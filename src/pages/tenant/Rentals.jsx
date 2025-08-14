@@ -8,11 +8,17 @@ import {
   DrawerOverlay,
   DrawerContent,
   DrawerHeader,
+  InputLeftElement,
   DrawerBody,
   useDisclosure,
   useBreakpointValue,
+  Avatar,
   Checkbox,
   Select,
+  Thead,
+  Th,
+  IconButton,
+  InputGroup,
   Slider,
   SliderTrack,
   SliderFilledTrack,
@@ -22,55 +28,56 @@ import {
   Heading,
   HStack,
   Flex,
+  Spinner,
+  Table,
   Badge,
   ChakraProvider,
   Divider,
   Image,
+  Tbody,
+  Tr,
+  Td,
   Icon,
   Modal,
   ModalOverlay,
   ModalContent,
   ModalHeader,
   ModalFooter,
+  Switch,
   ModalBody,
   ModalCloseButton,
+  Input,
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
 } from "@chakra-ui/react";
 
-import {
-  CheckCircleIcon,
-  SmallCloseIcon,
-  TimeIcon,
-  InfoIcon,
-} from "@chakra-ui/icons";
+import { InfoIcon, SearchIcon, AddIcon } from "@chakra-ui/icons";
 
 import {
   FaBolt,
   FaGasPump,
   FaCogs,
   FaSuitcase,
-  FaCarSide,
+  FaUser,
   FaUsers,
   FaCalendarAlt,
   FaSuitcaseRolling,
   FaTachometerAlt,
   FaArrowRight,
   FaCheckCircle,
-  FaStar,
-  FaMobileAlt,
-  FaApple,
-  FaAndroid,
-  FaBluetooth,
+  FaBook,
+  FaCalculator,
+  FaMoneyBillWave,
+  FaClock,
+  FaExclamationCircle,
+  FaCalendarDay,
 } from "react-icons/fa";
 
-// import { MdAutomatic, MdTouchApp } from "react-icons/md";
-import { GiCarKey, GiSpeedometer } from "react-icons/gi";
-import { AiOutlineStar } from "react-icons/ai";
-import { SiApple, SiAndroid } from "react-icons/si";
-import { BsBluetooth } from "react-icons/bs";
-
 import SlickCarouSliderel from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+import { BsTable } from "react-icons/bs";
+import { MdViewModule } from "react-icons/md";
 
 function Rentals() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -117,51 +124,75 @@ function FilterSidebar() {
   return <Filters />;
 }
 
-// Dummy car list
 function CarList() {
+  const [isCardView, setIsCardView] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleToggleView = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setIsCardView((prev) => !prev);
+      setLoading(false);
+    }, 300); // 1 second delay
+  };
+
   return (
     <Box pt="3">
-      <CarSummary />
-      <CarCardList />
+      <CarSummary isCardView={isCardView} onToggleView={handleToggleView} />
+
+      {loading ? (
+        <Flex justify="center" py={10}>
+          <Spinner size="xl" color="grey.800" thickness="4px" />
+        </Flex>
+      ) : isCardView ? (
+        <CarCardList />
+      ) : (
+        <TableView />
+      )}
     </Box>
   );
 }
 
-function CarSummary() {
-  const summary = [
-    {
-      label: "Available",
-      value: 70,
-      color: "green",
-      icon: <CheckCircleIcon color="green.200" />,
-    },
-    {
-      label: "Unavailable",
-      value: 15,
-      color: "red",
-      icon: <SmallCloseIcon color="red.200" />,
-    },
-    {
-      label: "Overdue",
-      value: 15,
-      color: "orange",
-      icon: <TimeIcon color="orange.200" />,
-    },
-  ];
-
+function CarSummary({ isCardView, onToggleView }) {
   return (
-    <Box pt="3">
-      <Flex justify="flex-end" gap={4} wrap="wrap">
-        {summary.map((item, idx) => (
-          <Flex key={idx} align="center" gap={2}>
-            <Text fontWeight="semibold" fontSize="sm">
-              {item.label}
-            </Text>
-            <Badge ml="1" variant="solid" colorScheme={item.color}>
-              {item.value}
-            </Badge>
-          </Flex>
-        ))}
+    <Box pb={4}>
+      <Flex
+        direction={{ base: "column", md: "row" }}
+        justify="space-between"
+        align={{ base: "stretch", md: "center" }}
+        gap={{ base: 3, md: 2 }}
+      >
+        {/* Left side - Search */}
+        <HStack
+          spacing={2}
+          align="center"
+          flexWrap={{ base: "wrap", md: "nowrap" }}
+        >
+          <InputGroup maxW="250px">
+            <InputLeftElement pointerEvents="none">
+              <SearchIcon color="gray.400" />
+            </InputLeftElement>
+            <Input placeholder="Search cars..." />
+          </InputGroup>
+
+          <Button colorScheme="blue" leftIcon={<SearchIcon />}>
+            Search
+          </Button>
+        </HStack>
+
+        {/* Right side - Add & Toggle buttons */}
+        <HStack spacing={2} align="center">
+          <Button colorScheme="green" leftIcon={<AddIcon />}>
+            Add
+          </Button>
+
+          <IconButton
+            aria-label="Toggle view"
+            icon={isCardView ? <MdViewModule /> : <BsTable />}
+            onClick={onToggleView}
+            colorScheme="teal"
+          />
+        </HStack>
       </Flex>
     </Box>
   );
@@ -180,7 +211,7 @@ function Filters() {
         p={5}
         bg="white"
       >
-        <VStack align="start" spacing={5} w="full">
+        <VStack align="start" spacing={3} w="full">
           <Heading as="h3" size="md" mb={1}>
             Filter By
           </Heading>
@@ -249,7 +280,7 @@ function Filters() {
               Price Range
             </Text>
             <Text fontSize="sm" color="gray.600" mb={2}>
-              Up to ₱{price.toLocaleString()}/day
+              Up to {price.toLocaleString()}/day
             </Text>
             <Slider
               value={price}
@@ -295,66 +326,82 @@ function Filters() {
 }
 
 function CarCardList() {
+  const specs = [
+    { icon: FaCalendarAlt, label: "0 - 3 year(s) old" },
+    { icon: FaUsers, label: "5 seats" },
+    { icon: FaSuitcase, label: "2 small bags" },
+    { icon: FaCogs, label: "1998 cc engine" },
+    { icon: FaCogs, label: "Automatic" },
+    { icon: FaGasPump, label: "Petrol" },
+    { icon: FaTachometerAlt, label: "7.6L / 100km" },
+  ];
+
   const cars = [
     {
       name: "Tesla Model 3",
-      age: "2 - 4 year(s) old",
-      type: "Electric",
-      transmission: "Auto",
-      fuelEfficiency: "A",
-      price: 5500,
       image: "/cars/6_tesla/1.avif",
       status: "Unavailable",
+      rateType: "Day",
+      rateAmount: "5,500",
+      renter: "John Doe",
+      startDate: "Aug 1, 10:00 am",
+      endDate: "Aug 3, 10:00 am",
+      actualReturn: "Aug 4, 12:00 pm",
+      extraCharge: "1,500",
+      transmission: "Auto",
+      type: "Electric",
     },
     {
       name: "Toyota Corolla",
-      age: "1 - 2 year(s) old",
-      type: "Gasoline",
-      transmission: "Manual",
-      fuelEfficiency: "B",
-      price: 2500,
       image: "/cars/3_toyota/1.avif",
       status: "Available",
+      rateType: "Hour",
+      rateAmount: "250",
+      transmission: "Manual",
+      type: "Gasoline",
+      age: "1 - 2 year(s) old",
+      fuelEfficiency: "B",
+      price: 2500,
     },
     {
       name: "Nissan Leaf",
-      age: "3 - 5 year(s) old",
-      type: "Electric",
-      transmission: "Auto",
-      fuelEfficiency: "A+",
-      price: 4000,
       image: "/cars/5_mitsubishi/1.avif",
       status: "Overdue",
+      rateType: "Day",
+      rateAmount: "4,000",
+      renter: "Jane Smith",
+      startDate: "Jul 15, 9:00 am",
+      endDate: "Aug 1, 9:00 am",
+      actualReturn: "Aug 4, 12:00 pm",
+      extraCharge: "4,000",
+      transmission: "Auto",
+      type: "Electric",
+    },
+    {
+      name: "Toyota Navara",
+      image: "/cars/4_ford/1.avif",
+      status: "Overdue",
+      rateType: "Day",
+      rateAmount: "4,000",
+      renter: "Jane Smith",
+      startDate: "Jul 15, 9:00 am",
+      endDate: "Aug 1, 9:00 am",
+      actualReturn: "Aug 4, 12:00 pm",
+      extraCharge: "4,000",
+      transmission: "Auto",
+      type: "Electric",
     },
     {
       name: "Honda Civic",
-      age: "2 - 3 year(s) old",
-      type: "Gasoline",
-      transmission: "Auto",
-      fuelEfficiency: "B+",
-      price: 3200,
       image: "/cars/2_van/1.avif",
       status: "Available",
-    },
-    {
-      name: "Toyota Yaris",
-      age: "6 year(s) old",
-      type: "Gasoline",
+      rateType: "Hour",
+      rateAmount: "320",
       transmission: "Auto",
+      type: "Gasoline",
+      age: "2 - 3 year(s) old",
       fuelEfficiency: "B+",
       price: 3200,
-      image: "/cars/9_toyota_yaris/1.avif",
-      status: "Available",
-    },
-    {
-      name: "Toyota Corolla Hatch",
-      age: "3 year(s) old",
-      type: "Gasoline",
-      transmission: "Auto",
-      fuelEfficiency: "B+",
-      price: 3200,
-      image: "/cars/8_toyota_corolla/1.avif",
-      status: "Available",
     },
   ];
 
@@ -366,121 +413,492 @@ function CarCardList() {
     onOpen();
   };
 
+  const handleBookCar = (car) => {
+    console.log("Book car:", car.name);
+  };
+
+  const statusColors = {
+    Available: "green.400",
+    Unavailable: "red.400",
+    Overdue: "orange.400",
+  };
+
+  const parseAmount = (str) => Number(str.replace(/[,]/g, "").trim()) || 0;
+
   return (
-    <ChakraProvider>
-      <Box pt="6">
-        <Grid
-          templateColumns={{
-            base: "1fr",
-            md: "repeat(2, 1fr)",
-            lg: "repeat(4, 1fr)",
-          }}
-          gap={6}
-        >
-          {cars.map((car, idx) => (
-            <Box
+    <Box pt={6}>
+      <Grid
+        templateColumns={{
+          base: "repeat(auto-fill, minmax(250px, 1fr))",
+          sm: "repeat(auto-fill, minmax(280px, 1fr))",
+        }}
+        gap={5}
+      >
+        {cars.map((car, idx) => {
+          const rate = parseAmount(car.rateAmount);
+          const extra = parseAmount(car.extraCharge || "0");
+          const totalCharge = rate + extra;
+
+          return (
+            <Card
               key={idx}
+              border="1px solid"
+              borderColor="gray.200"
               borderRadius="lg"
               overflow="hidden"
-              boxShadow="sm"
-              border="1px solid #e2e8f0"
-              bg="white"
-              _hover={{ boxShadow: "lg" }}
+              _hover={{ shadow: "md", transform: "translateY(-2px)" }}
+              transition="all 0.2s ease"
+              minH="100%"
+              display="flex"
+              flexDirection="column"
             >
-              {/* Image + badge */}
-              <Box position="relative">
+              {/* Image & Status */}
+              <CardHeader p={0} position="relative" h="180px">
                 <Image
                   src={car.image}
                   alt={car.name}
                   objectFit="cover"
                   w="100%"
-                  h="140px"
+                  h="100%"
                 />
-
                 <Badge
                   position="absolute"
-                  top="2"
-                  left="2"
-                  fontSize="0.7em"
+                  top={2}
+                  left={2}
+                  px={2}
+                  py={1}
+                  borderRadius="md"
                   color="white"
-                  bg={
-                    car.status === "Available"
-                      ? "green.400"
-                      : car.status === "Unavailable"
-                      ? "red.400"
-                      : car.status === "OverdueWarning"
-                      ? "yellow.400"
-                      : "yellow.400"
-                  }
+                  fontSize="xs"
+                  bg={statusColors[car.status]}
                 >
                   {car.status}
                 </Badge>
-              </Box>
+              </CardHeader>
 
-              {/* Car info */}
-              <Box p="4">
-                <Text fontWeight="bold" fontSize="xl">
-                  {car.name}
-                </Text>
-                <Text fontSize="sm" color="gray.500">
-                  {car.age}
-                </Text>
+              {car.status === "Available" ? (
+                <>
+                  <CardBody flex="1" display="flex" flexDirection="column">
+                    <Text fontWeight="bold" fontSize="lg" isTruncated>
+                      {car.name}
+                    </Text>
 
-                {/* Fuel efficiency */}
-                <Flex align="center" mt="2">
-                  <FaTachometerAlt color="#4A5568" />
-                  <Text fontSize="sm" mr="2" ml="3">
-                    7.6L / 100km
+                    {/* Rate Display */}
+                    <Box mt={2}>
+                      <HStack
+                        spacing={7}
+                        pt={2}
+                        pb={2}
+                        border="1px solid"
+                        borderColor="gray.200"
+                        borderRadius="lg"
+                        justify="center"
+                      >
+                        <HStack spacing={1}>
+                          <FaCalendarDay size={14} color="#4A5568" />
+                          <Text fontSize="md" color="gray.700">
+                            ₱{car.rateType === "Day" ? car.rateAmount : 300}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            /day
+                          </Text>
+                        </HStack>
+                        <Divider orientation="vertical" h="20px" />
+                        <HStack spacing={1}>
+                          <FaClock size={14} color="#4A5568" />
+                          <Text fontSize="md" color="gray.700">
+                            ₱{car.rateType === "Hour" ? car.rateAmount : 300}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            /hr
+                          </Text>
+                        </HStack>
+                      </HStack>
+                    </Box>
+
+                    <Divider my={3} />
+
+                    {/* Specs Section */}
+                    {/* Specs Section */}
+                    <Box mt={2} fontSize="sm" color="gray.600">
+                      {specs.map((spec, i) => (
+                        <Flex key={i} align="center" gap={2} mb={2}>
+                          <Box as={spec.icon} color="gray.500" fontSize="md" />
+                          <Text>{spec.label}</Text>
+                        </Flex>
+                      ))}
+                    </Box>
+                  </CardBody>
+
+                  <CardFooter mt="auto">
+                    <Button
+                      size="sm"
+                      colorScheme="blue"
+                      leftIcon={<InfoIcon />}
+                      w="full"
+                      onClick={() => handleOpenModal(car)}
+                    >
+                      More Info
+                    </Button>
+                  </CardFooter>
+                </>
+              ) : (
+                <>
+                  <CardBody fontSize="sm" color="gray.600" flex="1">
+                    <Text fontWeight="bold" fontSize="lg" isTruncated>
+                      {car.name}
+                    </Text>
+
+                    <Box mt={2}>
+                      <HStack
+                        spacing={7}
+                        pt={2}
+                        pb={2}
+                        border="1px solid"
+                        borderColor="gray.200"
+                        borderRadius="lg"
+                        justify="center"
+                      >
+                        {/* Daily */}
+                        <HStack spacing={1}>
+                          <FaCalendarDay size={14} color="#4A5568" />
+                          <Text fontSize="md" color="gray.700">
+                            ₱
+                            {car.rateType === "Day"
+                              ? car.rateAmount
+                              : defaultRates.Day}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            /day
+                          </Text>
+                        </HStack>
+
+                        <Divider orientation="vertical" h="20px" />
+
+                        {/* Hourly */}
+                        <HStack spacing={1}>
+                          <FaClock size={14} color="#4A5568" />
+                          <Text fontSize="md" color="gray.700">
+                            ₱{car.rateType === "Hour" ? car.rateAmount : 300}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            /hr
+                          </Text>
+                        </HStack>
+                      </HStack>
+                    </Box>
+
+                    <Divider my={3} />
+
+                    <Flex align="center" gap={2} mt={1}>
+                      <FaUser />
+                      <Text>{car.renter || "---"}</Text>
+                    </Flex>
+                    <Flex align="center" gap={2} mt={1}>
+                      <FaCalendarAlt />
+                      <Text>
+                        {car.startDate && car.endDate
+                          ? `${car.startDate} - ${car.endDate}`
+                          : ""}
+                      </Text>
+                    </Flex>
+
+                    <Flex align="center" gap={2} mt={1}>
+                      <FaClock />
+                      <Text>Returned: {car.actualReturn}</Text>
+                    </Flex>
+                    <Divider my={3} />
+
+                    {/* Payment Details */}
+                    <Box mt={3} p={2} borderRadius="md" bg="gray.50">
+                      <Text fontWeight="bold" fontSize="sm" mb={1}>
+                        Payment Details
+                      </Text>
+                      <Flex align="center" justify="space-between">
+                        <Flex align="center" gap={2}>
+                          <FaMoneyBillWave />
+                          <Text>Charge</Text>
+                        </Flex>
+                        <Text fontWeight="medium">{car.rateAmount}</Text>
+                      </Flex>
+
+                      {car.extraCharge && (
+                        <>
+                          <Flex align="center" justify="space-between" mt={1}>
+                            <Flex align="center" gap={2}>
+                              <FaExclamationCircle color="red" />
+                              <Text>Extra Charge</Text>
+                            </Flex>
+                            <Text fontWeight="medium">{car.extraCharge}</Text>
+                          </Flex>
+                          <Flex align="center" justify="space-between" mt={1}>
+                            <Flex align="center" gap={2}>
+                              <FaCalculator />
+                              <Text>Total</Text>
+                            </Flex>
+                            <Text fontWeight="bold">
+                              {totalCharge.toLocaleString()}
+                            </Text>
+                          </Flex>
+                        </>
+                      )}
+                    </Box>
+                  </CardBody>
+
+                  <CardFooter>
+                    <Flex gap={3} w="full">
+                      <Button
+                        flex={1}
+                        size="sm"
+                        colorScheme="blue"
+                        leftIcon={<InfoIcon />}
+                        onClick={() => handleOpenModal(car)}
+                      >
+                        Info
+                      </Button>
+                      <Button
+                        flex={1}
+                        size="sm"
+                        colorScheme="green"
+                        leftIcon={<FaBook />}
+                        onClick={() => handleBookCar(car)}
+                        isDisabled={car.status !== "Available"}
+                      >
+                        Book
+                      </Button>
+                    </Flex>
+                  </CardFooter>
+                </>
+              )}
+            </Card>
+          );
+        })}
+      </Grid>
+
+      {selectedCar && (
+        <CarInfoModal
+          isOpen={isOpen}
+          onClose={onClose}
+          title={selectedCar.name}
+        />
+      )}
+    </Box>
+  );
+}
+
+function TableView() {
+  const cars = [
+    {
+      name: "Tesla Model 3",
+      image: "/cars/6_tesla/1.avif",
+      status: "Unavailable",
+      rateType: "Day",
+      rateAmount: "5,500",
+      renter: "John Doe",
+      startDate: "Aug 1, 10:00 am",
+      endDate: "Aug 3, 10:00 am",
+      actualReturn: "Aug 4, 12:00 pm",
+      extraCharge: "", // Not overdue
+    },
+    {
+      name: "Toyota Corolla",
+      image: "/cars/3_toyota/1.avif",
+      status: "Available",
+      rateType: "Hour",
+      rateAmount: "250",
+      renter: "",
+      startDate: "",
+      endDate: "",
+      actualReturn: "",
+      extraCharge: "",
+    },
+    {
+      name: "Nissan Leaf",
+      image: "/cars/5_mitsubishi/1.avif",
+      status: "Overdue",
+      rateType: "Day",
+      rateAmount: "4,000",
+      renter: "Jane Smith",
+      startDate: "Jul 15, 9:00 am",
+      endDate: "Aug 1, 9:00 am",
+      actualReturn: "",
+      extraCharge: "4,000", // Overdue
+    },
+    {
+      name: "Honda Civic",
+      image: "/cars/2_van/1.avif",
+      status: "Available",
+      rateType: "Hour",
+      rateAmount: "320",
+      renter: "",
+      startDate: "",
+      endDate: "",
+      actualReturn: "",
+      extraCharge: "",
+    },
+    {
+      name: "BMW X5",
+      image: "/cars/2_van/1.avif",
+      status: "Returned Late",
+      rateType: "Hour",
+      rateAmount: "350",
+      renter: "Alex Green",
+      startDate: "Aug 14, 5:00 am",
+      endDate: "Aug 14, 8:00 am",
+      actualReturn: "Aug 14, 10:30 am",
+      extraCharge: "", // Not overdue, already returned
+    },
+    {
+      name: "Ford Mustang",
+      image: "/cars/5_mitsubishi/1.avif",
+      status: "Unavailable",
+      rateType: "Day",
+      rateAmount: "3,000",
+      renter: "Chris Evans",
+      startDate: "Aug 12, 2:00 pm",
+      endDate: "Aug 14, 2:00 pm",
+      actualReturn: "Aug 15, 10:00 am",
+      extraCharge: "", // Not overdue
+    },
+  ];
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedCar, setSelectedCar] = useState(null);
+
+  const handleOpenModal = (car) => {
+    setSelectedCar(car);
+    onOpen();
+  };
+
+  const statusColors = {
+    Available: "green",
+    Unavailable: "gray",
+    Overdue: "red",
+    "Returned Late": "orange",
+  };
+
+  return (
+    <Box borderWidth="1px" borderRadius="lg" overflowX="auto" pb="4" bg="white">
+      <Table size="sm" variant="simple">
+        <Thead bg="gray.50">
+          <Tr>
+            <Th>Car</Th>
+            <Th>Status</Th>
+            <Th>Rate</Th>
+            <Th>Type</Th>
+            <Th>Renter</Th>
+            <Th>Start</Th>
+            <Th>End</Th>
+            <Th>Return</Th>
+            <Th>Extra Charge</Th>
+            <Th textAlign="center">Book</Th>
+          </Tr>
+        </Thead>
+        <Tbody fontSize="sm">
+          {cars.map((car, idx) => (
+            <Tr
+              key={idx}
+              cursor="pointer"
+              _hover={{ bg: "gray.50" }}
+              onDoubleClick={() => handleOpenModal(car)}
+              bg={car.status === "Overdue" ? "red.50" : "transparent"}
+            >
+              <Td>
+                <Flex align="center" gap={2}>
+                  <Image
+                    src={car.image}
+                    alt={car.name}
+                    boxSize="35px"
+                    borderRadius="md"
+                    objectFit="cover"
+                  />
+                  <Text fontSize="sm" fontWeight="medium">
+                    {car.name}
                   </Text>
-                  <Badge colorScheme="green">{car.fuelEfficiency}</Badge>
                 </Flex>
-
-                <Divider my="3" />
-
-                {/* Price */}
-                <Text color="grey.500" fontWeight="bold" fontSize="lg">
-                  ₱{car.price.toLocaleString()}
-                </Text>
-
-                {/* Features */}
-                <Flex
-                  mt="3"
-                  align="center"
-                  gap="4"
-                  fontSize="sm"
-                  color="gray.600"
+              </Td>
+              <Td>
+                <Badge
+                  px={2}
+                  py={0.5}
+                  borderRadius="full"
+                  fontSize="0.7rem"
+                  colorScheme={statusColors[car.status]}
+                  variant="solid"
+                  color="white"
                 >
-                  <Flex align="center" gap="1">
-                    <Icon as={FaCogs} /> {car.transmission}
-                  </Flex>
-                  <Flex align="center" gap="1">
-                    {car.type === "Electric" ? <FaBolt /> : <FaGasPump />}{" "}
-                    {car.type}
-                  </Flex>
+                  {car.status}
+                </Badge>
+              </Td>
+              <Td>{car.rateAmount.toLocaleString()}</Td>
+              <Td>{car.rateType}</Td>
+              <Td>
+                <Flex align="center" gap={2}>
+                  {/* {car.status != "Available" ? (
+                    <Avatar
+                      name={car.renter}
+                      src="https://via.placeholder.com/35" // free placeholder image
+                      size="sm"
+                    />
+                  ) : (
+                    ""
+                  )} */}
+                  <Text fontSize="sm" fontWeight="medium">
+                    {car.renter}
+                  </Text>
                 </Flex>
+              </Td>
 
-                {/* More button */}
-                <Button
-                  mt="4"
-                  size="sm"
-                  colorScheme="blue"
-                  leftIcon={<InfoIcon />}
-                  onClick={() => handleOpenModal(car)}
-                >
-                  More
-                </Button>
-              </Box>
-            </Box>
+              <Td>{car.startDate}</Td>
+              <Td>{car.endDate}</Td>
+              <Td>{car.actualReturn}</Td>
+              <Td>{car.extraCharge}</Td>
+              <Td textAlign="center">
+                <Flex justify="center" gap={2}>
+                  <IconButton
+                    size="sm"
+                    colorScheme="blue"
+                    icon={<FaBook />}
+                    aria-label="Book"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log("Book", car.name);
+                    }}
+                  />
+                </Flex>
+              </Td>
+            </Tr>
           ))}
-        </Grid>
-      </Box>
+        </Tbody>
+      </Table>
 
-      <CarInfoModal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={selectedCar?.name || ""}
-      />
-    </ChakraProvider>
+      <Flex justify="center" mt={3} gap={1}>
+        <Button size="sm" variant="outline">
+          Prev
+        </Button>
+        {[1, 2, 3].map((page) => (
+          <Button
+            key={page}
+            size="sm"
+            variant={page === 1 ? "solid" : "outline"}
+            colorScheme="blue"
+          >
+            {page}
+          </Button>
+        ))}
+        <Button size="sm" variant="outline">
+          Next
+        </Button>
+      </Flex>
+
+      {isOpen && (
+        <CarInfoModal
+          isOpen={isOpen}
+          onClose={onClose}
+          title={selectedCar?.name || ""}
+        />
+      )}
+    </Box>
   );
 }
 
@@ -490,13 +908,18 @@ function CarInfoModal({ isOpen, onClose, title }) {
       isOpen={isOpen}
       onClose={onClose}
       size="5xl"
+      scrollBehavior="inside"
       className="custom-modal"
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>{title}</ModalHeader>
+        <ModalHeader>
+          <Text fontSize="26px">{title}</Text>
+        </ModalHeader>
+
         <ModalCloseButton />
         <ModalBody>
+          <SimpleSlider />
           <CarProfile />
         </ModalBody>
         <ModalFooter>
@@ -510,12 +933,102 @@ function CarInfoModal({ isOpen, onClose, title }) {
 }
 
 function CarProfile() {
-  const images = [
-    "/cars/5_mitsubishi/2.avif",
-    "/cars/5_mitsubishi/3.avif",
-    "/cars/5_mitsubishi/4.avif",
+  const specs = [
+    { icon: FaCalendarAlt, label: "0 - 3 year(s) old" },
+    { icon: FaUsers, label: "5 seats" },
+    { icon: FaSuitcaseRolling, label: "1 large bag" },
+    { icon: FaSuitcase, label: "2 small bags" },
+    { icon: FaCogs, label: "1998 cc engine" },
+    { icon: FaCogs, label: "Automatic" },
+    { icon: FaGasPump, label: "Petrol" },
+    { icon: FaTachometerAlt, label: "7.6L / 100km" },
   ];
 
+  const otherDesc = [
+    "Keyless entry",
+    "5 Star ANCAP Rating",
+    '8" Touchscreen Entertainment',
+    "Apple Carplay and Android Auto",
+    "Bluetooth Audio",
+  ];
+
+  return (
+    <Box p={6} pt={8} bg="white" mx="auto" borderRadius="md">
+      <Flex gap={8} wrap="wrap">
+        {/* Specification Table */}
+        <Box flex="1">
+          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
+            Specification
+          </Heading>
+          <Table variant="simple" size="sm">
+            <Tbody>
+              {specs.map((item, idx) => (
+                <Tr key={idx}>
+                  <Td w="40px">
+                    <item.icon size={20} color="#4A5568" />
+                  </Td>
+                  <Td fontWeight="semibold" color="gray.700">
+                    {item.label}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+
+        {/* Other Description Table */}
+        <Box flex="1">
+          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
+            Other Description
+          </Heading>
+          <Table variant="simple" size="sm">
+            <Tbody>
+              {otherDesc.map((text, idx) => (
+                <Tr key={idx}>
+                  <Td w="40px">
+                    <FaArrowRight size={18} color="#4A5568" />
+                  </Td>
+                  <Td fontWeight="semibold" color="gray.700">
+                    {text}
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+      </Flex>
+
+      {/* Why Choose Section */}
+      <Box mt={8}>
+        <Text fontSize="lg" fontWeight="bold" mb={3}>
+          Why choose this vehicle?
+        </Text>
+        <VStack align="flex-start" spacing={2}>
+          <HStack spacing={2}>
+            <FaCheckCircle size={18} color="green" />
+            <Text fontSize="md">
+              Comfortable cabin: Enough room for small families and passengers
+            </Text>
+          </HStack>
+          <HStack spacing={2}>
+            <FaCheckCircle size={18} color="green" />
+            <Text fontSize="md">
+              Fuel efficient: Efficient engine helps keep costs down
+            </Text>
+          </HStack>
+          <HStack spacing={2}>
+            <FaCheckCircle size={18} color="green" />
+            <Text fontSize="md">
+              Long-term reliability: Proven Corolla track record for durability
+            </Text>
+          </HStack>
+        </VStack>
+      </Box>
+    </Box>
+  );
+}
+
+function SimpleSlider() {
   const settings = {
     dots: true,
     infinite: true,
@@ -524,154 +1037,39 @@ function CarProfile() {
     slidesToScroll: 3,
   };
 
+  const images = [
+    "/cars/5_mitsubishi/4.avif",
+    "/cars/5_mitsubishi/2.avif",
+    "/cars/5_mitsubishi/4.avif",
+    "/cars/5_mitsubishi/5.avif",
+    "/cars/5_mitsubishi/1.avif",
+  ];
+
   return (
-    <Box p={8} bg="white" maxW="1000px" mx="auto">
-      {/* Image Carousel */}
-      <Box mb={8}>
-        <SlickCarouSliderel {...settings}>
-          {images.map((src, idx) => (
-            <Box key={idx} px={2}>
-              <Image
-                src={src}
-                alt={`Vehicle Image ${idx + 1}`}
-                borderRadius="md"
-                w="100%"
-                h="200px"
-                objectFit="cover"
-              />
-            </Box>
-          ))}
-        </SlickCarouSliderel>
-      </Box>
-
-      {/* Main Content */}
-      <Flex gap={10} wrap="wrap">
-        {/* Left Column - Specs */}
-        <Box flex="1">
-          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
-            Specs
-          </Heading>
-          <VStack align="start" spacing={4}>
-            <HStack spacing={3}>
-              <FaCalendarAlt size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                0 - 3 year(s) old
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaUsers size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                5 seats
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaSuitcaseRolling size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                1 large bag
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaSuitcase size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                2 small bags
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaCogs size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                1998 cc engine
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaCogs size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                Automatic
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaGasPump size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                Petrol
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaTachometerAlt size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                7.6L / 100km
-              </Text>
-            </HStack>
-          </VStack>
-        </Box>
-
-        {/* Divider */}
-        <Box w="1px" bg="gray.300" />
-
-        {/* Right Column - Other Description */}
-        <Box flex="1">
-          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
-            Other Description
-          </Heading>
-          <VStack align="start" spacing={4}>
-            <HStack spacing={3}>
-              <FaArrowRight size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                Keyless entry
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaArrowRight size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                5 Star ANCAP Rating
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaArrowRight size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                8" Touchscreen Entertainment
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaArrowRight size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                Apple Carplay and Android Auto
-              </Text>
-            </HStack>
-            <HStack spacing={3}>
-              <FaArrowRight size={22} color="#4A5568" />
-              <Text fontSize="md" fontWeight="medium" color="gray.800">
-                Bluetooth Audio
-              </Text>
-            </HStack>
-          </VStack>
-        </Box>
-      </Flex>
-
-      {/* Why Choose Section */}
-      <Box mt={8}>
-        <Text fontSize="lg" fontWeight="bold" mb={4}>
-          Why choose this vehicle?
-        </Text>
-        <VStack align="flex-start" spacing={3}>
-          <HStack spacing={3}>
-            <FaCheckCircle size={20} color="green" />
-            <Text fontSize="md">
-              Comfortable cabin: Enough room for small families and passengers
-            </Text>
-          </HStack>
-          <HStack spacing={3}>
-            <FaCheckCircle size={20} color="green" />
-            <Text fontSize="md">
-              Fuel efficient: Efficient engine helps keep costs down
-            </Text>
-          </HStack>
-          <HStack spacing={3}>
-            <FaCheckCircle size={20} color="green" />
-            <Text fontSize="md">
-              Long-term reliability: Proven Corolla track record for durability
-            </Text>
-          </HStack>
-        </VStack>
-      </Box>
+    <Box p={6}>
+      <SlickCarouSliderel {...settings}>
+        {images.map((src, index) => (
+          <div
+            key={index}
+            style={{
+              width: "360px",
+              height: "240px",
+              margin: "0 auto", // centers the image inside the slide
+            }}
+          >
+            <img
+              src={src}
+              alt={`Car ${index + 1}`}
+              style={{
+                width: "360px",
+                height: "240px",
+                objectFit: "cover", // crop without distortion
+                borderRadius: "8px",
+              }}
+            />
+          </div>
+        ))}
+      </SlickCarouSliderel>
     </Box>
   );
 }
