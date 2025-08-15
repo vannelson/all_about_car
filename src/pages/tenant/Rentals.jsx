@@ -12,7 +12,7 @@ import {
   DrawerBody,
   useDisclosure,
   useBreakpointValue,
-  Avatar,
+  Stack,
   Checkbox,
   Select,
   Thead,
@@ -73,6 +73,9 @@ import {
   FaClock,
   FaExclamationCircle,
   FaCalendarDay,
+  FaChair,
+  FaCar,
+  FaBatteryFull,
 } from "react-icons/fa";
 
 import SlickCarouSliderel from "react-slick";
@@ -163,21 +166,13 @@ function CarSummary({ isCardView, onToggleView }) {
         gap={{ base: 3, md: 2 }}
       >
         {/* Left side - Search */}
-        <HStack
-          spacing={2}
-          align="center"
-          flexWrap={{ base: "wrap", md: "nowrap" }}
-        >
-          <InputGroup maxW="250px">
+        <HStack align="center" flexWrap={{ base: "wrap", md: "nowrap" }}>
+          <InputGroup maxW="350px">
             <InputLeftElement pointerEvents="none">
               <SearchIcon color="gray.400" />
             </InputLeftElement>
-            <Input placeholder="Search cars..." />
+            <Input maxW="350px" placeholder="Search cars..." />
           </InputGroup>
-
-          <Button colorScheme="blue" leftIcon={<SearchIcon />}>
-            Search
-          </Button>
         </HStack>
 
         {/* Right side - Add & Toggle buttons */}
@@ -426,7 +421,7 @@ function CarCardList() {
   const parseAmount = (str) => Number(str.replace(/[,]/g, "").trim()) || 0;
 
   return (
-    <Box pt={6}>
+    <Box>
       <Grid
         templateColumns={{
           base: "repeat(auto-fill, minmax(250px, 1fr))",
@@ -691,74 +686,28 @@ function TableView() {
     {
       name: "Tesla Model 3",
       image: "/cars/6_tesla/1.avif",
+      specs: ["5 seats", "7.6L / 100km", "Petrol"],
       status: "Unavailable",
-      rateType: "Day",
-      rateAmount: "5,500",
       renter: "John Doe",
       startDate: "Aug 1, 10:00 am",
       endDate: "Aug 3, 10:00 am",
       actualReturn: "Aug 4, 12:00 pm",
-      extraCharge: "", // Not overdue
-    },
-    {
-      name: "Toyota Corolla",
-      image: "/cars/3_toyota/1.avif",
-      status: "Available",
-      rateType: "Hour",
-      rateAmount: "250",
-      renter: "",
-      startDate: "",
-      endDate: "",
-      actualReturn: "",
-      extraCharge: "",
+      charge: 4000,
+      extraCharge: 1500,
+      rates: { day: 5500, hour: 300 },
     },
     {
       name: "Nissan Leaf",
       image: "/cars/5_mitsubishi/1.avif",
+      specs: ["4 seats", "Electric", "350km range"],
       status: "Overdue",
-      rateType: "Day",
-      rateAmount: "4,000",
       renter: "Jane Smith",
       startDate: "Jul 15, 9:00 am",
       endDate: "Aug 1, 9:00 am",
       actualReturn: "",
-      extraCharge: "4,000", // Overdue
-    },
-    {
-      name: "Honda Civic",
-      image: "/cars/2_van/1.avif",
-      status: "Available",
-      rateType: "Hour",
-      rateAmount: "320",
-      renter: "",
-      startDate: "",
-      endDate: "",
-      actualReturn: "",
-      extraCharge: "",
-    },
-    {
-      name: "BMW X5",
-      image: "/cars/2_van/1.avif",
-      status: "Returned Late",
-      rateType: "Hour",
-      rateAmount: "350",
-      renter: "Alex Green",
-      startDate: "Aug 14, 5:00 am",
-      endDate: "Aug 14, 8:00 am",
-      actualReturn: "Aug 14, 10:30 am",
-      extraCharge: "", // Not overdue, already returned
-    },
-    {
-      name: "Ford Mustang",
-      image: "/cars/5_mitsubishi/1.avif",
-      status: "Unavailable",
-      rateType: "Day",
-      rateAmount: "3,000",
-      renter: "Chris Evans",
-      startDate: "Aug 12, 2:00 pm",
-      endDate: "Aug 14, 2:00 pm",
-      actualReturn: "Aug 15, 10:00 am",
-      extraCharge: "", // Not overdue
+      charge: 4000,
+      extraCharge: 4000,
+      rates: { day: 4000, hour: 250 },
     },
   ];
 
@@ -770,11 +719,27 @@ function TableView() {
     onOpen();
   };
 
-  const statusColors = {
-    Available: "green",
-    Unavailable: "gray",
-    Overdue: "red",
-    "Returned Late": "orange",
+  const iconColor = "gray.500";
+  const getSpecIcon = (spec) => {
+    if (spec.includes("seats")) return <FaChair color={iconColor} />;
+    if (spec.includes("Petrol")) return <FaGasPump color={iconColor} />;
+    if (spec.includes("Electric")) return <FaBolt color={iconColor} />;
+    if (spec.includes("km")) return <FaCar color={iconColor} />;
+    if (spec.includes("L")) return <FaCogs color={iconColor} />;
+    return <FaCar color={iconColor} />;
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Available":
+        return "green";
+      case "Unavailable":
+        return "red";
+      case "Overdue":
+        return "orange";
+      default:
+        return "gray";
+    }
   };
 
   return (
@@ -782,122 +747,186 @@ function TableView() {
       <Table size="sm" variant="simple">
         <Thead bg="gray.50">
           <Tr>
-            <Th>Car</Th>
+            <Th>Car Info</Th>
+            <Th>Renter Info</Th>
+            <Th>Rates</Th>
+            <Th>Payment Details</Th>
             <Th>Status</Th>
-            <Th>Rate</Th>
-            <Th>Type</Th>
-            <Th>Renter</Th>
-            <Th>Start</Th>
-            <Th>End</Th>
-            <Th>Return</Th>
-            <Th>Extra Charge</Th>
-            <Th textAlign="center">Book</Th>
+            <Th textAlign="center">Actions</Th>
           </Tr>
         </Thead>
         <Tbody fontSize="sm">
-          {cars.map((car, idx) => (
-            <Tr
-              key={idx}
-              cursor="pointer"
-              _hover={{ bg: "gray.50" }}
-              onDoubleClick={() => handleOpenModal(car)}
-              bg={car.status === "Overdue" ? "red.50" : "transparent"}
-            >
-              <Td>
-                <Flex align="center" gap={2}>
-                  <Image
-                    src={car.image}
-                    alt={car.name}
-                    boxSize="35px"
-                    borderRadius="md"
-                    objectFit="cover"
-                  />
-                  <Text fontSize="sm" fontWeight="medium">
-                    {car.name}
-                  </Text>
-                </Flex>
-              </Td>
-              <Td>
-                <Badge
-                  px={2}
-                  py={0.5}
-                  borderRadius="full"
-                  fontSize="0.7rem"
-                  colorScheme={statusColors[car.status]}
-                  variant="solid"
-                  color="white"
-                >
-                  {car.status}
-                </Badge>
-              </Td>
-              <Td>{car.rateAmount.toLocaleString()}</Td>
-              <Td>{car.rateType}</Td>
-              <Td>
-                <Flex align="center" gap={2}>
-                  {/* {car.status != "Available" ? (
-                    <Avatar
-                      name={car.renter}
-                      src="https://via.placeholder.com/35" // free placeholder image
-                      size="sm"
-                    />
-                  ) : (
-                    ""
-                  )} */}
-                  <Text fontSize="sm" fontWeight="medium">
-                    {car.renter}
-                  </Text>
-                </Flex>
-              </Td>
+          {cars.map((car, idx) => {
+            const total = car.charge + car.extraCharge;
 
-              <Td>{car.startDate}</Td>
-              <Td>{car.endDate}</Td>
-              <Td>{car.actualReturn}</Td>
-              <Td>{car.extraCharge}</Td>
-              <Td textAlign="center">
-                <Flex justify="center" gap={2}>
-                  <IconButton
-                    size="sm"
-                    colorScheme="blue"
-                    icon={<FaBook />}
-                    aria-label="Book"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log("Book", car.name);
-                    }}
-                  />
-                </Flex>
-              </Td>
-            </Tr>
-          ))}
+            return (
+              <Tr
+                key={idx}
+                _hover={{ bg: "gray.50" }}
+                bg={car.status === "Overdue" ? "red.50" : "transparent"}
+              >
+                {/* Car Info */}
+                <Td>
+                  <Flex align="flex-start" gap={3}>
+                    <Image
+                      src={car.image}
+                      alt={car.name}
+                      boxSize="75px"
+                      borderRadius="md"
+                      objectFit="cover"
+                    />
+                    <Box>
+                      <Text fontWeight="semibold" mb={1}>
+                        {car.name}
+                      </Text>
+                      <Stack spacing={1} fontSize="xs" color="gray.600">
+                        {car.specs.map((s, i) => (
+                          <Flex key={i} align="center" gap={2}>
+                            {getSpecIcon(s)}
+                            <Text>{s}</Text>
+                          </Flex>
+                        ))}
+                      </Stack>
+                    </Box>
+                  </Flex>
+                </Td>
+
+                {/* Renter Info */}
+                <Td>
+                  <Flex align="center" gap={2}>
+                    <FaUser color={iconColor} />
+                    <Text fontWeight="medium">{car.renter || "—"}</Text>
+                  </Flex>
+                  {car.startDate && car.endDate && (
+                    <Flex align="center" gap={2} mt={1}>
+                      <FaCalendarAlt color="gray" />
+                      <Text fontSize="sm" color="gray.600">
+                        {car.startDate} - {car.endDate}
+                      </Text>
+                    </Flex>
+                  )}
+                  {car.actualReturn && (
+                    <Flex align="center" gap={2} mt={1}>
+                      <FaClock color="gray" />
+                      <Text fontSize="sm" color="gray.600">
+                        Returned: {car.actualReturn}
+                      </Text>
+                    </Flex>
+                  )}
+                </Td>
+
+                {/* Rates */}
+                <Td>
+                  <Box p={3} borderWidth="1px" borderRadius="md" shadow="sm">
+                    <Stack spacing={2}>
+                      <Flex align="center" justify="space-between">
+                        <Flex align="center" gap={2}>
+                          <FaCalendarDay size={14} color="#4A5568" />
+                          <Text color="gray.600" fontSize="sm">
+                            Daily
+                          </Text>
+                        </Flex>
+                        <Text fontWeight="semibold">
+                          ₱{car.rates.day.toLocaleString()}
+                        </Text>
+                      </Flex>
+                      <Flex align="center" justify="space-between">
+                        <Flex align="center" gap={2}>
+                          <FaClock size={14} color="#4A5568" />
+                          <Text color="gray.600" fontSize="sm">
+                            Hourly
+                          </Text>
+                        </Flex>
+                        <Text fontWeight="semibold" color="black.100">
+                          ₱{car.rates.hour.toLocaleString()}
+                        </Text>
+                      </Flex>
+                    </Stack>
+                  </Box>
+                </Td>
+
+                {/* Payment Details */}
+                <Td>
+                  <Box p={3} borderWidth="1px" borderRadius="md" bg="white">
+                    <Stack spacing={2}>
+                      <Flex align="center" justify="space-between">
+                        <Flex align="center" gap={2}>
+                          <FaMoneyBillWave color="gray" />
+                          <Text color="gray.600">Charge</Text>
+                        </Flex>
+                        <Text>{car.charge.toLocaleString()}</Text>
+                      </Flex>
+
+                      <Flex align="center" justify="space-between">
+                        <Flex align="center" gap={2}>
+                          <FaExclamationCircle color="orange" />
+                          <Text color="gray.600">Extra</Text>
+                        </Flex>
+                        <Text>
+                          {car.extraCharge
+                            ? car.extraCharge.toLocaleString()
+                            : "-"}
+                        </Text>
+                      </Flex>
+
+                      <Divider my={1} />
+                      <Flex
+                        align="center"
+                        justify="space-between"
+                        fontWeight="semibold"
+                      >
+                        <Flex align="center" gap={2}>
+                          <FaCalculator color={iconColor} />
+                          <Text>Total</Text>
+                        </Flex>
+                        <Text>{total.toLocaleString()}</Text>
+                      </Flex>
+                    </Stack>
+                  </Box>
+                </Td>
+
+                {/* Status */}
+                <Td>
+                  <Badge
+                    colorScheme={getStatusColor(car.status)}
+                    variant="solid"
+                    px={3}
+                    py={1}
+                    borderRadius="md"
+                  >
+                    {car.status}
+                  </Badge>
+                </Td>
+
+                {/* Actions */}
+                <Td textAlign="center">
+                  <Stack direction="column" spacing={2} align="center">
+                    <Button
+                      size="sm"
+                      colorScheme="blue"
+                      leftIcon={<FaBook color="white" />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log("Book", car.name);
+                      }}
+                    >
+                      Book
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      leftIcon={<InfoIcon color={iconColor} />}
+                      onClick={() => handleOpenModal(car)}
+                    >
+                      More
+                    </Button>
+                  </Stack>
+                </Td>
+              </Tr>
+            );
+          })}
         </Tbody>
       </Table>
-
-      <Flex justify="center" mt={3} gap={1}>
-        <Button size="sm" variant="outline">
-          Prev
-        </Button>
-        {[1, 2, 3].map((page) => (
-          <Button
-            key={page}
-            size="sm"
-            variant={page === 1 ? "solid" : "outline"}
-            colorScheme="blue"
-          >
-            {page}
-          </Button>
-        ))}
-        <Button size="sm" variant="outline">
-          Next
-        </Button>
-      </Flex>
-
-      {isOpen && (
-        <CarInfoModal
-          isOpen={isOpen}
-          onClose={onClose}
-          title={selectedCar?.name || ""}
-        />
-      )}
     </Box>
   );
 }
