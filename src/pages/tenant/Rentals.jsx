@@ -129,7 +129,6 @@ function CarListTableOrCard() {
         <CardCar />
       ) : (
         <TableCar />
-        // <TableView />
       )}
     </Box>
   );
@@ -307,11 +306,11 @@ function SimpleSlider() {
   };
 
   const images = [
-    "/cars/5_mitsubishi/4.avif",
-    "/cars/5_mitsubishi/2.avif",
-    "/cars/5_mitsubishi/4.avif",
-    "/cars/5_mitsubishi/5.avif",
-    "/cars/5_mitsubishi/1.avif",
+    { alt: "Tesla Model 3", images: "/cars/5_mitsubishi/4.avif" },
+    { alt: "Toyota Corolla", images: "/cars/5_mitsubishi/2.avif" },
+    { alt: "Nissan Leaf", images: "/cars/5_mitsubishi/4.avif" },
+    { alt: "Toyota Navara", images: "/cars/5_mitsubishi/5.avif" },
+    { alt: "Honda Civic", images: "/cars/5_mitsubishi/1.avif" },
   ];
 
   return (
@@ -323,12 +322,12 @@ function SimpleSlider() {
             style={{
               width: "360px",
               height: "240px",
-              margin: "0 auto", // centers the image inside the slide
+              margin: "0 auto",
             }}
           >
             <img
-              src={src}
-              alt={`Car ${index + 1}`}
+              src={src.images}
+              alt={src.alt}
               style={{
                 width: "260px",
                 height: "140px",

@@ -18,11 +18,13 @@ import {
 
 import { InfoIcon } from "@chakra-ui/icons";
 import { extractBookingDetails } from "../../../utils/helpers/bookingHelpers";
-import { FaBook, FaClock, FaCalendarDay } from "react-icons/fa";
+import { FaBook } from "react-icons/fa";
 
 import BaseListAndIcons from "../../base/BaseListAndIcons";
 import PaymentPanel from "../payment/PaymentPanel";
 import CarRates from "./CarRates";
+import BaseModal from "../../base/BaseModal";
+import BaseSlider from "../../base/BaseSlider";
 
 const CardCar = () => {
   const cars = [
@@ -44,7 +46,7 @@ const CardCar = () => {
       booking: {
         startDate: "Aug 1, 10:00 am",
         endDate: "Aug 3, 10:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "5,500",
         extraCharge: "1,500",
@@ -86,7 +88,7 @@ const CardCar = () => {
       booking: {
         startDate: "Jul 15, 9:00 am",
         endDate: "Aug 1, 9:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "4,000",
         extraCharge: "4,000",
@@ -111,7 +113,7 @@ const CardCar = () => {
       booking: {
         startDate: "Jul 15, 9:00 am",
         endDate: "Aug 1, 9:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "4,000",
         extraCharge: "4,000",
@@ -138,24 +140,31 @@ const CardCar = () => {
     },
   ];
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [selectedCar, setSelectedCar] = useState(null);
-
-  const handleOpenModal = (car) => {
-    setSelectedCar(car);
-    onOpen();
-  };
-
-  const handleBookCar = (car) => {
-    console.log("Book car:", car.name);
-  };
-
   const statusColors = {
     Available: "green.400",
     Unavailable: "red.400",
     Overdue: "orange.400",
   };
 
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure();
+
+  const [selectedCar, setSelectedCar] = useState([]);
+  const [sliderImages, setSliderImages] = useState([]);
+
+  const handleModalOpen = (car) => {
+    setSelectedCar(car);
+    setSliderImages(
+      cars.map((car) => ({
+        alt: car.name,
+        image: car.image,
+      }))
+    );
+    onModalOpen();
+  };
   return (
     <Box>
       <Grid
@@ -203,12 +212,17 @@ const CardCar = () => {
                 </Badge>
               </CardHeader>
 
-              <CardBody fontSize="sm" color="gray.600" flex="1">
-                <Text fontWeight="bold" fontSize="lg" isTruncated>
+              <CardBody fontSize="sm" flex="1">
+                <Text
+                  fontWeight="bold"
+                  fontSize="lg"
+                  color="gray.700"
+                  isTruncated
+                >
                   {car.name}
                 </Text>
 
-                <CarRates rateAmount={car.rateAmoun} rateType={car.rateType} />
+                <CarRates rateAmount={car.rateAmount} rateType={car.rateType} />
                 <Divider my={3} />
                 {car.status == "Available" ? (
                   <>
@@ -241,7 +255,7 @@ const CardCar = () => {
                     size="sm"
                     colorScheme="gray"
                     leftIcon={<InfoIcon />}
-                    onClick={() => handleOpenModal(car)}
+                    onClick={() => handleModalOpen(car)}
                   >
                     Info
                   </Button>
@@ -249,8 +263,8 @@ const CardCar = () => {
                     flex={1}
                     size="sm"
                     colorScheme="blue"
+                    onClick={() => handleModalOpen(car)}
                     leftIcon={<FaBook />}
-                    onClick={() => handleBookCar(car)}
                     isDisabled={car.status !== "Available"}
                   >
                     Book
@@ -262,13 +276,38 @@ const CardCar = () => {
         })}
       </Grid>
 
-      {selectedCar && (
-        <CarInfoModal
-          isOpen={isOpen}
-          onClose={onClose}
-          title={selectedCar.name}
-        />
-      )}
+      <BaseModal
+        title={selectedCar.name || ""}
+        isOpen={isModalOpen}
+        onClose={onModalClose}
+        size="4xl"
+      >
+        <Flex gap={4}>
+          {/* Left Side (Details) */}
+          <Box flex="1">
+            <Text fontSize="lg" fontWeight="bold">
+              {selectedCar.name}
+            </Text>
+            <Text>Status: {selectedCar.status}</Text>
+            <Text>
+              Rate: {selectedCar.rateAmount} / {selectedCar.rateType}
+            </Text>
+            {/* You can add more details/specs here */}
+          </Box>
+
+          {/* Right Side (Slider inside a Card) */}
+          <Card flex="1">
+            <CardBody>
+              <BaseSlider
+                images={sliderImages}
+                speed={500}
+                slidesToShow={2}
+                slidesToScroll={2}
+              />
+            </CardBody>
+          </Card>
+        </Flex>
+      </BaseModal>
     </Box>
   );
 };

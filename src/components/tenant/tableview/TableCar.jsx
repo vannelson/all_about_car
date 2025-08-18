@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { extractBookingDetails } from "../../../utils/helpers/bookingHelpers";
+
 import {
   Box,
   Button,
@@ -35,6 +37,8 @@ import {
   FaCar,
 } from "react-icons/fa";
 import BaseListAndIcons from "../../base/BaseListAndIcons";
+import CarRates from "../cardview/CarRates";
+import PaymentPanel from "../payment/PaymentPanel";
 
 const TableCar = () => {
   // const cars = [
@@ -80,11 +84,12 @@ const TableCar = () => {
         { key: "engine_capacity_cc", value: "1998 cc engine" },
         { key: "transmission", value: "Automatic" },
         { key: "fuel_type", value: "Petrol" },
+        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
       ],
       booking: {
         startDate: "Aug 1, 10:00 am",
         endDate: "Aug 3, 10:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "5,500",
         extraCharge: "1,500",
@@ -104,6 +109,7 @@ const TableCar = () => {
         { key: "engine_capacity_cc", value: "1998 cc engine" },
         { key: "transmission", value: "Manual" },
         { key: "fuel_type", value: "Gasoline" },
+        { key: "fuel_efficiency_rate", value: "Fuel Efficiency: B" },
       ],
       booking: null,
     },
@@ -120,11 +126,12 @@ const TableCar = () => {
         { key: "engine_capacity_cc", value: "1998 cc engine" },
         { key: "transmission", value: "Automatic" },
         { key: "fuel_type", value: "Electric" },
+        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
       ],
       booking: {
         startDate: "Jul 15, 9:00 am",
         endDate: "Aug 1, 9:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "4,000",
         extraCharge: "4,000",
@@ -144,11 +151,12 @@ const TableCar = () => {
         { key: "engine_capacity_cc", value: "1998 cc engine" },
         { key: "transmission", value: "Automatic" },
         { key: "fuel_type", value: "Diesel" },
+        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
       ],
       booking: {
         startDate: "Jul 15, 9:00 am",
         endDate: "Aug 1, 9:00 am",
-        actualReturn: "Aug 4, 12:00 pm",
+        actualReturn: "Returned : Aug 4, 12:00 pm",
         rateType: "Daily",
         rateAmount: "4,000",
         extraCharge: "4,000",
@@ -169,6 +177,7 @@ const TableCar = () => {
         { key: "engine_capacity_cc", value: "1998 cc engine" },
         { key: "transmission", value: "Automatic" },
         { key: "fuel_type", value: "Gasoline" },
+        { key: "fuel_efficiency_rate", value: "Fuel Efficiency: B+" },
       ],
       booking: null,
     },
@@ -183,11 +192,13 @@ const TableCar = () => {
 
   const iconColor = "gray.500";
   const getSpecIcon = (spec) => {
-    if (spec.includes("age")) return <FaChair color={iconColor} />;
-    if (spec.includes("seats")) return <FaGasPump color={iconColor} />;
-    if (spec.includes("luggage_capacity")) return <FaBolt color={iconColor} />;
-    if (spec.includes("transmission")) return <FaCar color={iconColor} />;
-    if (spec.includes("fuel_type")) return <FaCogs color={iconColor} />;
+    if (spec.key.includes("seats")) return <FaChair color={iconColor} />;
+    if (spec.key.includes("luggage_capacity"))
+      return <FaGasPump color={iconColor} />;
+    if (spec.key.includes("fuel_efficiency_rate"))
+      return <FaBolt color={iconColor} />;
+    if (spec.key.includes("transmission")) return <FaCar color={iconColor} />;
+    if (spec.key.includes("fuel_type")) return <FaCogs color={iconColor} />;
     return <FaCar color={iconColor} />;
   };
 
@@ -233,127 +244,64 @@ const TableCar = () => {
                     <Image
                       src={car.image}
                       alt={car.name}
-                      boxSize="75px"
+                      boxSize="80px"
                       borderRadius="md"
                       objectFit="cover"
                     />
                     <Box>
-                      <Text fontWeight="semibold" mb={1}>
+                      <Text fontWeight="semibold" color="gray.700" mb={1}>
                         {car.name}
                       </Text>
-                      <Stack spacing={1} fontSize="xs" color="gray.600">
-                        {/* <BaseListAndIcons
+                      <Stack spacing={0} fontSize="xs" pt={1}>
+                        <BaseListAndIcons
                           specs={car.specification}
-                          fontSize={"sm"}
-                        /> */}
-
-                        {car.specification.map((s, i) => (
-                          <Flex key={i} align="center" gap={2}>
-                            {getSpecIcon(s)}
-                            <Text>{s}</Text>
-                          </Flex>
-                        ))}
+                          IconfontSize={12}
+                          labelFontSize={12}
+                          mb={1}
+                          showMode={3}
+                        />
                       </Stack>
                     </Box>
                   </Flex>
                 </Td>
 
                 {/* Renter Info */}
-                {/* <Td>
-                  <Flex align="center" gap={2}>
-                    <FaUser color={iconColor} />
-                    <Text fontWeight="medium">{car.renter || "—"}</Text>
-                  </Flex>
-                  {car.startDate && car.endDate && (
-                    <Flex align="center" gap={2} mt={1}>
-                      <FaCalendarAlt color="gray" />
-                      <Text fontSize="sm" color="gray.600">
-                        {car.startDate} - {car.endDate}
-                      </Text>
-                    </Flex>
+                <Td>
+                  {car.status != "Available" ? (
+                    <>
+                      <BaseListAndIcons
+                        specs={extractBookingDetails(car.booking, [
+                          "renter",
+                          "startDate_endDate",
+                          "actualReturn",
+                        ])}
+                      />
+                    </>
+                  ) : (
+                    ""
                   )}
-                  {car.actualReturn && (
-                    <Flex align="center" gap={2} mt={1}>
-                      <FaClock color="gray" />
-                      <Text fontSize="sm" color="gray.600">
-                        Returned: {car.actualReturn}
-                      </Text>
-                    </Flex>
-                  )}
-                </Td> */}
+                </Td>
 
                 {/* Rates */}
-                {/* <Td>
-                  <Box p={3} borderWidth="1px" borderRadius="md" shadow="sm">
-                    <Stack spacing={2}>
-                      <Flex align="center" justify="space-between">
-                        <Flex align="center" gap={2}>
-                          <FaCalendarDay size={14} color="#4A5568" />
-                          <Text color="gray.600" fontSize="sm">
-                            Daily
-                          </Text>
-                        </Flex>
-                        <Text fontWeight="semibold">
-                          ₱{car.rates.day.toLocaleString()}
-                        </Text>
-                      </Flex>
-                      <Flex align="center" justify="space-between">
-                        <Flex align="center" gap={2}>
-                          <FaClock size={14} color="#4A5568" />
-                          <Text color="gray.600" fontSize="sm">
-                            Hourly
-                          </Text>
-                        </Flex>
-                        <Text fontWeight="semibold" color="black.100">
-                          ₱{car.rates.hour.toLocaleString()}
-                        </Text>
-                      </Flex>
-                    </Stack>
-                  </Box>
-                </Td> */}
+                <Td>
+                  <CarRates
+                    rateAmount={car.rateAmount}
+                    rateType={car.rateType}
+                    direction={"vertical"}
+                  />
+                </Td>
 
                 {/* Payment Details */}
-                {/* <Td>
-                  <Box p={3} borderWidth="1px" borderRadius="md" bg="white">
-                    <Stack spacing={2}>
-                      <Flex align="center" justify="space-between">
-                        <Flex align="center" gap={2}>
-                          <FaMoneyBillWave color="gray" />
-                          <Text color="gray.600">Charge</Text>
-                        </Flex>
-                        <Text>{car.charge.toLocaleString()}</Text>
-                      </Flex>
-
-                      <Flex align="center" justify="space-between">
-                        <Flex align="center" gap={2}>
-                          <FaExclamationCircle color="orange" />
-                          <Text color="gray.600">Extra</Text>
-                        </Flex>
-                        <Text>
-                          {car.extraCharge
-                            ? car.extraCharge.toLocaleString()
-                            : "-"}
-                        </Text>
-                      </Flex>
-
-                      <Divider my={1} />
-                      <Flex
-                        align="center"
-                        justify="space-between"
-                        fontWeight="semibold"
-                      >
-                        <Flex align="center" gap={2}>
-                          <FaCalculator color={iconColor} />
-                          <Text>Total</Text>
-                        </Flex>
-                        <Text>{total.toLocaleString()}</Text>
-                      </Flex>
-                    </Stack>
-                  </Box>
-                </Td> */}
+                <Td>
+                  <PaymentPanel
+                    bgColor="white"
+                    rateAmount={car.rateAmount}
+                    extraCharge={car.extraCharge}
+                  />
+                </Td>
 
                 {/* Status */}
-                {/* <Td>
+                <Td>
                   <Badge
                     colorScheme={getStatusColor(car.status)}
                     variant="solid"
@@ -363,10 +311,10 @@ const TableCar = () => {
                   >
                     {car.status}
                   </Badge>
-                </Td> */}
+                </Td>
 
                 {/* Actions */}
-                {/* <Td textAlign="center">
+                <Td textAlign="center">
                   <Stack direction="column" spacing={2} align="center">
                     <Button
                       size="sm"
@@ -388,7 +336,7 @@ const TableCar = () => {
                       More
                     </Button>
                   </Stack>
-                </Td> */}
+                </Td>
               </Tr>
             );
           })}

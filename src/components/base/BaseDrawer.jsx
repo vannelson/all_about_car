@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import {
   Drawer,
   DrawerBody,
@@ -30,6 +31,15 @@ const BaseDrawer = ({
       </DrawerContent>
     </Drawer>
   );
+};
+
+BaseDrawer.propTypes = {
+  isOpenRightDrawer: PropTypes.bool.isRequired,
+  onCloseRightDrawer: PropTypes.func.isRequired,
+  title: PropTypes.node,
+  size: PropTypes.oneOf(["xs", "sm", "md", "lg", "xl", "full"]),
+  placement: PropTypes.oneOf(["top", "right", "bottom", "left"]),
+  children: PropTypes.node,
 };
 
 export default BaseDrawer;

@@ -1,4 +1,5 @@
-import { Box, Text, Flex } from "@chakra-ui/react";
+import { useState } from "react";
+import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import { carIcons } from "../../utils/carIcons";
 
 import {
@@ -17,19 +18,47 @@ import {
   FaCalendarDay,
 } from "react-icons/fa";
 
-const BaseListAndIcons = ({ specs = [], fontSize = "16" }) => {
+const BaseListAndIcons = ({
+  specs = [],
+  IconfontSize = 16,
+  labelFontSize = 14,
+  IconColor = "#4A5568",
+  mb = 2,
+  gap = 2,
+  showMode = "all", // "all" | number
+}) => {
+  const [expanded, setExpanded] = useState(false);
+
+  let displayedSpecs = specs;
+
+  if (showMode !== "all") {
+    displayedSpecs = expanded ? specs : specs.slice(0, showMode);
+  }
+
   return (
-    <>
-      {specs.map((spec, i) => {
+    <Box>
+      {displayedSpecs.map((spec, i) => {
         const Icon = carIcons[spec.key];
         return (
-          <Flex key={i} align="center" gap={2} mb={2}>
-            {Icon && <Icon fontSize={fontSize} />}
-            <Text>{spec.value}</Text>
+          <Flex key={i} align="center" gap={gap} mb={mb}>
+            {Icon && <Icon fontSize={IconfontSize} color={IconColor} />}
+            <Text fontSize={labelFontSize}>{spec.value}</Text>
           </Flex>
         );
       })}
-    </>
+
+      {showMode !== "all" && specs.length > showMode && (
+        <Button
+          onClick={() => setExpanded(!expanded)}
+          size="xl"
+          variant="link"
+          colorScheme="gray"
+          mt={2}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </Button>
+      )}
+    </Box>
   );
 };
 

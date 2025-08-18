@@ -21,14 +21,14 @@ const PaymentPanel = ({
       {title === "" ? (
         ""
       ) : (
-        <Text fontWeight="bold" fontSize="14" mb={2}>
+        <Text fontWeight="bold" fontSize="14" color="#4A5568" mb={2}>
           {title}
         </Text>
       )}
 
       <Flex align="center" justify="space-between">
         <Flex align="center" gap={2}>
-          <FaMoneyBillWave fontSize="16" />
+          <FaMoneyBillWave fontSize="16" color="#4A5568" />
           <Text>Charge</Text>
         </Flex>
         <Text fontWeight="medium">{rateAmount}</Text>
@@ -44,7 +44,7 @@ const PaymentPanel = ({
       <Divider my={2} />
       <Flex align="center" justify="space-between" mt={1}>
         <Flex align="center" gap={2}>
-          <FaCalculator fontSize="16" />
+          <FaCalculator fontSize="16" color="#4A5568" />
           <Text>Total</Text>
         </Flex>
         <Text fontWeight="bold">{totalCharge.toLocaleString()}</Text>
