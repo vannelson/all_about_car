@@ -25,6 +25,7 @@ import PaymentPanel from "../payment/PaymentPanel";
 import CarRates from "./CarRates";
 import BaseModal from "../../base/BaseModal";
 import BaseSlider from "../../base/BaseSlider";
+import CarProfile from "../CarProfile";
 
 const CardCar = () => {
   const cars = [
@@ -282,31 +283,13 @@ const CardCar = () => {
         onClose={onModalClose}
         size="4xl"
       >
-        <Flex gap={4}>
-          {/* Left Side (Details) */}
-          <Box flex="1">
-            <Text fontSize="lg" fontWeight="bold">
-              {selectedCar.name}
-            </Text>
-            <Text>Status: {selectedCar.status}</Text>
-            <Text>
-              Rate: {selectedCar.rateAmount} / {selectedCar.rateType}
-            </Text>
-            {/* You can add more details/specs here */}
-          </Box>
-
-          {/* Right Side (Slider inside a Card) */}
-          <Card flex="1">
-            <CardBody>
-              <BaseSlider
-                images={sliderImages}
-                speed={500}
-                slidesToShow={2}
-                slidesToScroll={2}
-              />
-            </CardBody>
-          </Card>
-        </Flex>
+        <BaseSlider
+          images={sliderImages}
+          speed={500}
+          slidesToShow={1}
+          slidesToScroll={2}
+        />
+        <CarProfile />
       </BaseModal>
     </Box>
   );

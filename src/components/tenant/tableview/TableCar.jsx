@@ -293,11 +293,15 @@ const TableCar = () => {
 
                 {/* Payment Details */}
                 <Td>
-                  <PaymentPanel
-                    bgColor="white"
-                    rateAmount={car.rateAmount}
-                    extraCharge={car.extraCharge}
-                  />
+                  {car.status != "Available" ? (
+                    <PaymentPanel
+                      bgColor="white"
+                      rateAmount={car.rateAmount}
+                      extraCharge={car.extraCharge}
+                    />
+                  ) : (
+                    ""
+                  )}
                 </Td>
 
                 {/* Status */}

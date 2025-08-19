@@ -6,40 +6,34 @@ import { Box } from "@chakra-ui/react";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const BaseSlider = ({
-  images,
-  speed,
-  slidesToShow,
-  slidesToScroll,
-  vertical,
-}) => {
+const BaseSlider = ({ images, speed, slidesToShow, slidesToScroll }) => {
   const settings = {
-    dots: true,
+    className: "center",
+    centerMode: true,
     infinite: true,
-    speed,
-    slidesToShow,
-    slidesToScroll,
-    vertical: true, // 👈 enables vertical sliding
-    verticalSwiping: true, // 👈 allows swipe up/down
-    arrows: false,
+    centerPadding: "60px",
+    slidesToShow: 3,
+    speed: 500,
   };
 
   return (
-    <Slider {...settings}>
-      {images.map((src, index) => (
-        <div key={index} style={{ margin: "0 auto" }}>
-          <img
-            src={src.image}
-            alt={src.alt}
-            style={{
-              width: vertical ? "260px" : "390px",
-              height: vertical ? "140px" : "180px",
-              objectFit: "cover",
-            }}
-          />
-        </div>
-      ))}
-    </Slider>
+    <Box>
+      <Slider {...settings}>
+        {images.map((src, index) => (
+          <div key={index}>
+            <img
+              src={src.image}
+              alt={src.alt}
+              style={{
+                width: "300px",
+                height: "180px",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+        ))}
+      </Slider>
+    </Box>
   );
 };
 
@@ -53,14 +47,12 @@ BaseSlider.propTypes = {
   speed: PropTypes.number,
   slidesToShow: PropTypes.number,
   slidesToScroll: PropTypes.number,
-  vertical: PropTypes.bool, // 👈 new
 };
 
 BaseSlider.defaultProps = {
   speed: 500,
   slidesToShow: 3,
   slidesToScroll: 3,
-  vertical: false,
 };
 
 export default BaseSlider;

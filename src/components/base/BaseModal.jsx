@@ -27,7 +27,7 @@ const BaseModal = ({
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader bg={theme} color="white">
+        <ModalHeader bg={theme} color="white" fontWeight={"bold"}>
           {title}
         </ModalHeader>
         <ModalCloseButton size="16" color="white" mt="4" mr="3" />
