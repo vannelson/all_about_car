@@ -29,6 +29,8 @@ import BaseButton from "../../components/base/BaseButton";
 import Filters from "../../layout/tenant/Filters";
 import TableCar from "../../components/tenant/tableview/TableCar";
 import CardCar from "../../components/tenant/cardview/CardCar";
+import BaseModal from "../../components/base/BaseModal";
+import CarForm from "../../components/tenant/CarForm";
 
 function Rentals() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -41,16 +43,13 @@ function Rentals() {
           Filter
         </Button>
       )}
-
       <Grid templateColumns={{ base: "1fr", md: "2fr 9fr" }} gap={4}>
         {!isMobile && (
           <GridItem>
             <Filters />
           </GridItem>
         )}
-
         <GridItem>
-          {/* Replace with card or table view */}
           <CarListTableOrCard />
         </GridItem>
       </Grid>
@@ -82,6 +81,16 @@ function CarListTableOrCard() {
     }, 300); // 1 second delay
   };
 
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure();
+
+  function handleModalOpen() {
+    onModalOpen();
+  }
+
   return (
     <Box pt="3">
       <Box pb={4}>
@@ -103,7 +112,7 @@ function CarListTableOrCard() {
 
           {/* Right side - Add & Toggle buttons */}
           <HStack spacing={2} align="center">
-            <BaseButton colorScheme="green">
+            <BaseButton colorScheme="green" onClick={handleModalOpen}>
               <AddIcon mr="2" /> Add
             </BaseButton>
             <IconButton
@@ -115,6 +124,8 @@ function CarListTableOrCard() {
           </HStack>
         </Flex>
       </Box>
+
+      {/* Table Or Grid */}
       {loading ? (
         <Flex justify="center" py={10}>
           <Spinner size="xl" color="grey.800" thickness="4px" />
@@ -124,6 +135,17 @@ function CarListTableOrCard() {
       ) : (
         <TableCar />
       )}
+
+      {/* Modal */}
+      <BaseModal
+        title={"Car Registration"}
+        isOpen={isModalOpen}
+        onClose={onModalClose}
+        size="6xl"
+        hassFooter={false}
+      >
+        <CarForm />
+      </BaseModal>
     </Box>
   );
 }

@@ -17,6 +17,7 @@ const BaseModal = ({
   children,
   isOpen,
   onClose,
+  hassFooter = true,
 }) => {
   return (
     <Modal
@@ -32,12 +33,16 @@ const BaseModal = ({
         </ModalHeader>
         <ModalCloseButton size="16" color="white" mt="4" mr="3" />
         <ModalBody p={0}>{children}</ModalBody>
-        <ModalFooter>
-          <Button colorScheme="blue" mr={3}>
-            Save
-          </Button>
-          <Button onClick={onClose}>Cancel</Button>
-        </ModalFooter>
+        {hassFooter ? (
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3}>
+              Save
+            </Button>
+            <Button onClick={onClose}>Cancel</Button>
+          </ModalFooter>
+        ) : (
+          ""
+        )}
       </ModalContent>
     </Modal>
   );
