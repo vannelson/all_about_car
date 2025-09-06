@@ -30,7 +30,7 @@ import Filters from "../../layout/tenant/Filters";
 import TableCar from "../../components/tenant/tableview/TableCar";
 import CardCar from "../../components/tenant/cardview/CardCar";
 import BaseModal from "../../components/base/BaseModal";
-import CarForm from "../../components/tenant/CarForm";
+import CarRegistrationSteps from "../../components/tenant/CarRegistrationSteps";
 
 function Rentals() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -144,7 +144,7 @@ function CarListTableOrCard() {
         size="6xl"
         hassFooter={false}
       >
-        <CarForm />
+        <CarRegistrationSteps />
       </BaseModal>
     </Box>
   );

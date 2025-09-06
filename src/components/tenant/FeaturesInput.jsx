@@ -11,7 +11,7 @@ import {
   Box,
 } from "@chakra-ui/react";
 import { FaPlus } from "react-icons/fa";
-import FeaturesList from "./FeaturesList"; // Import the simple component
+import FeaturesList from "./FeaturesList";
 
 const FeaturesInput = ({
   label = "Features & Amenities",
