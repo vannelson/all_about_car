@@ -29,8 +29,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Brand</FormLabel>
           <Select
-            name="make"
-            value={formData.make}
+            name="info_make"
+            value={formData.info_make}
             onChange={handleInputChange}
             placeholder="Select brand"
           >
@@ -45,8 +45,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Model</FormLabel>
           <Input
-            name="model"
-            value={formData.model}
+            name="info_model"
+            value={formData.info_model}
             onChange={handleInputChange}
             placeholder="e.g. Camry, Civic, F-150"
           />
@@ -57,7 +57,7 @@ const CarInfo = ({
           <NumberInput
             min={1990}
             max={new Date().getFullYear() + 1}
-            value={formData.year}
+            value={formData.info_year}
             onChange={(value) => handleNumberChange("year", value)}
           >
             <NumberInputField />
@@ -69,7 +69,11 @@ const CarInfo = ({
         </FormControl>
         <FormControl isRequired>
           <FormLabel>Vehicle Age</FormLabel>
-          <Select name="age" value={formData.age} onChange={handleInputChange}>
+          <Select
+            name="info_age"
+            value={formData.info_age}
+            onChange={handleInputChange}
+          >
             <option value="0-3">0-3 years</option>
             <option value="4-6">4-6 years</option>
             <option value="7-10">7-10 years</option>
@@ -82,8 +86,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Car Type</FormLabel>
           <Select
-            name="carType"
-            value={formData.carType}
+            name="info_carType"
+            value={formData.info_carType}
             onChange={handleInputChange}
           >
             <option value="SUV">SUV</option>
@@ -99,8 +103,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Availability Status</FormLabel>
           <Select
-            name="availabilityStatus"
-            value={formData.availabilityStatus}
+            name="info_availabilityStatus"
+            value={formData.info_availabilityStatus}
             onChange={handleInputChange}
           >
             <option value="Available">Available</option>
@@ -114,8 +118,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Plate Number</FormLabel>
           <Input
-            name="plateNumber"
-            value={formData.plateNumber}
+            name="info_plateNumber"
+            value={formData.info_plateNumber}
             onChange={handleInputChange}
             placeholder="e.g. ABC123"
           />
@@ -124,8 +128,8 @@ const CarInfo = ({
         <FormControl>
           <FormLabel>VIN / Chassis Number</FormLabel>
           <Input
-            name="vin"
-            value={formData.vin}
+            name="info_vin"
+            value={formData.info_vin}
             onChange={handleInputChange}
             placeholder="17-character VIN"
           />
@@ -136,8 +140,8 @@ const CarInfo = ({
         <FormControl isRequired>
           <FormLabel>Location / Branch</FormLabel>
           <Input
-            name="location"
-            value={formData.location}
+            name="info_location"
+            value={formData.info_location}
             onChange={handleInputChange}
             placeholder="e.g. Downtown Branch"
           />
@@ -146,7 +150,7 @@ const CarInfo = ({
           <FormLabel>Mileage (km)</FormLabel>
           <NumberInput
             min={0}
-            value={formData.mileage}
+            value={formData.info_mileage}
             onChange={(value) => handleNumberChange("mileage", value)}
           >
             <NumberInputField />

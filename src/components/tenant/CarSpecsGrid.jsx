@@ -32,41 +32,41 @@ const CarSpecsGrid = ({
     {
       icon: FaUsers,
       label: "Seats",
-      value: formData.seats || "N/A",
+      value: formData.spcs_seats || "N/A",
       description: "Passenger capacity",
     },
     {
       icon: FaCogs,
       label: "Engine",
-      value: formData.engineSize ? `${formData.engineSize}cc` : "N/A",
+      value: formData.spcs_engineSize ? `${formData.spcs_engineSize}cc` : "N/A",
       description: "Engine displacement",
     },
     {
       icon: FaGasPump,
       label: "Fuel",
-      value: formData.fuelType || "N/A",
+      value: formData.spcs_fuelType || "N/A",
       description: "Fuel type",
     },
     {
       icon: FaTachometerAlt,
       label: "Economy",
-      value: formData.fuelEfficiency
-        ? `${formData.fuelEfficiency}L/100km`
+      value: formData.spcs_fuelEfficiency
+        ? `${formData.spcs_fuelEfficiency}L/100km`
         : "N/A",
       description: "Fuel efficiency",
     },
     {
       icon: FaCogs,
       label: "Transmission",
-      value: formData.transmission ? formData.transmission : "N/A",
+      value: formData.spcs_transmission ? formData.spcs_transmission : "N/A",
       description: "Transmission type",
     },
     {
       icon: FaSuitcase,
       label: "Luggage",
       value:
-        formData.largeBags && formData.smallBags
-          ? `${formData.largeBags}L ${formData.smallBags}S`
+        formData.spcs_largeBags && formData.spcs_smallBags
+          ? `${formData.spcs_largeBags}L ${formData.spcs_smallBags}S`
           : "N/A",
       description: "Bag capacity",
     },
@@ -74,7 +74,7 @@ const CarSpecsGrid = ({
     {
       icon: FaCar,
       label: "Type",
-      value: formData.vehicleType || "N/A",
+      value: formData.spcs_vehicleType || "N/A",
       description: "Vehicle category",
     },
   ];

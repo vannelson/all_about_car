@@ -37,8 +37,8 @@ const CarSpecifications = ({
           <NumberInput
             min={2}
             max={9}
-            value={formData.seats}
-            onChange={(value) => handleNumberChange("seats", value)}
+            value={formData.spcs_seats}
+            onChange={(value) => handleNumberChange("spcs_seats", value)}
           >
             <NumberInputField />
             <NumberInputStepper>
@@ -53,8 +53,8 @@ const CarSpecifications = ({
           <NumberInput
             min={1000}
             max={5000}
-            value={formData.engineSize}
-            onChange={(value) => handleNumberChange("engineSize", value)}
+            value={formData.spcs_engineSize}
+            onChange={(value) => handleNumberChange("spcs_engineSize", value)}
           >
             <NumberInputField />
             <NumberInputStepper>
@@ -69,8 +69,8 @@ const CarSpecifications = ({
           <NumberInput
             min={0}
             max={5}
-            value={formData.largeBags}
-            onChange={(value) => handleNumberChange("largeBags", value)}
+            value={formData.spcs_largeBags}
+            onChange={(value) => handleNumberChange("spcs_largeBags", value)}
           >
             <NumberInputField />
             <NumberInputStepper>
@@ -79,13 +79,14 @@ const CarSpecifications = ({
             </NumberInputStepper>
           </NumberInput>
         </FormControl>
+
         <FormControl isRequired>
           <FormLabel>Small Bags</FormLabel>
           <NumberInput
             min={0}
             max={5}
-            value={formData.smallBags}
-            onChange={(value) => handleNumberChange("smallBags", value)}
+            value={formData.spcs_smallBags}
+            onChange={(value) => handleNumberChange("spcs_smallBags", value)}
           >
             <NumberInputField />
             <NumberInputStepper>
@@ -100,8 +101,8 @@ const CarSpecifications = ({
         <FormControl isRequired>
           <FormLabel>Transmission</FormLabel>
           <Select
-            name="transmission"
-            value={formData.transmission}
+            name="spcs_transmission"
+            value={formData.spcs_transmission}
             onChange={handleInputChange}
           >
             <option value="Automatic">Automatic</option>
@@ -113,8 +114,8 @@ const CarSpecifications = ({
         <FormControl isRequired>
           <FormLabel>Fuel Type</FormLabel>
           <Select
-            name="fuelType"
-            value={formData.fuelType}
+            name="spcs_fuelType"
+            value={formData.spcs_fuelType}
             onChange={handleInputChange}
           >
             <option value="Petrol">Petrol</option>
@@ -130,8 +131,10 @@ const CarSpecifications = ({
             min={0}
             max={20}
             step={0.1}
-            value={formData.fuelEfficiency}
-            onChange={(value) => handleNumberChange("fuelEfficiency", value)}
+            value={formData.spcs_fuelEfficiency}
+            onChange={(value) =>
+              handleNumberChange("spcs_fuelEfficiency", value)
+            }
           >
             <NumberInputField />
             <NumberInputStepper>

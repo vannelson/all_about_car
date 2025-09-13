@@ -4,14 +4,6 @@ import {
   Container,
   VStack,
   HStack,
-  FormControl,
-  FormLabel,
-  Select,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   Button,
   Heading,
   Text,
@@ -44,6 +36,7 @@ import ImageGrid from "./ImageGrid";
 import CarSpecsGrid from "./CarSpecsGrid";
 import CarInfo from "./form/CarInfo";
 import CarSpecifications from "./form/CarSpecifications";
+import CarInfoTable from "./CarInfoTable";
 
 const steps = [
   { title: "Basic", description: "Vehicle Info" },
@@ -68,24 +61,23 @@ const CarRegistrationSteps = () => {
   const [displayImages, setDisplayImages] = useState([]);
 
   const [formData, setFormData] = useState({
-    make: "",
-    model: "",
-    year: new Date().getFullYear(),
-    age: "0-3",
-    carType: "SUV",
-    seats: 5,
-    largeBags: 1,
-    smallBags: 2,
-    engineSize: 1998,
-    transmission: "Automatic",
-    fuelType: "Petrol",
-    fuelEfficiency: 7.6,
-    // New fields
-    plateNumber: "",
-    vin: "",
-    availabilityStatus: "Available",
-    location: "",
-    mileage: 0,
+    info_make: "",
+    info_model: "",
+    info_year: new Date().getFullYear(),
+    info_age: "0-3",
+    info_carType: "SUV",
+    info_plateNumber: "",
+    info_vin: "",
+    info_availabilityStatus: "Available",
+    info_location: "",
+    info_mileage: 0,
+    spcs_seats: 5,
+    spcs_largeBags: 1,
+    spcs_smallBags: 2,
+    spcs_engineSize: 1998,
+    spcs_transmission: "Automatic",
+    spcs_fuelType: "Petrol",
+    spcs_fuelEfficiency: 7.6,
   });
 
   const handleInputChange = (e) => {
@@ -105,45 +97,6 @@ const CarRegistrationSteps = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log("Form submitted:", {
-      ...formData,
-      features,
-      profileImage,
-      displayImages,
-    });
-
-    toast({
-      title: "Car registered successfully",
-      description: `${formData.make} ${formData.model} has been added to your rental fleet`,
-      status: "success",
-      duration: 5000,
-      isClosable: true,
-    });
-
-    // Reset form
-    setFormData({
-      make: "",
-      model: "",
-      year: new Date().getFullYear(),
-      age: "0-3",
-      carType: "SUV",
-      seats: 5,
-      largeBags: 1,
-      smallBags: 2,
-      engineSize: 1998,
-      transmission: "Automatic",
-      fuelType: "Petrol",
-      fuelEfficiency: 7.6,
-    });
-    setFeatures([
-      "Keyless Entry",
-      "5 Star ANCAP Rating",
-      '8" Touchscreen Entertainment',
-    ]);
-    setProfileImage(null);
-    setDisplayImages([]);
-    setActiveStep(0);
   };
 
   const nextStep = () => {
@@ -240,38 +193,7 @@ const CarRegistrationSteps = () => {
 
               <Stack spacing="4" p="5">
                 {/* Header */}
-                <Box mb={4}>
-                  <Heading size="md" fontWeight="bold" color="gray.800" mb={2}>
-                    {formData.make} {formData.model}
-                  </Heading>
-
-                  <HStack spacing={2} flexWrap="wrap">
-                    <Badge colorScheme="blue" px={2} py={1} borderRadius="md">
-                      <HStack spacing={1}>
-                        <Icon as={FaCar} boxSize={3} />
-                        <Text fontSize="xs">{formData.carType}</Text>
-                      </HStack>
-                    </Badge>
-
-                    <Badge colorScheme="gray" px={2} py={1} borderRadius="md">
-                      <HStack spacing={1}>
-                        <Icon as={FaCalendarAlt} boxSize={3} />
-                        <Text fontSize="xs">{formData.year}</Text>
-                      </HStack>
-                    </Badge>
-
-                    <Badge colorScheme="green" px={2} py={1} borderRadius="md">
-                      <HStack spacing={1}>
-                        <Icon as={FaHistory} boxSize={3} />
-                        <Text fontSize="xs">
-                          {formData.age.includes("+")
-                            ? `${formData.age.replace("+", "")}+ yrs`
-                            : `${formData.age} yrs`}
-                        </Text>
-                      </HStack>
-                    </Badge>
-                  </HStack>
-                </Box>
+                <CarInfoTable formData={formData} />
 
                 {/* Specifications Grid */}
                 <CarSpecsGrid

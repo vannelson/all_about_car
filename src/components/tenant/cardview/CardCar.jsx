@@ -26,6 +26,7 @@ import CarRates from "./CarRates";
 import BaseModal from "../../base/BaseModal";
 import BaseSlider from "../../base/BaseSlider";
 import CarProfile from "../CarProfile";
+import BookingModal from "../booking/BookingModal";
 
 const CardCar = () => {
   const cars = [
@@ -152,6 +153,11 @@ const CardCar = () => {
     onOpen: onModalOpen,
     onClose: onModalClose,
   } = useDisclosure();
+  const {
+    isOpen: isBookingOpen,
+    onOpen: onBookingOpen,
+    onClose: onBookingClose,
+  } = useDisclosure();
 
   const [selectedCar, setSelectedCar] = useState([]);
   const [sliderImages, setSliderImages] = useState([]);
@@ -165,6 +171,10 @@ const CardCar = () => {
       }))
     );
     onModalOpen();
+  };
+  const handleBookingOpen = (car) => {
+    setSelectedCar(car);
+    onBookingOpen();
   };
   return (
     <Box>
@@ -264,7 +274,7 @@ const CardCar = () => {
                     flex={1}
                     size="sm"
                     colorScheme="blue"
-                    onClick={() => handleModalOpen(car)}
+                    onClick={() => handleBookingOpen(car)}
                     leftIcon={<FaBook />}
                     isDisabled={car.status !== "Available"}
                   >
@@ -291,6 +301,12 @@ const CardCar = () => {
         />
         <CarProfile />
       </BaseModal>
+
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={onBookingClose}
+        car={selectedCar}
+      />
     </Box>
   );
 };
