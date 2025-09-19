@@ -194,18 +194,10 @@ const CarRegistrationSteps = () => {
               <Stack spacing="4" p="5">
                 {/* Header */}
                 <CarInfoTable formData={formData} />
-
-                {/* Specifications Grid */}
-                <CarSpecsGrid
-                  formData={formData}
-                  columns={{ base: 2, md: 2 }}
-                  spacing={4}
-                />
               </Stack>
             </BaseCard>
 
             {/* Features Card - Column 2 */}
-
             <BaseCard>
               <Stack spacing="4" p="5">
                 <Heading size="md" fontWeight="semibold" color="gray.800">
@@ -214,6 +206,15 @@ const CarRegistrationSteps = () => {
                 <Wrap spacing={2}>
                   <FeaturesList features={features} />
                 </Wrap>
+                <Heading size="md" fontWeight="semibold" color="gray.800">
+                  Specification
+                </Heading>
+                {/* Specifications Grid */}
+                <CarSpecsGrid
+                  formData={formData}
+                  columns={{ base: 2, md: 2 }}
+                  spacing={4}
+                />
               </Stack>
             </BaseCard>
 
