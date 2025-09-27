@@ -1,21 +1,8 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./layout/Layout";
-import { ChakraProvider, extendTheme } from "@chakra-ui/react";
-
-const theme = extendTheme({
-  styles: {
-    global: {
-      body: {
-        bg: "#fbfbfb", // your desired color
-      },
-    },
-  },
-});
+import { useSelector } from "react-redux";
+import { selectAuth } from "./store";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 // Borrower pages
 import Payments from "./pages/borrower/Payments";
@@ -27,32 +14,87 @@ import Dashboard from "./pages/tenant/Dashboard";
 import Calendars from "./pages/tenant/Calendars";
 import Rentals from "./pages/tenant/Rentals";
 
+// Auth pages
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+
 export default function App() {
-  const userRole = "tenant"; // Or "borrower" — normally from auth
+  const auth = useSelector(selectAuth);
 
   return (
     <Router>
-      <Layout role={userRole}>
+      <Layout role={auth.role}>
         <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
           {/* Tenant Routes */}
-          {userRole === "tenant" && (
-            <>
-              <Route path="/tenant/dashboard" element={<Dashboard />} />
-              <Route path="/tenant/calendars" element={<Calendars />} />
-              <Route path="/tenant/rentals" element={<Rentals />} />
-              <Route path="*" element={<Navigate to="/tenant/dashboard" />} />
-            </>
-          )}
+          <Route
+            path="/tenant/dashboard"
+            element={
+              <ProtectedRoute allowRoles={["tenant"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tenant/calendars"
+            element={
+              <ProtectedRoute allowRoles={["tenant"]}>
+                <Calendars />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tenant/rentals"
+            element={
+              <ProtectedRoute allowRoles={["tenant"]}>
+                <Rentals />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Borrower Routes */}
-          {userRole === "borrower" && (
-            <>
-              <Route path="/borrower/payments" element={<Payments />} />
-              <Route path="/borrower/bookings" element={<Bookings />} />
-              <Route path="/borrower/profile" element={<Profile />} />
-              <Route path="*" element={<Navigate to="/borrower/payments" />} />
-            </>
-          )}
+          <Route
+            path="/borrower/payments"
+            element={
+              <ProtectedRoute allowRoles={["borrower"]}>
+                <Payments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/borrower/bookings"
+            element={
+              <ProtectedRoute allowRoles={["borrower"]}>
+                <Bookings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/borrower/profile"
+            element={
+              <ProtectedRoute allowRoles={["borrower"]}>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Default route: if authenticated go to role home; else login */}
+          <Route
+            path="*"
+            element={
+              auth.isAuthenticated ? (
+                <Navigate
+                  to={auth.role === "tenant" ? "/tenant/dashboard" : "/borrower/payments"}
+                  replace
+                />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
         </Routes>
       </Layout>
     </Router>

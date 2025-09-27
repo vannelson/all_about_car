@@ -6,7 +6,7 @@ const BaseButton = ({
   colorScheme = "teal",
   isDisabled = false,
   onClick,
-  ...resk
+  ...rest
 }) => {
   return (
     <Button
@@ -14,6 +14,7 @@ const BaseButton = ({
       variant={variant}
       isDisabled={isDisabled}
       onClick={onClick}
+      {...rest}
     >
       {children}
     </Button>

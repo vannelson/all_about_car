@@ -1,9 +1,14 @@
 import { useState } from "react";
 import Navbar from "./Navbar";
 import { NAV_ITEMS_BY_ROLE } from "../navConfig";
+import { useSelector, useDispatch } from "react-redux";
+import { selectAuth } from "../store";
+import { logout } from "../store/authSlice";
 import BaseDrawer from "../components/base/BaseDrawer";
 
-export default function Layout({ role = "borrower", children }) {
+export default function Layout({ role = null, children }) {
+  const auth = useSelector(selectAuth);
+  const dispatch = useDispatch();
   const [drawerConfig, setDrawerConfig] = useState({
     title: "",
     size: "lg",
@@ -16,9 +21,21 @@ export default function Layout({ role = "borrower", children }) {
     setDrawerOpen(true);
   };
 
+  const navItems = role ? NAV_ITEMS_BY_ROLE[role] : [];
+
+  const handleLogout = () => dispatch(logout());
+
   return (
     <>
-      <Navbar navItems={NAV_ITEMS_BY_ROLE[role]} onOpenDrawer={onOpenDrawer} />
+      {auth.isAuthenticated && (
+        <Navbar
+          navItems={navItems}
+          onOpenDrawer={onOpenDrawer}
+          isAuthenticated={auth.isAuthenticated}
+          user={auth.user}
+          onLogout={handleLogout}
+        />
+      )}
       <main>{children}</main>
       <BaseDrawer
         isOpenRightDrawer={isDrawerOpen}

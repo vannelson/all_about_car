@@ -9,7 +9,9 @@ import {
   Collapse,
   useColorModeValue,
   useDisclosure,
+  Image,
 } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 
 import {
   HamburgerIcon,
@@ -23,7 +25,13 @@ import { FaUser } from "react-icons/fa";
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
 
-export default function Navbar({ navItems = [], onOpenDrawer }) {
+export default function Navbar({
+  navItems = [],
+  onOpenDrawer,
+  isAuthenticated,
+  user,
+  onLogout,
+}) {
   const { isOpen, onToggle } = useDisclosure();
 
   return (
@@ -67,7 +75,7 @@ export default function Navbar({ navItems = [], onOpenDrawer }) {
           </Text>
 
           {/* Desktop Menu */}
-          <Flex display={{ base: "none", md: "flex" }} ml={10}>
+          <Flex display={{ base: "none", md: "flex" }} ml={10} mt={3}>
             <DesktopNav navItems={navItems} />
           </Flex>
         </Flex>
@@ -79,36 +87,59 @@ export default function Navbar({ navItems = [], onOpenDrawer }) {
           direction="row"
           spacing={2}
         >
-          <Button as="a" fontSize="sm" fontWeight={400} variant="link" href="#">
-            <SettingsIcon
-              onClick={() => onOpenDrawer("Settings", "sm", "right")}
-              boxSize={5}
-            />
-          </Button>
-          <Button
-            onClick={() => onOpenDrawer("Notification", "sm", "right")}
-            as="a"
-            fontSize="sm"
-            fontWeight={400}
-            variant="link"
-            href="#"
-          >
-            <BellIcon boxSize={6} />
-          </Button>
-          <Button
-            as="a"
-            display={{ base: "none", md: "inline-flex" }}
-            fontSize="sm"
-            fontWeight={600}
-            color="white"
-            bg="blue.400"
-            p="3"
-            href="#"
-            _hover={{ bg: "blue.300" }}
-            onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
-          >
-            <Icon as={FaUser} />
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <Button
+                as="a"
+                fontSize="sm"
+                fontWeight={400}
+                variant="link"
+                href="#"
+              >
+                <SettingsIcon
+                  onClick={() => onOpenDrawer("Settings", "sm", "right")}
+                  boxSize={5}
+                />
+              </Button>
+              <Button
+                onClick={() => onOpenDrawer("Notification", "sm", "right")}
+                as="a"
+                fontSize="sm"
+                fontWeight={400}
+                variant="link"
+                href="#"
+              >
+                <BellIcon boxSize={6} />
+              </Button>
+              <Button
+                as="a"
+                display={{ base: "none", md: "inline-flex" }}
+                fontSize="sm"
+                fontWeight={600}
+                color="white"
+                bg="blue.400"
+                p="3"
+                href="#"
+                _hover={{ bg: "blue.300" }}
+                onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
+                leftIcon={<Icon as={FaUser} />}
+              >
+                {user?.name || "Account"}
+              </Button>
+              <Button variant="outline" onClick={onLogout}>
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button as={RouterLink} to="/login" variant="ghost">
+                Login
+              </Button>
+              <Button as={RouterLink} to="/register" colorScheme="blue">
+                Register
+              </Button>
+            </>
+          )}
         </Stack>
       </Flex>
 

@@ -1,0 +1,51 @@
+Login API
+
+http://127.0.0.1:8000/api/login
+get
+{
+"email": "vannelsonsimumbay@outlook.com",
+"password": "nelson199715#"
+}
+
+{
+"message": "Login successful.",
+"data": {
+"user": {
+"id": 25,
+"name": "Nelson Sim P Umbay",
+"email": "vannelsonsimumbay@outlook.com",
+"email_verified_at": null,
+"created_at": "2025-09-24T08:39:44.000000Z",
+"updated_at": "2025-09-24T08:39:44.000000Z",
+"type": "tenant",
+"role": "admin"
+},
+"token": "4|GxOTJGXXXeGEca6toZE9UFvq5A8pbz6SamEpJEX3032b81fa"
+}
+}
+
+register
+http://127.0.0.1:8000/api/users
+Post
+
+{
+"name" : "Nelson Sim P Umbay",
+"email" : "vannelsonsimumbay@outlook.com",
+"password" : "nelson199715#",
+"password_confirmation": "nelson199715#",
+"type": "tenant",
+"role" : "admin"
+}
+
+{
+"message": "User registered successfully!",
+"data": {
+"data": {
+"id": 12,
+"name": "Nelson Sim P Umbay",
+"email": "vannelsonsimumbay@outlook.com",
+"created_at": "2025-09-27 06:56:01",
+"updated_at": "2025-09-27 06:56:01"
+}
+}
+}
