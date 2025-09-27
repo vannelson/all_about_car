@@ -15,6 +15,7 @@ const ImageUpload = ({
   multiple = false,
   maxFiles = 10,
   onImagesChange,
+  onFilesSelected,
   initialImages = [],
   aspectRatio = 16 / 9,
   ...props
@@ -46,6 +47,7 @@ const ImageUpload = ({
           const newImage = event.target.result;
           setImages([newImage]);
           onImagesChange && onImagesChange([newImage]);
+          onFilesSelected && onFilesSelected([validFiles[0]]);
         };
         reader.readAsDataURL(validFiles[0]);
       } else if (multiple) {
@@ -65,6 +67,7 @@ const ImageUpload = ({
               const updatedImages = [...images, ...newImages];
               setImages(updatedImages);
               onImagesChange && onImagesChange(updatedImages);
+              onFilesSelected && onFilesSelected(validFiles.slice(0, maxFiles - images.length));
             }
           };
           reader.readAsDataURL(file);

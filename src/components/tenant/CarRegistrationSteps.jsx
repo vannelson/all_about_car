@@ -37,6 +37,9 @@ import CarSpecsGrid from "./CarSpecsGrid";
 import CarInfo from "./form/CarInfo";
 import CarSpecifications from "./form/CarSpecifications";
 import CarInfoTable from "./CarInfoTable";
+import { useDispatch, useSelector } from "react-redux";
+import { createCar } from "../../store/carsSlice";
+import { selectAuth } from "../../store";
 
 const steps = [
   { title: "Basic", description: "Vehicle Info" },
@@ -52,6 +55,9 @@ const CarRegistrationSteps = () => {
     count: steps.length,
   });
   const toast = useToast();
+  const dispatch = useDispatch();
+  const auth = useSelector(selectAuth);
+  const [submitting, setSubmitting] = useState(false);
   const [features, setFeatures] = useState([
     "Keyless Entry",
     "5 Star ANCAP Rating",
@@ -59,6 +65,8 @@ const CarRegistrationSteps = () => {
   ]);
   const [profileImage, setProfileImage] = useState(null);
   const [displayImages, setDisplayImages] = useState([]);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [displayImageFiles, setDisplayImageFiles] = useState([]);
 
   const [formData, setFormData] = useState({
     info_make: "",
@@ -95,8 +103,30 @@ const CarRegistrationSteps = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      // Basic client-side guard for required image if backend expects it
+      if (!profileImage) {
+        toast({ title: "Profile image required", description: "Please upload a profile image.", status: "warning" });
+        return;
+      }
+      setSubmitting(true);
+      const action = await dispatch(
+        createCar({ formData, features, user: auth.user, profileImage: profileImage, displayImages: displayImages })
+      );
+      if (createCar.fulfilled.match(action)) {
+        toast({ title: "Car saved", description: action.payload?.message || "Car registered successfully", status: "success" });
+      } else {
+        const err = action.payload || {};
+        const errorsObj = err.errors || {};
+        const flatErrors = Object.values(errorsObj).flat().join("\n");
+        const msg = flatErrors || err.message || action.error?.message || "Failed to save car";
+        toast({ title: "Error", description: msg, status: "error", isClosable: true, duration: 6000 });
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const nextStep = () => {
@@ -166,6 +196,7 @@ const CarRegistrationSteps = () => {
               <ImageUpload
                 multiple={false}
                 onImagesChange={(images) => setProfileImage(images[0] || null)}
+                onFilesSelected={(files) => setProfileImageFile(files && files[0] ? files[0] : null)}
                 initialImages={profileImage ? [profileImage] : []}
                 mb={4}
               />
@@ -173,6 +204,7 @@ const CarRegistrationSteps = () => {
                 multiple={true}
                 maxFiles={10}
                 onImagesChange={setDisplayImages}
+                onFilesSelected={(files) => setDisplayImageFiles(files || [])}
                 initialImages={displayImages}
               />
             </SimpleGrid>
@@ -278,16 +310,12 @@ const CarRegistrationSteps = () => {
               Previous
             </Button>
 
-            {activeStep < steps.length ? (
-              <Button
-                onClick={nextStep}
-                rightIcon={<FaArrowRight />}
-                colorScheme="blue"
-              >
+            {activeStep < steps.length - 1 ? (
+              <Button onClick={nextStep} rightIcon={<FaArrowRight />} colorScheme="blue">
                 Next
               </Button>
             ) : (
-              <Button type="submit" colorScheme="green" rightIcon={<FaCheck />}>
+              <Button type="submit" colorScheme="green" rightIcon={<FaCheck />} isLoading={submitting} loadingText="Saving...">
                 Submit
               </Button>
             )}
@@ -299,3 +327,4 @@ const CarRegistrationSteps = () => {
 };
 
 export default CarRegistrationSteps;
+

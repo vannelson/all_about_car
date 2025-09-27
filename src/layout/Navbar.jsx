@@ -75,7 +75,7 @@ export default function Navbar({
           </Text>
 
           {/* Desktop Menu */}
-          <Flex display={{ base: "none", md: "flex" }} ml={10} mt={3}>
+          <Flex display={{ base: "none", md: "flex" }} ml={10}>
             <DesktopNav navItems={navItems} />
           </Flex>
         </Flex>
