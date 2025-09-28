@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -14,133 +14,68 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
+  Skeleton,
+  SkeletonText,
 } from "@chakra-ui/react";
 
 import { InfoIcon } from "@chakra-ui/icons";
-import { extractBookingDetails } from "../../../utils/helpers/bookingHelpers";
-import { FaBook } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
 import BaseListAndIcons from "../../base/BaseListAndIcons";
 import PaymentPanel from "../payment/PaymentPanel";
 import CarRates from "./CarRates";
 import BaseModal from "../../base/BaseModal";
+// Booking removed for Units page
 import BaseSlider from "../../base/BaseSlider";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCars } from "../../../store/carsSlice";
+// no stepper modal; using BaseSlider + CarProfile for info
 import CarProfile from "../CarProfile";
-import BookingModal from "../booking/BookingModal";
+const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
+  // No demo cars — always API
 
-const CardCar = () => {
-  const cars = [
-    {
-      name: "Tesla Model 3",
-      image: "/cars/6_tesla/1.avif",
-      status: "Unavailable",
-      rateType: "Daily",
-      rateAmount: "5,500",
-      specification: [
-        { key: "age", value: "0 - 3 year(s) old" },
-        { key: "seats", value: "5 seats" },
-        { key: "luggage_capacity", value: "2 small bags" },
-        { key: "engine_capacity_cc", value: "1998 cc engine" },
-        { key: "transmission", value: "Automatic" },
-        { key: "fuel_type", value: "Petrol" },
-        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
-      ],
-      booking: {
-        startDate: "Aug 1, 10:00 am",
-        endDate: "Aug 3, 10:00 am",
-        actualReturn: "Returned : Aug 4, 12:00 pm",
-        rateType: "Daily",
-        rateAmount: "5,500",
-        extraCharge: "1,500",
-        renter: "John Doe",
-      },
-    },
-    {
-      name: "Toyota Corolla",
-      image: "/cars/3_toyota/1.avif",
-      status: "Available",
-      rateType: "Hourly",
-      rateAmount: "250",
-      specification: [
-        { key: "age", value: "1 - 2 year(s) old" },
-        { key: "seats", value: "5 seats" },
-        { key: "luggage_capacity", value: "2 small bags" },
-        { key: "engine_capacity_cc", value: "1998 cc engine" },
-        { key: "transmission", value: "Manual" },
-        { key: "fuel_type", value: "Gasoline" },
-        { key: "fuel_efficiency_rate", value: "Fuel Efficiency: B" },
-      ],
-      booking: null,
-    },
-    {
-      name: "Nissan Leaf",
-      image: "/cars/5_mitsubishi/1.avif",
-      status: "Overdue",
-      rateType: "Daily",
-      rateAmount: "4,000",
-      specification: [
-        { key: "age", value: "0 - 3 year(s) old" },
-        { key: "seats", value: "5 seats" },
-        { key: "luggage_capacity", value: "2 small bags" },
-        { key: "engine_capacity_cc", value: "1998 cc engine" },
-        { key: "transmission", value: "Automatic" },
-        { key: "fuel_type", value: "Electric" },
-        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
-      ],
-      booking: {
-        startDate: "Jul 15, 9:00 am",
-        endDate: "Aug 1, 9:00 am",
-        actualReturn: "Returned : Aug 4, 12:00 pm",
-        rateType: "Daily",
-        rateAmount: "4,000",
-        extraCharge: "4,000",
-        renter: "Smith Doe",
-      },
-    },
-    {
-      name: "Toyota Navara",
-      image: "/cars/4_ford/1.avif",
-      status: "Overdue",
-      rateType: "Daily",
-      rateAmount: "4,000",
-      specification: [
-        { key: "age", value: "0 - 3 year(s) old" },
-        { key: "seats", value: "5 seats" },
-        { key: "luggage_capacity", value: "2 small bags" },
-        { key: "engine_capacity_cc", value: "1998 cc engine" },
-        { key: "transmission", value: "Automatic" },
-        { key: "fuel_type", value: "Diesel" },
-        { key: "fuel_efficiency_rate", value: "7.6L / 100km" },
-      ],
-      booking: {
-        startDate: "Jul 15, 9:00 am",
-        endDate: "Aug 1, 9:00 am",
-        actualReturn: "Returned : Aug 4, 12:00 pm",
-        rateType: "Daily",
-        rateAmount: "4,000",
-        extraCharge: "4,000",
-        renter: "Jane Smith",
-        idType: "Driver License",
-      },
-    },
-    {
-      name: "Honda Civic",
-      image: "/cars/2_van/1.avif",
-      status: "Available",
-      rateType: "Hourly",
-      rateAmount: "320",
-      specification: [
-        { key: "age", value: "2 - 3 year(s) old" },
-        { key: "seats", value: "5 seats" },
-        { key: "luggage_capacity", value: "2 small bags" },
-        { key: "engine_capacity_cc", value: "1998 cc engine" },
-        { key: "transmission", value: "Automatic" },
-        { key: "fuel_type", value: "Gasoline" },
-        { key: "fuel_efficiency_rate", value: "Fuel Efficiency: B+" },
-      ],
-      booking: null,
-    },
-  ];
+  const dispatch = useDispatch();
+  const {
+    items: cars,
+    page,
+    limit,
+    hasNext,
+    listLoading,
+    meta,
+  } = useSelector((s) => s.cars);
+
+  useEffect(() => {
+    if (!cars || cars.length === 0) {
+      dispatch(fetchCars({ page: 1, limit: 6 }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Map UI filters -> API filters
+  const apiFilters = useMemo(() => {
+    const f = {};
+    if (filters?.brand) f["info_make"] = filters.brand;
+    if (filters?.carType) f["info_carType"] = filters.carType;
+    if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
+    if (filters?.availability === "yes") f["info_availabilityStatus"] = "available";
+    if (filters?.availability === "no") f["info_availabilityStatus"] = "unavailable";
+    if (filters?.seats && /^\d+$/.test(String(filters.seats))) f["spcs_seats"] = String(filters.seats);
+    if (filters?.plateNumber) f["info_plateNumber"] = filters.plateNumber;
+    if (filters?.vin) f["info_vin"] = filters.vin;
+    return f;
+  }, [filters]);
+
+  // Refetch from API when server-side filters change
+  useEffect(() => {
+    const hasFilters = Object.keys(apiFilters).length > 0;
+    if (hasFilters) {
+      dispatch(fetchCars({ page: 1, limit: limit || 6, filters: apiFilters }));
+    } else {
+      // If filters cleared, reload unfiltered list
+      dispatch(fetchCars({ page: 1, limit: limit || 6 }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiFilters]);
 
   const statusColors = {
     Available: "green.400",
@@ -153,29 +88,25 @@ const CardCar = () => {
     onOpen: onModalOpen,
     onClose: onModalClose,
   } = useDisclosure();
-  const {
-    isOpen: isBookingOpen,
-    onOpen: onBookingOpen,
-    onClose: onBookingClose,
-  } = useDisclosure();
+  // Booking modal removed
 
   const [selectedCar, setSelectedCar] = useState([]);
-  const [sliderImages, setSliderImages] = useState([]);
 
   const handleModalOpen = (car) => {
     setSelectedCar(car);
-    setSliderImages(
-      cars.map((car) => ({
-        alt: car.name,
-        image: car.image,
-      }))
-    );
     onModalOpen();
   };
-  const handleBookingOpen = (car) => {
+  const handleEdit = (car) => {
     setSelectedCar(car);
-    onBookingOpen();
+    onModalOpen();
   };
+  const handleDelete = (car) => {
+    // TODO: wire delete action when API is available
+    // eslint-disable-next-line no-alert
+    alert(`Delete ${car?.name || "unit"} (not yet implemented)`);
+  };
+  const skeletonCount = limit || 6;
+
   return (
     <Box>
       <Grid
@@ -185,7 +116,43 @@ const CardCar = () => {
         }}
         gap={5}
       >
-        {cars.map((car, idx) => {
+        {listLoading
+          ? Array.from({ length: skeletonCount }).map((_, idx) => (
+              <Card key={`sk-${idx}`} borderRadius="lg" overflow="hidden">
+                <CardHeader p={0} h="180px">
+                  <Skeleton w="100%" h="100%" />
+                </CardHeader>
+                <CardBody>
+                  <Skeleton height="18px" mb={2} />
+                  <SkeletonText noOfLines={3} spacing="2" />
+                  <Divider my={3} />
+                  <SkeletonText noOfLines={2} spacing="2" />
+                </CardBody>
+                <CardFooter>
+                  <HStack w="full" spacing={3}>
+                    <Skeleton height="32px" flex="1" />
+                    <Skeleton height="32px" flex="1" />
+                    <Skeleton height="32px" flex="1" />
+                  </HStack>
+                </CardFooter>
+              </Card>
+            ))
+          : ((cars || [])
+          .filter((car) => {
+            const q = String(query || "").toLowerCase();
+            const nameOk = !q || String(car.name || "").toLowerCase().includes(q);
+            const availability = filters.availability || "all";
+            const status = String(car.status || "");
+            const availOk =
+              availability === "all" ||
+              (availability === "yes" && status === "Available") ||
+              (availability === "no" && status !== "Available");
+            const rate = Number(car.rateAmount || car.rates?.daily || car.rates?.hourly || 0);
+            const priceCap = Number(filters.price || 0);
+            const priceOk = !priceCap || rate <= priceCap;
+            return nameOk && availOk && priceOk;
+          }))
+          .map((car, idx) => {
           return (
             <Card
               key={idx}
@@ -233,7 +200,7 @@ const CardCar = () => {
                   {car.name}
                 </Text>
 
-                <CarRates rateAmount={car.rateAmount} rateType={car.rateType} />
+                <CarRates rates={car.rates} />
                 <Divider my={3} />
                 {car.status == "Available" ? (
                   <>
@@ -241,13 +208,7 @@ const CardCar = () => {
                   </>
                 ) : (
                   <>
-                    <BaseListAndIcons
-                      specs={extractBookingDetails(car.booking, [
-                        "renter",
-                        "startDate_endDate",
-                        "actualReturn",
-                      ])}
-                    />
+                    {/* Booking details are shown in the details modal if available */}
                     <Divider my={3} />
                     {/* Payment Details */}
                     <PaymentPanel
@@ -274,11 +235,19 @@ const CardCar = () => {
                     flex={1}
                     size="sm"
                     colorScheme="blue"
-                    onClick={() => handleBookingOpen(car)}
-                    leftIcon={<FaBook />}
-                    isDisabled={car.status !== "Available"}
+                    leftIcon={<FaEdit />}
+                    onClick={() => handleEdit(car)}
                   >
-                    Book
+                    Edit
+                  </Button>
+                  <Button
+                    flex={1}
+                    size="sm"
+                    colorScheme="red"
+                    leftIcon={<FaTrash />}
+                    onClick={() => handleDelete(car)}
+                  >
+                    Delete
                   </Button>
                 </Flex>
               </CardFooter>
@@ -287,26 +256,82 @@ const CardCar = () => {
         })}
       </Grid>
 
+      {/* Pagination: < 1 2 3 4 > */}
+      <Flex justify="center" align="center" gap={2} mt={6}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            dispatch(fetchCars({ page: Math.max(1, (page || 1) - 1), limit }))
+          }
+          isDisabled={(page || 1) <= 1}
+        >
+          {"<"}
+        </Button>
+        {Array.from(
+          {
+            length: Math.max(
+              1,
+              meta?.last_page || (hasNext ? (page || 1) + 1 : page || 1)
+            ),
+          },
+          (_, i) => i + 1
+        ).map((p) => (
+          <Button
+            key={p}
+            size="sm"
+            colorScheme={p === (page || 1) ? "blue" : "gray"}
+            variant={p === (page || 1) ? "solid" : "outline"}
+            onClick={() => dispatch(fetchCars({ page: p, limit }))}
+          >
+            {p}
+          </Button>
+        ))}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => dispatch(fetchCars({ page: (page || 1) + 1, limit }))}
+          isDisabled={
+            meta?.last_page ? (page || 1) >= meta.last_page : !hasNext
+          }
+        >
+          {">"}
+        </Button>
+      </Flex>
+
       <BaseModal
-        title={selectedCar.name || ""}
+        title={selectedCar?.name || ""}
         isOpen={isModalOpen}
         onClose={onModalClose}
         size="4xl"
       >
         <BaseSlider
-          images={sliderImages}
+          images={(() => {
+            const imgs = [];
+            if (selectedCar?.image)
+              imgs.push({ image: selectedCar.image, alt: selectedCar.name });
+            const disp =
+              selectedCar?.images?.displayImages ||
+              selectedCar?.raw?.displayImages ||
+              [];
+            (disp || []).forEach((url) =>
+              imgs.push({ image: url, alt: selectedCar?.name || "Car" })
+            );
+            return imgs;
+          })()}
           speed={500}
           slidesToShow={1}
-          slidesToScroll={2}
+          slidesToScroll={1}
         />
-        <CarProfile />
+        <Box mt={4}>
+          <CarProfile
+            specs={selectedCar?.specification || []}
+            otherDesc={selectedCar?.raw?.features || []}
+          />
+        </Box>
       </BaseModal>
 
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={onBookingClose}
-        car={selectedCar}
-      />
+      {/* Booking modal removed on Units page */}
     </Box>
   );
 };

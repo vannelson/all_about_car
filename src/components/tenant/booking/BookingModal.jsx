@@ -14,14 +14,43 @@ import {
   Image,
   Divider,
   Button,
+  Stepper,
+  Step,
+  StepIndicator,
+  StepStatus,
+  StepIcon,
+  StepNumber,
+  StepSeparator,
+  StepTitle,
+  StepDescription,
+  Heading,
+  useSteps,
+  Card,
+  CardBody,
+  CardHeader,
+  FormControl,
+  FormLabel,
+  FormHelperText,
   Badge,
+  Icon,
+  Alert,
+  AlertIcon,
+  Flex,
+  useColorModeValue,
 } from "@chakra-ui/react";
+import {
+  FaRoute,
+  FaUser,
+  FaPlusCircle,
+  FaClipboardCheck,
+  FaCalendarAlt,
+  FaMapMarkerAlt,
+} from "react-icons/fa";
 
 import BaseModal from "../../base/BaseModal";
-import CarRates from "../cardview/CarRates";
-import PaymentPanel from "../payment/PaymentPanel";
 
-const toNumber = (str = "0") => Number(String(str).replace(/,/g, "").trim()) || 0;
+const toNumber = (str = "0") =>
+  Number(String(str).replace(/,/g, "").trim()) || 0;
 
 const hoursBetween = (start, end) => {
   const s = new Date(start);
@@ -36,7 +65,18 @@ const daysBetween = (start, end) => {
   return Math.ceil(hrs / 24);
 };
 
+const steps = [
+  { title: "Trip", description: "Dates & Locations", icon: FaRoute },
+  { title: "Renter", description: "Contact & ID", icon: FaUser },
+  { title: "Extras", description: "Add-ons", icon: FaPlusCircle },
+  { title: "Review", description: "Summary & Confirm", icon: FaClipboardCheck },
+];
+
 const BookingModal = ({ isOpen, onClose, car = {} }) => {
+  const { activeStep, setActiveStep } = useSteps({
+    index: 0,
+    count: steps.length,
+  });
   const [pickupAt, setPickupAt] = useState("");
   const [returnAt, setReturnAt] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
@@ -49,18 +89,34 @@ const BookingModal = ({ isOpen, onClose, car = {} }) => {
   const [needSeat, setNeedSeat] = useState(false);
   const [notes, setNotes] = useState("");
 
-  const baseRate = toNumber(car?.rateAmount);
+  const chosenRateType = useMemo(() => {
+    const fromCard = String(car?.rateType || "").toLowerCase();
+    if (fromCard.includes("hour")) return "hourly";
+    if (fromCard.includes("day")) return "daily";
+    if (car?.rates?.daily) return "daily";
+    if (car?.rates?.hourly) return "hourly";
+    return "daily";
+  }, [car?.rateType, car?.rates]);
+
+  const baseRate = toNumber(
+    chosenRateType === "hourly"
+      ? car?.rates?.hourly
+      : car?.rates?.daily || car?.rateAmount
+  );
 
   const quantities = useMemo(() => {
-    if (!pickupAt || !returnAt) return { qty: 0, label: car?.rateType || "" };
-    if ((car?.rateType || "").toLowerCase() === "hourly") {
+    if (!pickupAt || !returnAt)
+      return {
+        qty: 0,
+        label: chosenRateType === "hourly" ? "hour(s)" : "day(s)",
+      };
+    if (chosenRateType === "hourly") {
       const hrs = hoursBetween(pickupAt, returnAt);
       return { qty: hrs, label: "hour(s)" };
     }
-    // default daily
     const d = daysBetween(pickupAt, returnAt);
     return { qty: d, label: "day(s)" };
-  }, [pickupAt, returnAt, car?.rateType]);
+  }, [pickupAt, returnAt, chosenRateType]);
 
   const extrasCharge = (needGPS ? 200 : 0) + (needSeat ? 150 : 0);
 
@@ -70,16 +126,20 @@ const BookingModal = ({ isOpen, onClose, car = {} }) => {
     return qty * baseRate + extrasCharge;
   }, [quantities.qty, baseRate, extrasCharge]);
 
-  const canSubmit =
+  const isTripValid = pickupAt && returnAt && quantities.qty > 0;
+  const isRenterValid =
     renterName.trim().length > 1 &&
     renterPhone.trim().length >= 7 &&
-    pickupAt &&
-    returnAt &&
-    quantities.qty > 0;
+    idNumber.trim().length > 0;
+  const canSubmit = isTripValid && isRenterValid;
+
+  // Color scheme
+  const primaryColor = useColorModeValue("blue.500", "blue.300");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const cardBg = useColorModeValue("white", "gray.700");
+  const sidebarBg = useColorModeValue("gray.50", "gray.800");
 
   const handleConfirm = () => {
-    // This is UI-only for now. Hook into API here later.
-    // eslint-disable-next-line no-console
     console.log("Booking created", {
       car: car?.name,
       pickupAt,
@@ -101,192 +161,587 @@ const BookingModal = ({ isOpen, onClose, car = {} }) => {
   return (
     <BaseModal
       title={`Book ${car?.name || "Vehicle"}`}
-      size="5xl"
+      size="3xl"
       isOpen={isOpen}
       onClose={onClose}
       hassFooter={false}
     >
-      <Box p={5} bg="white">
-        <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6}>
+      <Box p={0} bg="white">
+        <Grid templateColumns={{ base: "1fr" }} gap={0} minH="500px">
+          {/* Main Content */}
           <GridItem>
-            <Stack spacing={5}>
-              <Box borderWidth="1px" borderRadius="md" p={4}>
-                <Text fontWeight="bold" mb={3} color="gray.700">
-                  Trip Details
-                </Text>
-                <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Pickup date & time
-                    </Text>
-                    <Input
-                      type="datetime-local"
-                      value={pickupAt}
-                      onChange={(e) => setPickupAt(e.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Return date & time
-                    </Text>
-                    <Input
-                      type="datetime-local"
-                      value={returnAt}
-                      onChange={(e) => setReturnAt(e.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Pickup location
-                    </Text>
-                    <Input
-                      placeholder="e.g. Downtown Branch"
-                      value={pickupLocation}
-                      onChange={(e) => setPickupLocation(e.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Drop-off location
-                    </Text>
-                    <Input
-                      placeholder="Same as pickup or different"
-                      value={dropoffLocation}
-                      onChange={(e) => setDropoffLocation(e.target.value)}
-                    />
-                  </Box>
-                </Grid>
+            <Box p={{ base: 5, md: 6 }}>
+              <Stepper index={activeStep} colorScheme="blue" size="md" mb={6}>
+                {steps.map((s, i) => (
+                  <Step key={i}>
+                    <StepIndicator>
+                      <StepStatus
+                        complete={<StepIcon />}
+                        incomplete={<StepNumber />}
+                        active={<StepNumber />}
+                      />
+                    </StepIndicator>
+                    <Box flexShrink={0} ml={2}>
+                      <StepTitle fontSize="sm" fontWeight="semibold">
+                        {s.title}
+                      </StepTitle>
+                      <StepDescription fontSize="xs">
+                        {s.description}
+                      </StepDescription>
+                    </Box>
+                    <StepSeparator />
+                  </Step>
+                ))}
+              </Stepper>
 
-                <HStack mt={3} spacing={4}>
-                  <Badge colorScheme="blue" fontSize="0.8em">
-                    {car?.rateType || "Daily"} rate
-                  </Badge>
-                  {quantities.qty > 0 && (
-                    <Text fontSize="sm" color="gray.600">
-                      Duration: {quantities.qty} {quantities.label}
-                    </Text>
+              {/* Step Content */}
+              <Card variant="outline" borderColor={borderColor}>
+                <CardBody p={{ base: 4, md: 5 }}>
+                  {activeStep === 0 && (
+                    <Stack spacing={4}>
+                      <HStack spacing={3} mb={2}>
+                        <Icon as={FaRoute} color={primaryColor} boxSize={5} />
+                        <Heading size="md" color="gray.700">
+                          Trip Details
+                        </Heading>
+                      </HStack>
+
+                      <Grid
+                        templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                        gap={5}
+                      >
+                        <FormControl isRequired>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            Pickup Date & Time
+                          </FormLabel>
+                          <Input
+                            type="datetime-local"
+                            value={pickupAt}
+                            onChange={(e) => setPickupAt(e.target.value)}
+                            size="md"
+                          />
+                        </FormControl>
+
+                        <FormControl isRequired>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            Return Date & Time
+                          </FormLabel>
+                          <Input
+                            type="datetime-local"
+                            value={returnAt}
+                            onChange={(e) => setReturnAt(e.target.value)}
+                            size="md"
+                          />
+                        </FormControl>
+                      </Grid>
+
+                      <Grid
+                        templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                        gap={5}
+                      >
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            <HStack spacing={2}>
+                              <Icon as={FaMapMarkerAlt} color="gray.500" />
+                              <Text>Pickup Location</Text>
+                            </HStack>
+                          </FormLabel>
+                          <Input
+                            placeholder="Enter pickup location"
+                            value={pickupLocation}
+                            onChange={(e) => setPickupLocation(e.target.value)}
+                            size="md"
+                          />
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            <HStack spacing={2}>
+                              <Icon as={FaMapMarkerAlt} color="gray.500" />
+                              <Text>Drop-off Location</Text>
+                            </HStack>
+                          </FormLabel>
+                          <Input
+                            placeholder="Enter drop-off location"
+                            value={dropoffLocation}
+                            onChange={(e) => setDropoffLocation(e.target.value)}
+                            size="md"
+                          />
+                        </FormControl>
+                      </Grid>
+
+                      {quantities.qty > 0 && (
+                        <Alert
+                          status="success"
+                          variant="subtle"
+                          borderRadius="md"
+                        >
+                          <AlertIcon />
+                          <Text fontSize="sm">
+                            Duration:{" "}
+                            <Badge colorScheme="green">
+                              {quantities.qty} {quantities.label}
+                            </Badge>
+                          </Text>
+                        </Alert>
+                      )}
+                    </Stack>
                   )}
-                </HStack>
-              </Box>
 
-              <Box borderWidth="1px" borderRadius="md" p={4}>
-                <Text fontWeight="bold" mb={3} color="gray.700">
-                  Renter Details
-                </Text>
-                <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Full name
-                    </Text>
-                    <Input
-                      placeholder="John Doe"
-                      value={renterName}
-                      onChange={(e) => setRenterName(e.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      Phone number
-                    </Text>
-                    <Input
-                      placeholder="09XX-XXX-XXXX"
-                      value={renterPhone}
-                      onChange={(e) => setRenterPhone(e.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      ID type
-                    </Text>
-                    <Select value={idType} onChange={(e) => setIdType(e.target.value)}>
-                      <option>Driver License</option>
-                      <option>Passport</option>
-                      <option>National ID</option>
-                    </Select>
-                  </Box>
-                  <Box>
-                    <Text fontSize="sm" color="gray.600" mb={1}>
-                      ID number
-                    </Text>
-                    <Input
-                      placeholder="ID / License number"
-                      value={idNumber}
-                      onChange={(e) => setIdNumber(e.target.value)}
-                    />
-                  </Box>
-                </Grid>
-              </Box>
+                  {activeStep === 1 && (
+                    <Stack spacing={4}>
+                      <HStack spacing={3} mb={2}>
+                        <Icon as={FaUser} color={primaryColor} boxSize={5} />
+                        <Heading size="md" color="gray.700">
+                          Renter Information
+                        </Heading>
+                      </HStack>
 
-              <Box borderWidth="1px" borderRadius="md" p={4}>
-                <Text fontWeight="bold" mb={3} color="gray.700">
-                  Extras
-                </Text>
-                <VStack align="stretch" spacing={3}>
-                  <HStack justify="space-between">
-                    <Box>
-                      <Text fontWeight="semibold">GPS Navigation</Text>
-                      <Text fontSize="sm" color="gray.600">
-                        Add GPS for easier navigation (+200)
-                      </Text>
-                    </Box>
-                    <Switch isChecked={needGPS} onChange={(e) => setNeedGPS(e.target.checked)} />
-                  </HStack>
-                  <Divider />
-                  <HStack justify="space-between">
-                    <Box>
-                      <Text fontWeight="semibold">Baby Seat</Text>
-                      <Text fontSize="sm" color="gray.600">
-                        Safety seat for infants (+150)
-                      </Text>
-                    </Box>
-                    <Switch isChecked={needSeat} onChange={(e) => setNeedSeat(e.target.checked)} />
-                  </HStack>
-                </VStack>
-              </Box>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="sm" fontWeight="medium">
+                          Full Name
+                        </FormLabel>
+                        <Input
+                          placeholder="Enter your full name"
+                          value={renterName}
+                          onChange={(e) => setRenterName(e.target.value)}
+                          size="md"
+                        />
+                      </FormControl>
 
-              <Box borderWidth="1px" borderRadius="md" p={4}>
-                <Text fontWeight="bold" mb={3} color="gray.700">
-                  Notes (optional)
-                </Text>
-                <Textarea
-                  placeholder="Any special requests or instructions"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </Box>
-            </Stack>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="sm" fontWeight="medium">
+                          Phone Number
+                        </FormLabel>
+                        <Input
+                          placeholder="Enter your phone number"
+                          value={renterPhone}
+                          onChange={(e) => setRenterPhone(e.target.value)}
+                          size="md"
+                        />
+                        <FormHelperText>
+                          We'll use this to contact you about your booking
+                        </FormHelperText>
+                      </FormControl>
+
+                      <Grid
+                        templateColumns={{ base: "1fr", md: "1fr 2fr" }}
+                        gap={3}
+                      >
+                        <FormControl isRequired>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            ID Type
+                          </FormLabel>
+                          <Select
+                            value={idType}
+                            onChange={(e) => setIdType(e.target.value)}
+                            size="md"
+                          >
+                            <option>Driver License</option>
+                            <option>Passport</option>
+                            <option>National ID</option>
+                          </Select>
+                        </FormControl>
+
+                        <FormControl isRequired>
+                          <FormLabel fontSize="sm" fontWeight="medium">
+                            ID Number
+                          </FormLabel>
+                          <Input
+                            placeholder="Enter your ID number"
+                            value={idNumber}
+                            onChange={(e) => setIdNumber(e.target.value)}
+                            size="md"
+                          />
+                        </FormControl>
+                      </Grid>
+                    </Stack>
+                  )}
+
+                  {activeStep === 2 && (
+                    <Stack spacing={6}>
+                      <HStack spacing={3} mb={2}>
+                        <Icon
+                          as={FaPlusCircle}
+                          color={primaryColor}
+                          boxSize={5}
+                        />
+                        <Heading size="md" color="gray.700">
+                          Additional Services
+                        </Heading>
+                      </HStack>
+
+                      <Card variant="outline" borderColor={borderColor}>
+                        <CardBody>
+                          <HStack justify="space-between" align="start">
+                            <Box flex={1}>
+                              <Text fontWeight="semibold" mb={1}>
+                                GPS Navigation
+                              </Text>
+                              <Text fontSize="sm" color="gray.600">
+                                Add GPS for easier navigation during your trip
+                              </Text>
+                              <Badge colorScheme="blue" mt={1}>
+                                +₱200
+                              </Badge>
+                            </Box>
+                            <Switch
+                              isChecked={needGPS}
+                              onChange={(e) => setNeedGPS(e.target.checked)}
+                              size="md"
+                              colorScheme="blue"
+                            />
+                          </HStack>
+                        </CardBody>
+                      </Card>
+
+                      <Card variant="outline" borderColor={borderColor}>
+                        <CardBody>
+                          <HStack justify="space-between" align="start">
+                            <Box flex={1}>
+                              <Text fontWeight="semibold" mb={1}>
+                                Baby Seat
+                              </Text>
+                              <Text fontSize="sm" color="gray.600">
+                                Safety seat for infants and young children
+                              </Text>
+                              <Badge colorScheme="blue" mt={1}>
+                                +₱150
+                              </Badge>
+                            </Box>
+                            <Switch
+                              isChecked={needSeat}
+                              onChange={(e) => setNeedSeat(e.target.checked)}
+                              size="md"
+                              colorScheme="blue"
+                            />
+                          </HStack>
+                        </CardBody>
+                      </Card>
+
+                      <FormControl>
+                        <FormLabel fontSize="sm" fontWeight="medium">
+                          Special Requests
+                        </FormLabel>
+                        <Textarea
+                          placeholder="Any special requests or instructions for your booking..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          size="md"
+                          rows={4}
+                        />
+                        <FormHelperText>
+                          Optional: Let us know if you have any special
+                          requirements
+                        </FormHelperText>
+                      </FormControl>
+                    </Stack>
+                  )}
+
+                  {activeStep === 3 && (
+                    <Stack spacing={4}>
+                      <HStack spacing={3} mb={2}>
+                        <Icon
+                          as={FaClipboardCheck}
+                          color={primaryColor}
+                          boxSize={5}
+                        />
+                        <Heading size="md" color="gray.700">
+                          Booking Summary
+                        </Heading>
+                      </HStack>
+
+                      <Alert status="info" variant="subtle" borderRadius="md">
+                        <AlertIcon />
+                        <Text fontSize="sm">
+                          Please review your booking details before confirming
+                        </Text>
+                      </Alert>
+
+                      <Grid
+                        templateColumns={{ base: "1fr", md: "1fr 1fr" }}
+                        gap={4}
+                      >
+                        <Box>
+                          <Text fontSize="sm" color="gray.600" mb={1}>
+                            Pickup
+                          </Text>
+                          <Text fontWeight="medium">
+                            {pickupAt
+                              ? new Date(pickupAt).toLocaleString()
+                              : "-"}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="sm" color="gray.600" mb={1}>
+                            Return
+                          </Text>
+                          <Text fontWeight="medium">
+                            {returnAt
+                              ? new Date(returnAt).toLocaleString()
+                              : "-"}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="sm" color="gray.600" mb={1}>
+                            Pickup Location
+                          </Text>
+                          <Text fontWeight="medium">
+                            {pickupLocation || "-"}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="sm" color="gray.600" mb={1}>
+                            Drop-off Location
+                          </Text>
+                          <Text fontWeight="medium">
+                            {dropoffLocation || "-"}
+                          </Text>
+                        </Box>
+                      </Grid>
+
+                      <Divider />
+
+                      <Box>
+                        <Text fontSize="sm" color="gray.600" mb={1}>
+                          Renter Information
+                        </Text>
+                        <Text fontWeight="medium">{renterName || "-"}</Text>
+                        <Text fontSize="sm" color="gray.600">
+                          {renterPhone || "-"}
+                        </Text>
+                        <Text fontSize="sm" color="gray.600">
+                          {idType}: {idNumber || "-"}
+                        </Text>
+                      </Box>
+
+                      <Divider />
+
+                      <Box>
+                        <Text fontSize="sm" color="gray.600" mb={2}>
+                          Additional Services
+                        </Text>
+                        <VStack align="stretch" spacing={1}>
+                          <HStack justify="space-between">
+                            <Text fontSize="sm">GPS Navigation</Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {needGPS ? "₱200" : "Not selected"}
+                            </Text>
+                          </HStack>
+                          <HStack justify="space-between">
+                            <Text fontSize="sm">Baby Seat</Text>
+                            <Text fontSize="sm" fontWeight="medium">
+                              {needSeat ? "₱150" : "Not selected"}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                      </Box>
+
+                      {/* Pricing Summary (moved from sidebar) */}
+                      <Card
+                        variant="subtle"
+                        bg={cardBg}
+                        borderColor={borderColor}
+                      >
+                        <CardHeader pb={2}>
+                          <Heading size="sm">Pricing Summary</Heading>
+                        </CardHeader>
+                        <CardBody pt={0}>
+                          <VStack spacing={2} align="stretch">
+                            <HStack justify="space-between">
+                              <Text fontSize="sm" color="gray.600">
+                                {quantities.qty} {quantities.label} x{" "}
+                                {baseRate.toLocaleString()}
+                              </Text>
+                              <Text fontWeight="semibold">
+                                {(quantities.qty * baseRate).toLocaleString()}
+                              </Text>
+                            </HStack>
+                            {extrasCharge > 0 && (
+                              <HStack justify="space-between">
+                                <Text fontSize="sm" color="gray.600">
+                                  Additional services
+                                </Text>
+                                <Text fontWeight="semibold">
+                                  {extrasCharge.toLocaleString()}
+                                </Text>
+                              </HStack>
+                            )}
+                            <Divider />
+                            <HStack justify="space-between">
+                              <Text fontWeight="bold">Total</Text>
+                              <Text fontWeight="bold" color="green.600">
+                                {total.toLocaleString()}
+                              </Text>
+                            </HStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
+                      {notes && (
+                        <>
+                          <Divider />
+                          <Box>
+                            <Text fontSize="sm" color="gray.600" mb={1}>
+                              Special Requests
+                            </Text>
+                            <Text fontSize="sm" fontStyle="italic">
+                              {notes}
+                            </Text>
+                          </Box>
+                        </>
+                      )}
+                    </Stack>
+                  )}
+
+                  {/* Navigation Buttons */}
+                  <Flex justify="space-between" mt={6}>
+                    <Button
+                      onClick={() => setActiveStep((s) => Math.max(0, s - 1))}
+                      isDisabled={activeStep === 0}
+                      variant="outline"
+                      size="md"
+                    >
+                      Previous
+                    </Button>
+
+                    {activeStep < steps.length - 1 ? (
+                      <Button
+                        colorScheme="blue"
+                        onClick={() => {
+                          if (activeStep === 0 && !isTripValid) return;
+                          if (activeStep === 1 && !isRenterValid) return;
+                          setActiveStep((s) =>
+                            Math.min(steps.length - 1, s + 1)
+                          );
+                        }}
+                        size="md"
+                        isDisabled={
+                          (activeStep === 0 && !isTripValid) ||
+                          (activeStep === 1 && !isRenterValid)
+                        }
+                      >
+                        Continue
+                      </Button>
+                    ) : (
+                      <Button
+                        colorScheme="green"
+                        onClick={handleConfirm}
+                        isDisabled={!canSubmit}
+                        size="md"
+                      >
+                        Confirm Booking
+                      </Button>
+                    )}
+                  </Flex>
+                </CardBody>
+              </Card>
+            </Box>
           </GridItem>
 
-          <GridItem>
-            <Stack spacing={4} position="sticky" top={0}>
-              <Box borderWidth="1px" borderRadius="md" overflow="hidden">
-                <Image src={car?.image} alt={car?.name} objectFit="cover" w="100%" h="160px" />
-                <Box p={3}>
-                  <Text fontWeight="bold" color="gray.700">
-                    {car?.name}
+          {/* Sidebar */}
+          {false && (
+            <GridItem bg={sidebarBg}>
+              <Box p={6} position="sticky" top={0}>
+                <Stack spacing={6}>
+                  {/* Vehicle Card */}
+                  <Card variant="filled" bg={cardBg}>
+                    <Image
+                      src={car?.image}
+                      alt={car?.name}
+                      objectFit="cover"
+                      w="100%"
+                      h="140px"
+                      borderTopRadius="md"
+                    />
+                    <CardBody>
+                      <Text
+                        fontWeight="bold"
+                        fontSize="lg"
+                        color="gray.700"
+                        mb={2}
+                      >
+                        {car?.name}
+                      </Text>
+                      {/* CarRates removed in compact layout */}
+                    </CardBody>
+                  </Card>
+
+                  {/* Pricing Summary */}
+                  <Card variant="filled" bg={cardBg}>
+                    <CardHeader pb={3}>
+                      <Heading size="sm">Pricing Summary</Heading>
+                    </CardHeader>
+                    <CardBody pt={0}>
+                      <VStack spacing={3} align="stretch">
+                        <HStack justify="space-between">
+                          <Text fontSize="sm" color="gray.600">
+                            {quantities.qty} {quantities.label} × ₱
+                            {baseRate.toLocaleString()}
+                          </Text>
+                          <Text fontWeight="semibold">
+                            ₱{(quantities.qty * baseRate).toLocaleString()}
+                          </Text>
+                        </HStack>
+
+                        {extrasCharge > 0 && (
+                          <HStack justify="space-between">
+                            <Text fontSize="sm" color="gray.600">
+                              Additional services
+                            </Text>
+                            <Text fontWeight="semibold">
+                              ₱{extrasCharge.toLocaleString()}
+                            </Text>
+                          </HStack>
+                        )}
+
+                        <Divider />
+
+                        <HStack justify="space-between">
+                          <Text fontWeight="bold" fontSize="lg">
+                            Total
+                          </Text>
+                          <Text
+                            fontWeight="bold"
+                            fontSize="lg"
+                            color="green.600"
+                          >
+                            ₱{total.toLocaleString()}
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+
+                  {/* Quick Actions */}
+                  <Stack spacing={3}>
+                    <Button
+                      colorScheme="blue"
+                      size="lg"
+                      isDisabled={!canSubmit}
+                      onClick={handleConfirm}
+                      w="full"
+                    >
+                      Confirm Booking
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={onClose}
+                      size="lg"
+                      w="full"
+                    >
+                      Cancel
+                    </Button>
+                  </Stack>
+
+                  {/* Help Text */}
+                  <Text fontSize="xs" color="gray.500" textAlign="center">
+                    You can modify your booking details until confirmation
                   </Text>
-                  <CarRates rateAmount={car?.rateAmount} rateType={car?.rateType} />
-                </Box>
+                </Stack>
               </Box>
-
-              <PaymentPanel
-                title="Estimated Charges"
-                rateAmount={(quantities.qty * baseRate).toLocaleString()}
-                extraCharge={extrasCharge.toLocaleString()}
-                bgColor="gray.50"
-              />
-
-              <Button
-                colorScheme="blue"
-                size="md"
-                isDisabled={!canSubmit}
-                onClick={handleConfirm}
-              >
-                Confirm Booking
-              </Button>
-              <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            </Stack>
-          </GridItem>
+            </GridItem>
+          )}
         </Grid>
       </Box>
     </BaseModal>
@@ -294,4 +749,3 @@ const BookingModal = ({ isOpen, onClose, car = {} }) => {
 };
 
 export default BookingModal;
-

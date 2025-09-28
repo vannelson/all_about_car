@@ -85,7 +85,16 @@ Get CArs
 Get
 http://127.0.0.1:8000/api/cars?limit=5&page=1&include[]=rates&include[]=company
 
+CArs Filters
+FILTERS
+http://127.0.0.1:8000/api/cars?limit=5&page=1&include[]=rates&include[]=company&filters[info_make]=Toyota
 
+
+        filter key is the column name = Value
+filters[info_make] = Toyota
+
+
+sample output
 {
     "status": "success",
     "message": "Cars retrieved successfully!",
@@ -334,4 +343,15 @@ http://127.0.0.1:8000/api/cars?limit=5&page=1&include[]=rates&include[]=company
 }
 
 
-implement th
+Rates
+post
+http://127.0.0.1:8000/api/car-rates 
+{
+  "car_id": 1,
+  "name": "Valentines Rate",
+  "rate": 2500,
+  "rate_type": "daily",
+  "start_date": "2025-10-01",
+  "status": "inactive"
+}
+

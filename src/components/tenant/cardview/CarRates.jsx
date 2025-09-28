@@ -2,20 +2,14 @@ import { Box, Text, Stack, Flex, Divider } from "@chakra-ui/react";
 import { FaClock, FaCalendarDay } from "react-icons/fa";
 import React from "react";
 
-const CarRates = ({ rateAmount, rateType, direction = "horizontal" }) => {
-  const rates = [
-    {
-      key: "Day",
-      label: "Daily",
-      icon: FaCalendarDay,
-      unit: "/day",
-    },
-    {
-      key: "Hour",
-      label: "Hourly",
-      icon: FaClock,
-      unit: "/hr",
-    },
+// Props:
+// - rates: { daily?: number, hourly?: number }
+// - direction: 'horizontal' | 'vertical'
+// Fallbacks to 0 when not provided.
+const CarRates = ({ rates = {}, direction = "horizontal" }) => {
+  const config = [
+    { key: "daily", label: "Daily", icon: FaCalendarDay, unit: "/day" },
+    { key: "hourly", label: "Hourly", icon: FaClock, unit: "/hr" },
   ];
 
   return (
@@ -30,15 +24,16 @@ const CarRates = ({ rateAmount, rateType, direction = "horizontal" }) => {
         align="center"
         justify="center"
       >
-        {rates.map((rate, idx) => {
+        {config.map((rate, idx) => {
           const Icon = rate.icon;
-          const price = rateType === rate.key ? rateAmount : 300;
+          const amount = Number(rates[rate.key]) || 0;
+          const price = amount.toLocaleString();
 
           const item =
             direction === "horizontal" ? (
-              <Flex align="center" gap={1}>
+              <Flex align="center" gap={2}>
                 <Icon size={14} color="#4A5568" />
-                <Text fontSize="md" color="gray.600">
+                <Text fontSize="md" color="gray.700">
                   ₱{price}
                 </Text>
                 <Text fontSize="xs" color="gray.600">
@@ -62,7 +57,7 @@ const CarRates = ({ rateAmount, rateType, direction = "horizontal" }) => {
           return (
             <React.Fragment key={rate.key}>
               {item}
-              {direction === "horizontal" && idx < rates.length - 1 && (
+              {direction === "horizontal" && idx < config.length - 1 && (
                 <Divider
                   orientation="vertical"
                   h="20px"

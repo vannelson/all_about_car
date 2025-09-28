@@ -7,6 +7,6 @@ export const NAV_ITEMS_BY_ROLE = {
   tenant: [
     { label: "Calendars Schedules", href: "/tenant/calendars" },
     { label: "Dashboard", href: "/tenant/dashboard" },
-    { label: "Rentals", href: "/tenant/rentals" },
+    { label: "Units", href: "/tenant/units" },
   ],
 };

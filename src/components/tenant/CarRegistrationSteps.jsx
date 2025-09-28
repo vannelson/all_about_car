@@ -24,6 +24,15 @@ import {
   useSteps,
   Image,
   Stack,
+  FormControl,
+  FormLabel,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Select,
+  Input,
 } from "@chakra-ui/react";
 import { FaArrowRight, FaArrowLeft, FaHistory } from "react-icons/fa";
 import { FaCalendarAlt, FaCheck, FaCar } from "react-icons/fa";
@@ -45,7 +54,8 @@ const steps = [
   { title: "Basic", description: "Vehicle Info" },
   { title: "Specs", description: "Specifications" },
   { title: "Features", description: "Add Features" },
-  { title: "Pictures", description: "Upload Images" },
+  { title: "Pictures", description: "Upload " },
+  { title: "Rates", description: "Pricing" },
   { title: "Review", description: "Preview & Submit" },
 ];
 
@@ -67,6 +77,13 @@ const CarRegistrationSteps = () => {
   const [displayImages, setDisplayImages] = useState([]);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [displayImageFiles, setDisplayImageFiles] = useState([]);
+  const [rateData, setRateData] = useState({
+    rate: 0,
+    rate_type: "daily",
+    name: "Standard Rate",
+    start_date: new Date().toISOString().slice(0, 10),
+    status: "active",
+  });
 
   const [formData, setFormData] = useState({
     info_make: "",
@@ -108,21 +125,46 @@ const CarRegistrationSteps = () => {
     try {
       // Basic client-side guard for required image if backend expects it
       if (!profileImage) {
-        toast({ title: "Profile image required", description: "Please upload a profile image.", status: "warning" });
+        toast({
+          title: "Profile image required",
+          description: "Please upload a profile image.",
+          status: "warning",
+        });
         return;
       }
       setSubmitting(true);
       const action = await dispatch(
-        createCar({ formData, features, user: auth.user, profileImage: profileImage, displayImages: displayImages })
+        createCar({
+          formData,
+          features,
+          user: auth.user,
+          profileImage: profileImage,
+          displayImages: displayImages,
+          rateData,
+        })
       );
       if (createCar.fulfilled.match(action)) {
-        toast({ title: "Car saved", description: action.payload?.message || "Car registered successfully", status: "success" });
+        toast({
+          title: "Car saved",
+          description: action.payload?.message || "Car registered successfully",
+          status: "success",
+        });
       } else {
         const err = action.payload || {};
         const errorsObj = err.errors || {};
         const flatErrors = Object.values(errorsObj).flat().join("\n");
-        const msg = flatErrors || err.message || action.error?.message || "Failed to save car";
-        toast({ title: "Error", description: msg, status: "error", isClosable: true, duration: 6000 });
+        const msg =
+          flatErrors ||
+          err.message ||
+          action.error?.message ||
+          "Failed to save car";
+        toast({
+          title: "Error",
+          description: msg,
+          status: "error",
+          isClosable: true,
+          duration: 6000,
+        });
       }
     } finally {
       setSubmitting(false);
@@ -196,7 +238,9 @@ const CarRegistrationSteps = () => {
               <ImageUpload
                 multiple={false}
                 onImagesChange={(images) => setProfileImage(images[0] || null)}
-                onFilesSelected={(files) => setProfileImageFile(files && files[0] ? files[0] : null)}
+                onFilesSelected={(files) =>
+                  setProfileImageFile(files && files[0] ? files[0] : null)
+                }
                 initialImages={profileImage ? [profileImage] : []}
                 mb={4}
               />
@@ -211,6 +255,78 @@ const CarRegistrationSteps = () => {
           </VStack>
         );
       case 4:
+        // Rates step
+        return (
+          <VStack spacing={6} align="stretch">
+            <Heading as="h2" size="md" color="blue.700">
+              Rates
+            </Heading>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Rate Amount</FormLabel>
+                <NumberInput
+                  min={0}
+                  value={rateData.rate}
+                  onChange={(v) =>
+                    setRateData((p) => ({ ...p, rate: Number(v) || 0 }))
+                  }
+                >
+                  <NumberInputField />
+                  <NumberInputStepper>
+                    <NumberIncrementStepper />
+                    <NumberDecrementStepper />
+                  </NumberInputStepper>
+                </NumberInput>
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Rate Type</FormLabel>
+                <Select
+                  value={rateData.rate_type}
+                  onChange={(e) =>
+                    setRateData((p) => ({ ...p, rate_type: e.target.value }))
+                  }
+                >
+                  <option value="daily">Daily</option>
+                  <option value="hourly">Hourly</option>
+                </Select>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Name</FormLabel>
+                <Input
+                  value={rateData.name}
+                  onChange={(e) =>
+                    setRateData((p) => ({ ...p, name: e.target.value }))
+                  }
+                />
+              </FormControl>
+            </SimpleGrid>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              <FormControl>
+                <FormLabel>Start Date</FormLabel>
+                <Input
+                  type="date"
+                  value={rateData.start_date}
+                  onChange={(e) =>
+                    setRateData((p) => ({ ...p, start_date: e.target.value }))
+                  }
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Status</FormLabel>
+                <Select
+                  value={rateData.status}
+                  onChange={(e) =>
+                    setRateData((p) => ({ ...p, status: e.target.value }))
+                  }
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              </FormControl>
+            </SimpleGrid>
+          </VStack>
+        );
+      case 5:
         return (
           <HStack align="start" spacing={5} width="100%">
             {/* Main Vehicle Card - Column 1 */}
@@ -311,11 +427,21 @@ const CarRegistrationSteps = () => {
             </Button>
 
             {activeStep < steps.length - 1 ? (
-              <Button onClick={nextStep} rightIcon={<FaArrowRight />} colorScheme="blue">
+              <Button
+                onClick={nextStep}
+                rightIcon={<FaArrowRight />}
+                colorScheme="blue"
+              >
                 Next
               </Button>
             ) : (
-              <Button type="submit" colorScheme="green" rightIcon={<FaCheck />} isLoading={submitting} loadingText="Saving...">
+              <Button
+                type="submit"
+                colorScheme="green"
+                rightIcon={<FaCheck />}
+                isLoading={submitting}
+                loadingText="Saving..."
+              >
                 Submit
               </Button>
             )}
@@ -327,4 +453,3 @@ const CarRegistrationSteps = () => {
 };
 
 export default CarRegistrationSteps;
-

@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { createCarApi } from "../services/cars";
+import { createCarApi, listCarsApi, mapCarToViewModel, createCarRateApi } from "../services/cars";
 
 export const createCar = createAsyncThunk(
   "cars/createCar",
   async (
-    { formData, features, user, profileImage, displayImages },
+    { formData, features, user, profileImage, displayImages, rateData },
     { rejectWithValue }
   ) => {
     try {
@@ -41,6 +41,25 @@ export const createCar = createAsyncThunk(
         displayImages,
         companyId,
       });
+      // If we have to create a rate after creating the car
+      try {
+        const createdCar = res?.data || res?.car || null;
+        const newCarId = createdCar?.id || res?.id;
+        if (newCarId && rateData && (rateData.rate || rateData.rate === 0)) {
+          await createCarRateApi({
+            car_id: newCarId,
+            rate: rateData.rate,
+            rate_type: rateData.rate_type || "daily",
+            name: rateData.name || "Standard Rate",
+            start_date: rateData.start_date,
+            status: rateData.status || "active",
+          });
+        }
+      } catch (e) {
+        // Rate creation failure shouldn't block car creation, but surface a warning
+        // eslint-disable-next-line no-console
+        console.warn("Rate creation failed:", e?.message || e);
+      }
       return res;
     } catch (err) {
       return rejectWithValue(err?.data || { message: err.message });
@@ -54,6 +73,14 @@ const carsSlice = createSlice({
     creating: false,
     lastCreated: null,
     error: null,
+    // Listing state
+    listLoading: false,
+    listError: null,
+    items: [],
+    page: 1,
+    limit: 6,
+    hasNext: false,
+    meta: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -69,8 +96,46 @@ const carsSlice = createSlice({
       .addCase(createCar.rejected, (state, action) => {
         state.creating = false;
         state.error = action.payload || { message: "Failed to create car" };
+      })
+      // fetch cars list
+      .addCase(fetchCars.pending, (state, action) => {
+        state.listLoading = true;
+        state.listError = null;
+      })
+      .addCase(fetchCars.fulfilled, (state, action) => {
+        state.listLoading = false;
+        const { items, page, limit, meta } = action.payload;
+        state.items = items;
+        state.page = page;
+        state.limit = limit;
+        state.meta = meta || null;
+        if (meta?.last_page) {
+          state.hasNext = (meta.current_page || 1) < meta.last_page;
+        } else {
+          state.hasNext = items.length >= limit; // fallback
+        }
+      })
+      .addCase(fetchCars.rejected, (state, action) => {
+        state.listLoading = false;
+        state.listError = action.payload || { message: "Failed to load cars" };
       });
   },
 });
 
 export default carsSlice.reducer;
+
+// Thunks
+export const fetchCars = createAsyncThunk(
+  "cars/fetchList",
+  async ({ page = 1, limit = 6, filters = {} } = {}, { rejectWithValue }) => {
+    try {
+      const res = await listCarsApi({ page, limit, includes: ["rates", "company"], filters });
+      const raw = res?.data || [];
+      const items = raw.map((c) => mapCarToViewModel(c)).filter(Boolean);
+      const meta = res?.meta || null;
+      return { items, page: meta?.current_page || page, limit: meta?.per_page || limit, meta };
+    } catch (err) {
+      return rejectWithValue(err?.data || { message: err.message });
+    }
+  }
+);

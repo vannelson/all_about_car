@@ -73,3 +73,118 @@ export async function createCarApi({
   const res = await axiosInstance.post("/cars", form);
   return res.data;
 }
+
+// Fetch cars with pagination and includes per APIdocs
+export async function listCarsApi({ limit = 6, page = 1, includes = ["rates", "company", "bookings"], filters = {} } = {}) {
+  const params = { limit, page };
+  // Laravel-style include[]= syntax
+  (includes || []).forEach((inc, idx) => {
+    params[`include[${idx}]`] = inc;
+  });
+  // Laravel-style filters[<column>]=value
+  if (filters && typeof filters === "object") {
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && String(val).length > 0) {
+        params[`filters[${key}]`] = val;
+      }
+    });
+  }
+
+  const res = await axiosInstance.get("/cars", { params });
+  return res.data; // expected: { status, message, data: [...], meta, links }
+}
+
+// Map API car to view model used by Card/Table components
+export function mapCarToViewModel(apiCar) {
+  if (!apiCar || typeof apiCar !== "object") return null;
+
+  const statusRaw = String(apiCar.info_availabilityStatus || "").toLowerCase();
+  const isAvailable = statusRaw === "available";
+
+  // Attempt to extract rates (daily/hourly) if provided
+  const rates = (Array.isArray(apiCar.rates) ? apiCar.rates : []).filter(
+    (r) => String(r?.status || "active").toLowerCase() === "active"
+  );
+  const findRate = (key) => {
+    // try common keys
+    const r = rates.find(
+      (x) =>
+        String(x?.type || x?.name || "").toLowerCase().includes(String(key).toLowerCase()) ||
+        String(x?.unit || "").toLowerCase().includes(String(key).toLowerCase())
+    );
+    const amount = r?.amount ?? r?.price ?? r?.rate ?? 0;
+    return Number(amount) || 0;
+  };
+
+  const daily = findRate("day") || findRate("daily");
+  const hourly = findRate("hour") || findRate("hourly");
+
+  const formatMoney = (n) => {
+    const num = Number(n) || 0;
+    return num.toLocaleString();
+  };
+
+  const specification = [
+    { key: "age", value: apiCar.info_age ? `${apiCar.info_age} year(s) old` : undefined },
+    { key: "seats", value: apiCar.spcs_seats != null ? `${apiCar.spcs_seats} seats` : undefined },
+    {
+      key: "luggage_capacity",
+      value:
+        apiCar.spcs_smallBags != null
+          ? `${apiCar.spcs_smallBags} small bag${apiCar.spcs_smallBags === 1 ? "" : "s"}`
+          : undefined,
+    },
+    {
+      key: "engine_capacity_cc",
+      value: apiCar.spcs_engineSize != null ? `${apiCar.spcs_engineSize} cc engine` : undefined,
+    },
+    { key: "transmission", value: apiCar.spcs_transmission },
+    { key: "fuel_type", value: apiCar.spcs_fuelType },
+    {
+      key: "fuel_efficiency_rate",
+      value: apiCar.spcs_fuelEfficiency ? `${apiCar.spcs_fuelEfficiency} L / 100km` : undefined,
+    },
+  ].filter((x) => x.value !== undefined);
+
+  const name = [apiCar.info_make, apiCar.info_model].filter(Boolean).join(" ") || "Car";
+  const image = apiCar.profileImage || "/cars/1.jpg";
+  const displayImages = Array.isArray(apiCar.displayImages) ? apiCar.displayImages : [];
+
+  // best-effort bookings passthrough; structure may vary
+  const bookings = Array.isArray(apiCar.bookings) ? apiCar.bookings : [];
+
+  return {
+    id: apiCar.id,
+    name,
+    image,
+    status: isAvailable ? "Available" : "Unavailable",
+    rateType: daily ? "Day" : hourly ? "Hour" : "Day",
+    rateAmount: formatMoney(daily || hourly || 0),
+    rates: { daily, hourly },
+    specification,
+    images: { profileImage: image, displayImages },
+    bookings,
+    raw: apiCar,
+  };
+}
+
+// Create a car rate entry after car creation
+export async function createCarRateApi({
+  car_id,
+  rate,
+  rate_type = "daily",
+  name = "Standard Rate",
+  start_date, // YYYY-MM-DD
+  status = "active",
+}) {
+  const body = {
+    car_id,
+    name,
+    rate: Number(rate),
+    rate_type: String(rate_type).toLowerCase(),
+    start_date: start_date || new Date().toISOString().slice(0, 10),
+    status,
+  };
+  const res = await axiosInstance.post("/car-rates", body);
+  return res.data;
+}

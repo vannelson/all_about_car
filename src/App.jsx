@@ -12,7 +12,7 @@ import Profile from "./pages/borrower/Profile";
 // Tenant pages
 import Dashboard from "./pages/tenant/Dashboard";
 import Calendars from "./pages/tenant/Calendars";
-import Rentals from "./pages/tenant/Rentals";
+import Units from "./pages/tenant/Units";
 
 // Auth pages
 import Login from "./pages/auth/Login";
@@ -47,13 +47,15 @@ export default function App() {
             }
           />
           <Route
-            path="/tenant/rentals"
+            path="/tenant/units"
             element={
               <ProtectedRoute allowRoles={["tenant"]}>
-                <Rentals />
+                <Units />
               </ProtectedRoute>
             }
           />
+          {/* Backward compat: old rentals path redirects to units */}
+          <Route path="/tenant/rentals" element={<Navigate to="/tenant/units" replace />} />
 
           {/* Borrower Routes */}
           <Route
