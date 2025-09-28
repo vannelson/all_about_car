@@ -31,6 +31,17 @@ import { fetchCars } from "../../../store/carsSlice";
 import CarProfile from "../CarProfile";
 import CarCardSkeleton from "../skeletons/CarCardSkeleton";
 import Pagination from "../Pagination";
+
+function buildSliderImages(selectedCar) {
+  if (!selectedCar) return [];
+  const imgs = [];
+  if (selectedCar.image) {
+    imgs.push({ image: selectedCar.image, alt: selectedCar.name });
+  }
+  const disp = selectedCar.images?.displayImages || selectedCar.raw?.displayImages || [];
+  (disp || []).forEach((url) => imgs.push({ image: url, alt: selectedCar?.name || "Car" }));
+  return imgs;
+}
 const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
   // No demo cars — always API
 
@@ -289,24 +300,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
         onClose={onModalClose}
         size="4xl"
       >
-        <BaseSlider
-          images={useMemo(() => {
-            const imgs = [];
-            if (selectedCar?.image)
-              imgs.push({ image: selectedCar.image, alt: selectedCar.name });
-            const disp =
-              selectedCar?.images?.displayImages ||
-              selectedCar?.raw?.displayImages ||
-              [];
-            (disp || []).forEach((url) =>
-              imgs.push({ image: url, alt: selectedCar?.name || "Car" })
-            );
-            return imgs;
-          }, [selectedCar])}
-          speed={500}
-          slidesToShow={1}
-          slidesToScroll={1}
-        />
+        <BaseSlider images={buildSliderImages(selectedCar)} speed={500} slidesToShow={1} slidesToScroll={1} />
         <Box mt={4}>
           <CarProfile
             specs={selectedCar?.specification || []}
