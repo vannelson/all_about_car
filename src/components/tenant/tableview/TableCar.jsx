@@ -17,8 +17,6 @@ import {
   Tbody,
   Tr,
   Td,
-  Skeleton,
-  SkeletonText,
 } from "@chakra-ui/react";
 
 import { InfoIcon } from "@chakra-ui/icons";
@@ -44,6 +42,8 @@ import BaseSlider from "../../base/BaseSlider";
 import CarProfile from "../CarProfile";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
+import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
+import Pagination from "../Pagination";
 
 const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   // const cars = [
@@ -174,36 +174,7 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
         <Tbody fontSize="sm">
           {listLoading
             ? Array.from({ length: 4 }).map((_, idx) => (
-                <Tr key={`sk-${idx}`}>
-                  <Td>
-                    <Flex align="flex-start" gap={3}>
-                      <Skeleton boxSize="80px" borderRadius="md" />
-                      <Box flex="1">
-                        <Skeleton height="16px" mb={2} />
-                        <SkeletonText noOfLines={2} spacing="2" />
-                      </Box>
-                    </Flex>
-                  </Td>
-                  <Td>
-                    <SkeletonText noOfLines={2} spacing="2" />
-                  </Td>
-                  <Td>
-                    <SkeletonText noOfLines={2} spacing="2" />
-                  </Td>
-                  <Td>
-                    <SkeletonText noOfLines={2} spacing="2" />
-                  </Td>
-                  <Td>
-                    <Skeleton height="24px" width="80px" />
-                  </Td>
-                  <Td>
-                    <Stack direction="column" spacing={2} align="center">
-                      <Skeleton height="28px" width="72px" />
-                      <Skeleton height="28px" width="72px" />
-                      <Skeleton height="28px" width="72px" />
-                    </Stack>
-                  </Td>
-                </Tr>
+                <TableCarRowSkeleton key={`sk-${idx}`} />
               ))
             : filtered.map((car, idx) => {
             const total = car.charge + car.extraCharge;
@@ -353,36 +324,13 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
           </>
         )}
       </BaseModal>
-      {/* Pagination: < 1 2 3 4 > */}
-      <Flex justify="center" align="center" gap={2} px={4} mt={4}>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => dispatch(fetchCars({ page: Math.max(1, (page || 1) - 1), limit }))}
-          isDisabled={(page || 1) <= 1}
-        >
-          {"<"}
-        </Button>
-        {Array.from({ length: Math.max(1, meta?.last_page || (hasNext ? (page || 1) + 1 : page || 1)) }, (_, i) => i + 1).map((p) => (
-          <Button
-            key={p}
-            size="sm"
-            colorScheme={p === (page || 1) ? "blue" : "gray"}
-            variant={p === (page || 1) ? "solid" : "outline"}
-            onClick={() => dispatch(fetchCars({ page: p, limit }))}
-          >
-            {p}
-          </Button>
-        ))}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => dispatch(fetchCars({ page: (page || 1) + 1, limit }))}
-          isDisabled={meta?.last_page ? (page || 1) >= meta.last_page : !hasNext}
-        >
-          {">"}
-        </Button>
-      </Flex>
+      <Pagination
+        page={page}
+        limit={limit}
+        hasNext={hasNext}
+        meta={meta}
+        onChange={(p, l) => dispatch(fetchCars({ page: p, limit: l }))}
+      />
     </Box>
   );
 };
