@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { extractBookingDetails } from "../../../utils/helpers/bookingHelpers";
 
 import {
@@ -45,8 +45,22 @@ import { fetchCars } from "../../../store/carsSlice";
 import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
 import Pagination from "../Pagination";
 
+// Build slider images array for BaseSlider from selected car
+function buildSliderImages(selectedCar) {
+  if (!selectedCar) return [];
+  const imgs = [];
+  if (selectedCar.image) {
+    imgs.push({ image: selectedCar.image, alt: selectedCar.name });
+  }
+  const disp =
+    selectedCar.images?.displayImages || selectedCar.raw?.displayImages || [];
+  (disp || []).forEach((url) =>
+    imgs.push({ image: url, alt: selectedCar?.name || "Car" })
+  );
+  return imgs;
+}
+
 const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
-  // const cars = [
   //   {
   //     name: "Tesla Model 3",
   //     image: "/cars/6_tesla/1.avif",
@@ -77,13 +91,19 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
 
   // No demo cars — always API
   const dispatch = useDispatch();
-  const { items: cars, page, limit, hasNext, listLoading, meta } = useSelector((s) => s.cars);
+  const {
+    items: cars,
+    page,
+    limit,
+    hasNext,
+    listLoading,
+    meta,
+  } = useSelector((s) => s.cars);
 
   useEffect(() => {
     if (!cars || cars.length === 0) {
       dispatch(fetchCars({ page: 1, limit: 6 }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Map UI filters -> API filters
@@ -92,9 +112,12 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
     if (filters?.brand) f["info_make"] = filters.brand;
     if (filters?.carType) f["info_carType"] = filters.carType;
     if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
-    if (filters?.availability === "yes") f["info_availabilityStatus"] = "available";
-    if (filters?.availability === "no") f["info_availabilityStatus"] = "unavailable";
-    if (filters?.seats && /^\d+$/.test(String(filters.seats))) f["spcs_seats"] = String(filters.seats);
+    if (filters?.availability === "yes")
+      f["info_availabilityStatus"] = "available";
+    if (filters?.availability === "no")
+      f["info_availabilityStatus"] = "unavailable";
+    if (filters?.seats && /^\d+$/.test(String(filters.seats)))
+      f["spcs_seats"] = String(filters.seats);
     if (filters?.plateNumber) f["info_plateNumber"] = filters.plateNumber;
     if (filters?.vin) f["info_vin"] = filters.vin;
     return f;
@@ -112,10 +135,26 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCar, setSelectedCar] = useState(null);
 
-  const handleOpenModal = (car) => {
-    setSelectedCar(car);
-    onOpen();
-  };
+  const onOpenModal = useCallback(
+    (car) => {
+      setSelectedCar(car);
+      onOpen();
+    },
+    [onOpen]
+  );
+
+  const onEdit = useCallback(
+    (car) => {
+      setSelectedCar(car);
+      onOpen();
+    },
+    [onOpen]
+  );
+
+  const onDelete = useCallback((car) => {
+    // eslint-disable-next-line no-alert
+    alert(`Delete ${car?.name || "unit"} (not yet implemented)`);
+  }, []);
 
   const iconColor = "gray.500";
   const getSpecIcon = (spec) => {
@@ -143,20 +182,29 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   };
 
   // Apply basic filtering on the client
-  const filtered = (cars || []).filter((car) => {
+  const filteredCars = useMemo(() => {
+    const list = cars || [];
     const q = String(query || "").toLowerCase();
-    const nameOk = !q || String(car.name || "").toLowerCase().includes(q);
-    const availability = filters.availability || "all";
-    const status = String(car.status || "");
-    const availOk =
-      availability === "all" ||
-      (availability === "yes" && status === "Available") ||
-      (availability === "no" && status !== "Available");
-    const rate = Number(car.rateAmount || car.rates?.daily || car.rates?.hourly || 0);
-    const priceCap = Number(filters.price || 0);
-    const priceOk = !priceCap || rate <= priceCap;
-    return nameOk && availOk && priceOk;
-  });
+    const availability = filters?.availability || "all";
+    const priceCap = Number(filters?.price || 0);
+    return list.filter((car) => {
+      const nameOk =
+        !q ||
+        String(car.name || "")
+          .toLowerCase()
+          .includes(q);
+      const status = String(car.status || "");
+      const availOk =
+        availability === "all" ||
+        (availability === "yes" && status === "Available") ||
+        (availability === "no" && status !== "Available");
+      const rate = Number(
+        car.rates?.daily || car.rates?.hourly || car.rateAmount || 0
+      );
+      const priceOk = !priceCap || rate <= priceCap;
+      return nameOk && availOk && priceOk;
+    });
+  }, [cars, query, filters?.availability, filters?.price]);
 
   return (
     <Box borderWidth="1px" borderRadius="lg" overflowX="auto" pb="4" bg="white">
@@ -176,141 +224,139 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
             ? Array.from({ length: 4 }).map((_, idx) => (
                 <TableCarRowSkeleton key={`sk-${idx}`} />
               ))
-            : filtered.map((car, idx) => {
-            const total = car.charge + car.extraCharge;
+            : filteredCars.map((car, idx) => {
+                const total = car.charge + car.extraCharge;
 
-            return (
-              <Tr
-                key={idx}
-                _hover={{ bg: "gray.50" }}
-                bg={car.status === "Overdue" ? "red.50" : "transparent"}
-              >
-                {/* Car Info */}
-                <Td>
-                  <Flex align="flex-start" gap={3}>
-                    <Image
-                      src={car.image}
-                      alt={car.name}
-                      boxSize="80px"
-                      borderRadius="md"
-                      objectFit="cover"
-                    />
-                    <Box>
-                      <Text fontWeight="semibold" color="gray.700" mb={1}>
-                        {car.name}
-                      </Text>
-                      <Stack spacing={0} fontSize="xs" pt={1}>
-                        <BaseListAndIcons
-                          specs={car.specification}
-                          IconfontSize={12}
-                          labelFontSize={12}
-                          mb={1}
-                          showMode={3}
-                        />
-                      </Stack>
-                    </Box>
-                  </Flex>
-                </Td>
-
-                {/* Renter Info */}
-                <Td>
-                  {car.status != "Available" && car.booking ? (
-                    <>
-                      <BaseListAndIcons
-                        specs={extractBookingDetails(car.booking, [
-                          "renter",
-                          "startDate_endDate",
-                          "actualReturn",
-                        ])}
-                      />
-                    </>
-                  ) : (
-                    ""
-                  )}
-                </Td>
-
-                {/* Rates */}
-                <Td>
-                  <CarRates rates={car.rates} direction={"vertical"} />
-                </Td>
-
-                {/* Payment Details */}
-                <Td>
-                  {car.status != "Available" ? (
-                    <PaymentPanel
-                      bgColor="white"
-                      rateAmount={car.rateAmount}
-                      extraCharge={car.extraCharge}
-                    />
-                  ) : (
-                    ""
-                  )}
-                </Td>
-
-                {/* Status */}
-                <Td>
-                  <Badge
-                    colorScheme={getStatusColor(car.status)}
-                    variant="solid"
-                    px={3}
-                    py={1}
-                    borderRadius="md"
+                return (
+                  <Tr
+                    key={car.id ?? `row-${idx}`}
+                    _hover={{ bg: "gray.50" }}
+                    bg={car.status === "Overdue" ? "red.50" : "transparent"}
                   >
-                    {car.status}
-                  </Badge>
-                </Td>
+                    {/* Car Info */}
+                    <Td>
+                      <Flex align="flex-start" gap={3}>
+                        <Image
+                          src={car.image}
+                          alt={car.name}
+                          boxSize="80px"
+                          borderRadius="md"
+                          objectFit="cover"
+                        />
+                        <Box>
+                          <Text fontWeight="semibold" color="gray.700" mb={1}>
+                            {car.name}
+                          </Text>
+                          <Stack spacing={0} fontSize="xs" pt={1}>
+                            <BaseListAndIcons
+                              specs={car.specification}
+                              IconfontSize={12}
+                              labelFontSize={12}
+                              mb={1}
+                              showMode={3}
+                            />
+                          </Stack>
+                        </Box>
+                      </Flex>
+                    </Td>
 
-                {/* Actions */}
-                <Td textAlign="center">
-                  <Stack direction="column" spacing={2} align="center">
-                    <Button
-                      size="sm"
-                      colorScheme="blue"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenModal(car);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      colorScheme="red"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // eslint-disable-next-line no-alert
-                        alert(`Delete ${car?.name || "unit"} (not yet implemented)`);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      leftIcon={<InfoIcon color={iconColor} />}
-                      onClick={() => handleOpenModal(car)}
-                    >
-                      More
-                    </Button>
-                  </Stack>
-                </Td>
-              </Tr>
-            );
-          })}
+                    {/* Renter Info */}
+                    <Td>
+                      {car.status != "Available" && car.booking ? (
+                        <>
+                          <BaseListAndIcons
+                            specs={extractBookingDetails(car.booking, [
+                              "renter",
+                              "startDate_endDate",
+                              "actualReturn",
+                            ])}
+                          />
+                        </>
+                      ) : (
+                        ""
+                      )}
+                    </Td>
+
+                    {/* Rates */}
+                    <Td>
+                      <CarRates rates={car.rates} direction={"vertical"} />
+                    </Td>
+
+                    {/* Payment Details */}
+                    <Td>
+                      {car.status != "Available" ? (
+                        <PaymentPanel
+                          bgColor="white"
+                          rateAmount={car.rateAmount}
+                          extraCharge={car.extraCharge}
+                        />
+                      ) : (
+                        ""
+                      )}
+                    </Td>
+
+                    {/* Status */}
+                    <Td>
+                      <Badge
+                        colorScheme={getStatusColor(car.status)}
+                        variant="solid"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                      >
+                        {car.status}
+                      </Badge>
+                    </Td>
+
+                    {/* Actions */}
+                    <Td textAlign="center">
+                      <Stack direction="column" spacing={2} align="center">
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(car);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          colorScheme="red"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(car);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          leftIcon={<InfoIcon color={iconColor} />}
+                          onClick={() => onOpenModal(car)}
+                        >
+                          More
+                        </Button>
+                      </Stack>
+                    </Td>
+                  </Tr>
+                );
+              })}
         </Tbody>
       </Table>
       {/* Details Modal */}
-      <BaseModal title={selectedCar?.name || "Car Details"} isOpen={isOpen} onClose={onClose} size="4xl">
+      <BaseModal
+        title={selectedCar?.name || "Car Details"}
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+      >
         {selectedCar && (
           <>
             <BaseSlider
-              images={(() => {
-                const imgs = [];
-                if (selectedCar?.image) imgs.push({ image: selectedCar.image, alt: selectedCar.name });
-                const disp = selectedCar?.images?.displayImages || selectedCar?.raw?.displayImages || [];
-                (disp || []).forEach((url) => imgs.push({ image: url, alt: selectedCar?.name || "Car" }));
-                return imgs;
-              })()}
+              images={buildSliderImages(selectedCar)}
               speed={500}
               slidesToShow={1}
               slidesToScroll={1}

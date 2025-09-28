@@ -15,7 +15,6 @@ import {
   InputLeftElement,
   HStack,
   Flex,
-  Spinner,
   Input,
   Heading,
 } from "@chakra-ui/react";
@@ -91,16 +90,11 @@ function Units() {
 
 function CarListTableOrCard({ query, onQueryChange, filters }) {
   const [isCardView, setIsCardView] = useState(true);
-  const [loading, setLoading] = useState(false);
   const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } =
     useDisclosure();
 
   const handleToggleView = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setIsCardView((prev) => !prev);
-      setLoading(false);
-    }, 300);
+    setIsCardView((prev) => !prev);
   };
 
   function handleModalOpen() {
@@ -147,11 +141,7 @@ function CarListTableOrCard({ query, onQueryChange, filters }) {
       </Box>
 
       {/* Table Or Grid */}
-      {loading ? (
-        <Flex justify="center" py={10}>
-          <Spinner size="xl" color="grey.800" thickness="4px" />
-        </Flex>
-      ) : isCardView ? (
+      {isCardView ? (
         <CardCar query={query} filters={filters} mode="manage" />
       ) : (
         <TableCar query={query} filters={filters} mode="manage" />

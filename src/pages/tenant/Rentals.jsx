@@ -16,7 +16,6 @@ import {
   InputGroup,
   HStack,
   Flex,
-  Spinner,
   Input,
 } from "@chakra-ui/react";
 
@@ -71,14 +70,9 @@ function Rentals() {
 
 function CarListTableOrCard() {
   const [isCardView, setIsCardView] = useState(true);
-  const [loading, setLoading] = useState(false);
 
   const handleToggleView = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setIsCardView((prev) => !prev);
-      setLoading(false);
-    }, 300); // 1 second delay
+    setIsCardView((prev) => !prev);
   };
 
   const {
@@ -126,11 +120,7 @@ function CarListTableOrCard() {
       </Box>
 
       {/* Table Or Grid */}
-      {loading ? (
-        <Flex justify="center" py={10}>
-          <Spinner size="xl" color="grey.800" thickness="4px" />
-        </Flex>
-      ) : isCardView ? (
+      {isCardView ? (
         <CardCar />
       ) : (
         <TableCar />
