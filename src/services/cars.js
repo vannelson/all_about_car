@@ -74,6 +74,50 @@ export async function createCarApi({
   return res.data;
 }
 
+export async function updateCarApi({
+  id,
+  fields,
+  features = [],
+  profileImage,
+  displayImages = [],
+  companyId,
+}) {
+  const form = new FormData();
+  Object.entries(fields || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) form.append(key, String(value));
+  });
+
+  if (companyId !== undefined && companyId !== null) {
+    form.set("company_id", String(companyId));
+  }
+
+  // features[] overwrite
+  features.forEach((f) => form.append("features[]", f));
+
+  // Optional images: only append if provided (to keep existing ones otherwise)
+  if (profileImage) {
+    if (profileImage instanceof File || profileImage instanceof Blob) {
+      form.append("profileImageFile", profileImage);
+    } else if (typeof profileImage === "string" && profileImage.startsWith("data:")) {
+      const f = dataUrlToFile(profileImage, "profile.png");
+      if (f) form.append("profileImageFile", f);
+    }
+  }
+  (displayImages || []).forEach((img, idx) => {
+    if (img instanceof File || img instanceof Blob) {
+      form.append("displayImagesFiles[]", img);
+    } else if (typeof img === "string" && img.startsWith("data:")) {
+      const f = dataUrlToFile(img, `display-${idx + 1}.png`);
+      if (f) form.append("displayImagesFiles[]", f);
+    }
+  });
+
+  // Some backends (Laravel) prefer method override for multipart updates
+  form.append("_method", "PUT");
+  const res = await axiosInstance.post(`/cars/${id}`, form);
+  return res.data;
+}
+
 // Fetch cars with pagination and includes per APIdocs
 export async function listCarsApi({ limit = 6, page = 1, includes = ["rates", "company", "bookings"], filters = {} } = {}) {
   const params = { limit, page };

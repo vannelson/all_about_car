@@ -40,6 +40,7 @@ import CarCardSkeleton from "../skeletons/CarCardSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
 import RateCreateModal from "../rates/RateCreateModal";
+import CarRegistrationSteps from "../CarRegistrationSteps";
 
 function buildSliderImages(selectedCar) {
   if (!selectedCar) return [];
@@ -183,6 +184,11 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
     onOpen: onRateOpen,
     onClose: onRateClose,
   } = useDisclosure();
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
 
   return (
     <Box>
@@ -306,7 +312,10 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                         <MenuList>
                           <MenuItem
                             icon={<FaEdit />}
-                            onClick={() => onEdit(car)}
+                            onClick={() => {
+                              setSelectedCar(car);
+                              onEditOpen();
+                            }}
                           >
                             Update
                           </MenuItem>
@@ -365,6 +374,22 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
         onClose={onRateClose}
         car={selectedCar}
       />
+
+      {/* Edit modal using registration steps in edit mode */}
+      <BaseModal
+        title={selectedCar?.name ? `Edit ${selectedCar.name}` : "Edit Car"}
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        size="6xl"
+        hassFooter={false}
+      >
+        <CarRegistrationSteps
+          mode="edit"
+          initialData={selectedCar?.raw || null}
+          carId={selectedCar?.id || null}
+          onClose={onEditClose}
+        />
+      </BaseModal>
 
       {/* Booking modal removed on Units page */}
     </Box>

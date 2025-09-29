@@ -52,6 +52,7 @@ import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
 import RateCreateModal from "../rates/RateCreateModal";
+import CarRegistrationSteps from "../CarRegistrationSteps";
 
 // Build slider images array for BaseSlider from selected car
 function buildSliderImages(selectedCar) {
@@ -147,6 +148,11 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
     onOpen: onRateOpen,
     onClose: onRateClose,
   } = useDisclosure();
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
 
   const onOpenModal = useCallback(
     (car) => {
@@ -159,9 +165,9 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   const onEdit = useCallback(
     (car) => {
       setSelectedCar(car);
-      onOpen();
+      onEditOpen();
     },
-    [onOpen]
+    [onEditOpen]
   );
 
   const onDelete = useCallback((car) => {
@@ -416,6 +422,20 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
         )}
       </BaseModal>
       <RateCreateModal isOpen={isRateOpen} onClose={onRateClose} car={selectedCar} />
+      <BaseModal
+        title={selectedCar?.name ? `Edit ${selectedCar.name}` : "Edit Car"}
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        size="6xl"
+        hassFooter={false}
+      >
+        <CarRegistrationSteps
+          mode="edit"
+          initialData={selectedCar?.raw || null}
+          carId={selectedCar?.id || null}
+          onClose={onEditClose}
+        />
+      </BaseModal>
       <Pagination
         page={page}
         limit={limit}
