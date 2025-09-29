@@ -32,6 +32,7 @@ import { fetchCars } from "../../../store/carsSlice";
 import CarProfile from "../CarProfile";
 import CarCardSkeleton from "../skeletons/CarCardSkeleton";
 import Pagination from "../Pagination";
+import CarIdentity from "../CarIdentity";
 
 function buildSliderImages(selectedCar) {
   if (!selectedCar) return [];
@@ -224,19 +225,14 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                     </Badge>
                   </CardHeader>
 
-                  <CardBody fontSize="sm" flex="1">
-                    <VStack align="start" spacing={0} mb={2}>
-                      <Text fontWeight="bold" color="gray.800" noOfLines={1}>
-                        {car?.raw?.info_make || car.name || "-"}
-                      </Text>
-                      {car?.raw?.info_model && (
-                        <Text fontSize="sm" color="gray.600" noOfLines={1}>
-                          {car.raw.info_model}
-                        </Text>
-                      )}
-                    </VStack>
+              <CardBody fontSize="sm" flex="1">
+                <CarIdentity
+                  brand={car?.raw?.info_make || car.name}
+                  model={car?.raw?.info_model}
+                  type={car?.raw?.info_carType}
+                />
 
-                    <CarRates rates={car.rates} />
+                <CarRates rates={car.rates} />
                     <Divider my={3} />
                     {car.status == "Available" ? (
                       <>
