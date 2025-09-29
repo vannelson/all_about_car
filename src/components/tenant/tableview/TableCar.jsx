@@ -44,6 +44,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
 import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
 import Pagination from "../Pagination";
+import CarIdentity from "../CarIdentity";
 
 // Build slider images array for BaseSlider from selected car
 function buildSliderImages(selectedCar) {
@@ -239,14 +240,16 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                         <Image
                           src={car.image}
                           alt={car.name}
-                          boxSize="80px"
+                          boxSize="150px"
                           borderRadius="md"
                           objectFit="cover"
                         />
-                        <Box>
-                          <Text fontWeight="semibold" color="gray.700" mb={1}>
-                            {car.name}
-                          </Text>
+                        <Box minW={0}>
+                          <CarIdentity
+                            brand={car?.raw?.info_make || car.name}
+                            model={car?.raw?.info_model}
+                            type={car?.raw?.info_carType}
+                          />
                           <Stack spacing={0} fontSize="xs" pt={1}>
                             <BaseListAndIcons
                               specs={car.specification}
@@ -309,10 +312,17 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                     </Td>
 
                     {/* Actions */}
-                    <Td textAlign="center">
-                      <Stack direction="column" spacing={2} align="center">
+                    <Td textAlign="center" px={2} py={3}>
+                      <Stack
+                        direction="column"
+                        spacing={2}
+                        w="full"
+                        align="stretch"
+                      >
+                        {/* Edit */}
                         <Button
                           size="sm"
+                          w="full"
                           colorScheme="blue"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -321,8 +331,11 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                         >
                           Edit
                         </Button>
+
+                        {/* Delete */}
                         <Button
                           size="sm"
+                          w="full"
                           colorScheme="red"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -331,8 +344,11 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                         >
                           Delete
                         </Button>
+
+                        {/* More */}
                         <Button
                           size="sm"
+                          w="full"
                           variant="outline"
                           leftIcon={<InfoIcon color={iconColor} />}
                           onClick={() => onOpenModal(car)}

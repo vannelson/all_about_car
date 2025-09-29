@@ -1,14 +1,28 @@
 import React from "react";
-import { HStack, VStack, Text, Tag, TagLabel, useColorModeValue } from "@chakra-ui/react";
+import {
+  HStack,
+  VStack,
+  Text,
+  Tag,
+  TagLabel,
+  useColorModeValue,
+} from "@chakra-ui/react";
+import CarBrandLogo from "./CarBrandLogo";
 
 const CarIdentity = ({ brand, model, type }) => {
   const brandColor = useColorModeValue("gray.900", "white");
   const modelColor = useColorModeValue("gray.600", "gray.400");
 
   return (
-    <HStack w="full" justify="space-between" align="start" mb={2} spacing={3}>
+    <HStack w="full" justify="space-between" align="center" mb={2} spacing={3}>
+      <CarBrandLogo brand={brand} size={35} />
       <VStack align="start" spacing={0} flex={1} minW={0}>
-        <Text fontWeight="semibold" fontSize="md" color={brandColor} noOfLines={1}>
+        <Text
+          fontWeight="semibold"
+          fontSize="md"
+          color={brandColor}
+          noOfLines={1}
+        >
           {brand || "-"}
         </Text>
         {model ? (
@@ -27,4 +41,3 @@ const CarIdentity = ({ brand, model, type }) => {
 };
 
 export default CarIdentity;
-

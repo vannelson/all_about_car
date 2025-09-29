@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
+  IconButton,
 } from "@chakra-ui/react";
 
 import { InfoIcon } from "@chakra-ui/icons";
@@ -202,7 +203,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                   flexDirection="column"
                 >
                   {/* Image & Status */}
-                  <CardHeader p={0} h="180px">
+                  <CardHeader p={0} h="180px" position="relative">
                     <Image
                       src={car.image}
                       alt={car.name}
@@ -223,16 +224,32 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                     >
                       {car.status}
                     </Badge>
+                    {car?.raw?.info_carType && (
+                      <Box
+                        position="absolute"
+                        bottom={2}
+                        right={2}
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                        bg="blackAlpha.900"
+                        color="white"
+                        fontSize="xs"
+                        textTransform="uppercase"
+                        letterSpacing="wide"
+                      >
+                        {car.raw.info_carType}
+                      </Box>
+                    )}
                   </CardHeader>
 
-              <CardBody fontSize="sm" flex="1">
-                <CarIdentity
-                  brand={car?.raw?.info_make || car.name}
-                  model={car?.raw?.info_model}
-                  type={car?.raw?.info_carType}
-                />
+                  <CardBody fontSize="sm" flex="1">
+                    <CarIdentity
+                      brand={car?.raw?.info_make || car.name}
+                      model={car?.raw?.info_model}
+                    />
 
-                <CarRates rates={car.rates} />
+                    <CarRates rates={car.rates} />
                     <Divider my={3} />
                     {car.status == "Available" ? (
                       <>
@@ -253,7 +270,8 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                     )}
                   </CardBody>
                   <CardFooter>
-                    <Flex gap={3} w="full">
+                    <Flex gap={2} w="full">
+                      {/* Keep "More Info" as a text button */}
                       <Button
                         flex={1}
                         size="sm"
@@ -261,26 +279,26 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                         leftIcon={<InfoIcon />}
                         onClick={() => onOpenInfo(car)}
                       >
-                        Info
+                        More Info
                       </Button>
-                      <Button
-                        flex={1}
+
+                      {/* Edit as icon button */}
+                      <IconButton
                         size="sm"
                         colorScheme="blue"
-                        leftIcon={<FaEdit />}
+                        aria-label="Edit"
+                        icon={<FaEdit />}
                         onClick={() => onEdit(car)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        flex={1}
+                      />
+
+                      {/* Delete as icon button */}
+                      <IconButton
                         size="sm"
                         colorScheme="red"
-                        leftIcon={<FaTrash />}
+                        aria-label="Delete"
+                        icon={<FaTrash size={14} />}
                         onClick={() => onDelete(car)}
-                      >
-                        Delete
-                      </Button>
+                      />
                     </Flex>
                   </CardFooter>
                 </Card>
