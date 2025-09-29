@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 
 import { InfoIcon } from "@chakra-ui/icons";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaMoneyBillWave } from "react-icons/fa";
 
 import BaseListAndIcons from "../../base/BaseListAndIcons";
 import PaymentPanel from "../payment/PaymentPanel";
@@ -34,6 +34,7 @@ import CarProfile from "../CarProfile";
 import CarCardSkeleton from "../skeletons/CarCardSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
+import RateCreateModal from "../rates/RateCreateModal";
 
 function buildSliderImages(selectedCar) {
   if (!selectedCar) return [];
@@ -172,6 +173,12 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
     alert(`Delete ${car?.name || "unit"} (not yet implemented)`);
   }, []);
 
+  const {
+    isOpen: isRateOpen,
+    onOpen: onRateOpen,
+    onClose: onRateClose,
+  } = useDisclosure();
+
   return (
     <Box>
       <Grid
@@ -299,6 +306,17 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                         icon={<FaTrash size={14} />}
                         onClick={() => onDelete(car)}
                       />
+                      {/* Create Rate */}
+                      <IconButton
+                        size="sm"
+                        colorScheme="purple"
+                        aria-label="Add Rate"
+                        icon={<FaMoneyBillWave />}
+                        onClick={() => {
+                          setSelectedCar(car);
+                          onRateOpen();
+                        }}
+                      />
                     </Flex>
                   </CardFooter>
                 </Card>
@@ -330,6 +348,8 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
           <CarProfile raw={selectedCar?.raw || null} />
         </Box>
       </BaseModal>
+
+      <RateCreateModal isOpen={isRateOpen} onClose={onRateClose} car={selectedCar} />
 
       {/* Booking modal removed on Units page */}
     </Box>

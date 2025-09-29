@@ -188,3 +188,34 @@ export async function createCarRateApi({
   const res = await axiosInstance.post("/car-rates", body);
   return res.data;
 }
+
+// List car rates with filters, order, pagination
+export async function listCarRatesApi({ page = 1, limit = 10, filters = {}, order = [] } = {}) {
+  const params = { page, limit };
+  if (filters && typeof filters === "object") {
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && String(v).length > 0) {
+        params[`filters[${k}]`] = v;
+      }
+    });
+  }
+  if (Array.isArray(order) && order.length === 2) {
+    params[`order[0]`] = order[0];
+    params[`order[1]`] = order[1];
+  }
+  const res = await axiosInstance.get("/car-rates", { params });
+  return res.data; // { data, meta, links }
+}
+
+// Update a car rate (e.g., status)
+export async function updateCarRateApi({ id, status }) {
+  const body = { status };
+  const res = await axiosInstance.put(`/car-rates/${id}`, body);
+  return res.data;
+}
+
+// Delete a rate
+export async function deleteCarRateApi(id) {
+  const res = await axiosInstance.delete(`/car-rates/${id}`);
+  return res.data;
+}

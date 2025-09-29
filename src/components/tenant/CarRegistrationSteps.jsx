@@ -55,7 +55,6 @@ const steps = [
   { title: "Specs", description: "Specifications" },
   { title: "Features", description: "Add Features" },
   { title: "Pictures", description: "Upload " },
-  { title: "Rates", description: "Pricing" },
   { title: "Review", description: "Preview & Submit" },
 ];
 
@@ -77,13 +76,7 @@ const CarRegistrationSteps = () => {
   const [displayImages, setDisplayImages] = useState([]);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [displayImageFiles, setDisplayImageFiles] = useState([]);
-  const [rateData, setRateData] = useState({
-    rate: 0,
-    rate_type: "daily",
-    name: "Standard Rate",
-    start_date: new Date().toISOString().slice(0, 10),
-    status: "active",
-  });
+  // Rates step removed; handled via separate modal elsewhere
 
   const [formData, setFormData] = useState({
     info_make: "",
@@ -255,78 +248,6 @@ const CarRegistrationSteps = () => {
           </VStack>
         );
       case 4:
-        // Rates step
-        return (
-          <VStack spacing={6} align="stretch">
-            <Heading as="h2" size="md" color="blue.700">
-              Rates
-            </Heading>
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Rate Amount</FormLabel>
-                <NumberInput
-                  min={0}
-                  value={rateData.rate}
-                  onChange={(v) =>
-                    setRateData((p) => ({ ...p, rate: Number(v) || 0 }))
-                  }
-                >
-                  <NumberInputField />
-                  <NumberInputStepper>
-                    <NumberIncrementStepper />
-                    <NumberDecrementStepper />
-                  </NumberInputStepper>
-                </NumberInput>
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Rate Type</FormLabel>
-                <Select
-                  value={rateData.rate_type}
-                  onChange={(e) =>
-                    setRateData((p) => ({ ...p, rate_type: e.target.value }))
-                  }
-                >
-                  <option value="daily">Daily</option>
-                  <option value="hourly">Hourly</option>
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Name</FormLabel>
-                <Input
-                  value={rateData.name}
-                  onChange={(e) =>
-                    setRateData((p) => ({ ...p, name: e.target.value }))
-                  }
-                />
-              </FormControl>
-            </SimpleGrid>
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-              <FormControl>
-                <FormLabel>Start Date</FormLabel>
-                <Input
-                  type="date"
-                  value={rateData.start_date}
-                  onChange={(e) =>
-                    setRateData((p) => ({ ...p, start_date: e.target.value }))
-                  }
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  value={rateData.status}
-                  onChange={(e) =>
-                    setRateData((p) => ({ ...p, status: e.target.value }))
-                  }
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </Select>
-              </FormControl>
-            </SimpleGrid>
-          </VStack>
-        );
-      case 5:
         return (
           <HStack align="start" spacing={5} width="100%">
             {/* Main Vehicle Card - Column 1 */}

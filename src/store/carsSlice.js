@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { createCarApi, listCarsApi, mapCarToViewModel, createCarRateApi } from "../services/cars";
+import { createCarApi, listCarsApi, mapCarToViewModel } from "../services/cars";
 
 export const createCar = createAsyncThunk(
   "cars/createCar",
@@ -41,25 +41,7 @@ export const createCar = createAsyncThunk(
         displayImages,
         companyId,
       });
-      // If we have to create a rate after creating the car
-      try {
-        const createdCar = res?.data || res?.car || null;
-        const newCarId = createdCar?.id || res?.id;
-        if (newCarId && rateData && (rateData.rate || rateData.rate === 0)) {
-          await createCarRateApi({
-            car_id: newCarId,
-            rate: rateData.rate,
-            rate_type: rateData.rate_type || "daily",
-            name: rateData.name || "Standard Rate",
-            start_date: rateData.start_date,
-            status: rateData.status || "active",
-          });
-        }
-      } catch (e) {
-        // Rate creation failure shouldn't block car creation, but surface a warning
-        // eslint-disable-next-line no-console
-        console.warn("Rate creation failed:", e?.message || e);
-      }
+      // Rates are now created via a separate modal (not during car creation)
       return res;
     } catch (err) {
       return rejectWithValue(err?.data || { message: err.message });

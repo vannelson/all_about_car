@@ -45,6 +45,7 @@ import { fetchCars } from "../../../store/carsSlice";
 import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
+import RateCreateModal from "../rates/RateCreateModal";
 
 // Build slider images array for BaseSlider from selected car
 function buildSliderImages(selectedCar) {
@@ -135,6 +136,11 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   }, [apiFilters]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCar, setSelectedCar] = useState(null);
+  const {
+    isOpen: isRateOpen,
+    onOpen: onRateOpen,
+    onClose: onRateClose,
+  } = useDisclosure();
 
   const onOpenModal = useCallback(
     (car) => {
@@ -345,6 +351,20 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                           Delete
                         </Button>
 
+                        {/* Rate */}
+                        <Button
+                          size="sm"
+                          w="full"
+                          colorScheme="purple"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCar(car);
+                            onRateOpen();
+                          }}
+                        >
+                          Rate
+                        </Button>
+
                         {/* More */}
                         <Button
                           size="sm"
@@ -386,6 +406,7 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
           </>
         )}
       </BaseModal>
+      <RateCreateModal isOpen={isRateOpen} onClose={onRateClose} car={selectedCar} />
       <Pagination
         page={page}
         limit={limit}

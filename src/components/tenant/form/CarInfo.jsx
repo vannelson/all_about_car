@@ -58,7 +58,7 @@ const CarInfo = ({
             min={1990}
             max={new Date().getFullYear() + 1}
             value={formData.info_year}
-            onChange={(value) => handleNumberChange("year", value)}
+            onChange={(value) => handleNumberChange("info_year", value)}
           >
             <NumberInputField />
             <NumberInputStepper>
@@ -151,7 +151,7 @@ const CarInfo = ({
           <NumberInput
             min={0}
             value={formData.info_mileage}
-            onChange={(value) => handleNumberChange("mileage", value)}
+            onChange={(value) => handleNumberChange("info_mileage", value)}
           >
             <NumberInputField />
             <NumberInputStepper>

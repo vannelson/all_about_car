@@ -142,171 +142,7 @@ sample output
             ],
             "rates": []
         },
-        {
-            "id": 34,
-            "company_id": 5,
-            "company": {
-                "id": 5,
-                "name": "Fadel-Pacocha",
-                "address": "756 Weissnat Divide Apt. 030\nWest Kellie, LA 57307",
-                "industry": "doloribus",
-                "user_id": 8
-            },
-            "info_make": "Hyundai",
-            "info_model": "Hyundai Elantra",
-            "info_year": "2025",
-            "info_age": "10+",
-            "info_carType": "SEDAN",
-            "info_plateNumber": "23123",
-            "info_vin": "2312323",
-            "info_availabilityStatus": "available",
-            "info_location": "local",
-            "info_mileage": 0,
-            "spcs_seats": 3,
-            "spcs_largeBags": 1,
-            "spcs_smallBags": 2,
-            "spcs_engineSize": 1998,
-            "spcs_transmission": "Automatic",
-            "spcs_fuelType": "Petrol",
-            "spcs_fuelEfficiency": "7.60",
-            "features": [
-                "Keyless Entry",
-                "5 Star ANCAP Rating",
-                "8\" Touchscreen Entertainment",
-                "Backup Camera",
-                "Heated Seats"
-            ],
-            "profileImage": "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
-            "displayImages": [
-                "http://127.0.0.1:8000/storage/cars/34/displayImages/Upr9macBSNGuvpqHEcdwrmUHTBvEfLWi2tPIN6n7.png",
-                "http://127.0.0.1:8000/storage/cars/34/displayImages/bChZwhiWyBhk5I16wJFT5jeRUAPDgRvILZ4IV5L1.png",
-                "http://127.0.0.1:8000/storage/cars/34/displayImages/ER6rXTfR4D1DPSO9hALSgbBwNIEQ2rHxdIlrBYSg.png"
-            ],
-            "rates": []
-        },
-        {
-            "id": 33,
-            "company_id": 5,
-            "company": {
-                "id": 5,
-                "name": "Fadel-Pacocha",
-                "address": "756 Weissnat Divide Apt. 030\nWest Kellie, LA 57307",
-                "industry": "doloribus",
-                "user_id": 8
-            },
-            "info_make": "Kia",
-            "info_model": "Kia Sorento AWD",
-            "info_year": "2025",
-            "info_age": "0-3",
-            "info_carType": "SEDAN",
-            "info_plateNumber": "SALVP2BG8EH123456",
-            "info_vin": "SALVP2BG8EH123456",
-            "info_availabilityStatus": "available",
-            "info_location": "Local",
-            "info_mileage": 0,
-            "spcs_seats": 5,
-            "spcs_largeBags": 1,
-            "spcs_smallBags": 2,
-            "spcs_engineSize": 1998,
-            "spcs_transmission": "Automatic",
-            "spcs_fuelType": "Petrol",
-            "spcs_fuelEfficiency": "7.60",
-            "features": [
-                "Keyless Entry",
-                "5 Star ANCAP Rating",
-                "8\" Touchscreen Entertainment",
-                "Backup Camera"
-            ],
-            "profileImage": "http://127.0.0.1:8000/storage/cars/33/profileImage/wEEYlX0LEWeCjplwAVa21ErwMnYOD51vusq9KvSA.png",
-            "displayImages": [
-                "http://127.0.0.1:8000/storage/cars/33/displayImages/uqgP1zzdLcEgUKXyMhcGkS1iJggTAvlDQ5WYb1af.png",
-                "http://127.0.0.1:8000/storage/cars/33/displayImages/lXjpLnW1eUH548XqVNzhIYDwQUuY81tHSKqMzYwY.png",
-                "http://127.0.0.1:8000/storage/cars/33/displayImages/ynmBAcVtBZBG9Jbgu2xIlJwhdSBtdeyay7xLWJOr.png"
-            ],
-            "rates": []
-        },
-        {
-            "id": 32,
-            "company_id": 5,
-            "company": {
-                "id": 5,
-                "name": "Fadel-Pacocha",
-                "address": "756 Weissnat Divide Apt. 030\nWest Kellie, LA 57307",
-                "industry": "doloribus",
-                "user_id": 8
-            },
-            "info_make": "Hyundai",
-            "info_model": "Hyundai Accent",
-            "info_year": "2025",
-            "info_age": "0-3",
-            "info_carType": "HATCHBACK",
-            "info_plateNumber": "WDBUF56X98B123456",
-            "info_vin": "WDBUF56X98B123456",
-            "info_availabilityStatus": "available",
-            "info_location": "Local",
-            "info_mileage": 0,
-            "spcs_seats": 4,
-            "spcs_largeBags": 1,
-            "spcs_smallBags": 2,
-            "spcs_engineSize": 1998,
-            "spcs_transmission": "Manual",
-            "spcs_fuelType": "Petrol",
-            "spcs_fuelEfficiency": "7.60",
-            "features": [
-                "Keyless Entry",
-                "Apple CarPlay",
-                "Android Auto"
-            ],
-            "profileImage": "http://127.0.0.1:8000/storage/cars/32/profileImage/VZHmop5q165vXq4LxojcquFTRIfZDxn8TVsRq7oA.png",
-            "displayImages": [
-                "http://127.0.0.1:8000/storage/cars/32/displayImages/GEZxRwJGg4bzLzXBRTQu2MqIozu1zwYafXMD9Zvd.png",
-                "http://127.0.0.1:8000/storage/cars/32/displayImages/44c3POq8I1cmiispmSB0G3rIxvdkB1iZRqXuPABF.png",
-                "http://127.0.0.1:8000/storage/cars/32/displayImages/XoexBogbmYA57SLaWmIBgpMOTou1hgDwuYQf1YxL.png"
-            ],
-            "rates": []
-        },
-        {
-            "id": 31,
-            "company_id": 5,
-            "company": {
-                "id": 5,
-                "name": "Fadel-Pacocha",
-                "address": "756 Weissnat Divide Apt. 030\nWest Kellie, LA 57307",
-                "industry": "doloribus",
-                "user_id": 8
-            },
-            "info_make": "Ford",
-            "info_model": "Ford Explorer ST 4x4",
-            "info_year": "2025",
-            "info_age": "4-6",
-            "info_carType": "COUPE",
-            "info_plateNumber": "1HGCM82633A004352",
-            "info_vin": "JTMZK33V98J123456",
-            "info_availabilityStatus": "available",
-            "info_location": "Local",
-            "info_mileage": 0,
-            "spcs_seats": 6,
-            "spcs_largeBags": 1,
-            "spcs_smallBags": 2,
-            "spcs_engineSize": 2002,
-            "spcs_transmission": "Manual",
-            "spcs_fuelType": "Petrol",
-            "spcs_fuelEfficiency": "7.60",
-            "features": [
-                "Keyless Entry",
-                "5 Star ANCAP Rating",
-                "8\" Touchscreen Entertainment",
-                "Bluetooth",
-                "Alloy Wheels"
-            ],
-            "profileImage": "http://127.0.0.1:8000/storage/cars/31/profileImage/kVlcDezbe6l7C1Zp3JL3wOxRZjunBPiVYtDSFanb.png",
-            "displayImages": [
-                "http://127.0.0.1:8000/storage/cars/31/displayImages/01JtABXGsoFnHTXBBdB8BvNjxQObqRhdw4BFnxhb.png",
-                "http://127.0.0.1:8000/storage/cars/31/displayImages/YyNHlme9zyRSfF5pTD8PIVXlplCT8VPxKCg8jT8E.png",
-                "http://127.0.0.1:8000/storage/cars/31/displayImages/Rww4ZHsn54zef1XCyMVKoag3klGlQeldeXrD9iCs.png"
-            ],
-            "rates": []
-        }
+       
     ],
     "links": {
         "first": "http://127.0.0.1:8000/api/cars?page=1",
@@ -343,7 +179,9 @@ sample output
 }
 
 
-Rates
+
+
+Rates Create
 post
 http://127.0.0.1:8000/api/car-rates 
 {
@@ -352,6 +190,90 @@ http://127.0.0.1:8000/api/car-rates
   "rate": 2500,
   "rate_type": "daily",
   "start_date": "2025-10-01",
+  "status": "active"
+}
+
+
+lIsting Table
+GET
+http://127.0.0.1:8000/api/car-rates?filters[name]=Regular&order[0]=id&order[1]=asc&limit=10&page=1
+
+
+Ouput sample
+{
+    "status": "success",
+    "message": "Car rates retrieved successfully!",
+    "data": [
+        {
+            "id": 17,
+            "car_id": 35,
+            "name": "Standard Rate",
+            "rate": "5000.00",
+            "rate_type": "daily",
+            "start_date": "2025-09-29",
+            "status": "active"
+        }
+    ],
+    "links": {
+        "first": "http://127.0.0.1:8000/api/car-rates?page=1",
+        "last": "http://127.0.0.1:8000/api/car-rates?page=1",
+        "prev": null,
+        "next": null
+    },
+    "meta": {
+        "current_page": 1,
+        "from": 1,
+        "last_page": 1,
+        "links": [
+            {
+                "url": null,
+                "label": "&laquo; Previous",
+                "active": false
+            },
+            {
+                "url": "http://127.0.0.1:8000/api/car-rates?page=1",
+                "label": "1",
+                "active": true
+            },
+            {
+                "url": null,
+                "label": "Next &raquo;",
+                "active": false
+            }
+        ],
+        "path": "http://127.0.0.1:8000/api/car-rates",
+        "per_page": 10,
+        "to": 1,
+        "total": 1
+    }
+}
+
+
+
+
+Update rates
+PUT
+http://127.0.0.1:8000/api/car-rates/1
+
+Body 
+{
+  "name": "Regular Rate",
+  "rate": 2500,
+  "rate_type": "daily",
+  "start_date": "2025-10-01",
   "status": "inactive"
 }
+
+
+utput smaple
+{
+    "message": "Car rate updated successfully!"
+}
+
+
+Delete Rates
+http://127.0.0.1:8000/api/car-rates/1
+Delete 
+http://127.0.0.1:8000/api/car-rates/17
+
 
