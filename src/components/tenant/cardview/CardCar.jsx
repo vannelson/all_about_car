@@ -327,10 +327,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
           slidesToScroll={1}
         />
         <Box mt={4}>
-          <CarProfile
-            specs={selectedCar?.specification || []}
-            otherDesc={selectedCar?.raw?.features || []}
-          />
+          <CarProfile raw={selectedCar?.raw || null} />
         </Box>
       </BaseModal>
 

@@ -1,110 +1,101 @@
 import {
   Box,
-  Text,
   VStack,
   Heading,
   HStack,
-  Flex,
-  Divider,
   SimpleGrid,
+  GridItem,
 } from "@chakra-ui/react";
-import {
-  FaGasPump,
-  FaCogs,
-  FaSuitcase,
-  FaUsers,
-  FaCalendarAlt,
-  FaSuitcaseRolling,
-  FaTachometerAlt,
-  FaArrowRight,
-  FaCheckCircle,
-} from "react-icons/fa";
+import { FaCheckCircle } from "react-icons/fa";
+import CarSpecsGrid from "./CarSpecsGrid";
+import CarInfoSummary from "./CarInfoSummary";
 
-const DEFAULT_SPECS = [
-  { icon: FaCalendarAlt, label: "0 - 3 year(s) old" },
-  { icon: FaUsers, label: "5 seats" },
-  { icon: FaSuitcaseRolling, label: "1 large bag" },
-  { icon: FaSuitcase, label: "2 small bags" },
-  { icon: FaCogs, label: "1998 cc engine" },
-  { icon: FaCogs, label: "Automatic" },
-  { icon: FaGasPump, label: "Petrol" },
-  { icon: FaTachometerAlt, label: "7.6L / 100km" },
-];
+const CarProfile = ({ raw = null, specs = null, otherDesc = null }) => {
+  const formData = raw
+    ? {
+        info_make: raw.info_make,
+        info_model: raw.info_model,
+        info_year: raw.info_year,
+        info_age: raw.info_age,
+        info_carType: raw.info_carType,
+        info_plateNumber: raw.info_plateNumber,
+        info_vin: raw.info_vin,
+        info_availabilityStatus: raw.info_availabilityStatus,
+        info_location: raw.info_location,
+        info_mileage: raw.info_mileage,
+        spcs_seats: raw.spcs_seats,
+        spcs_largeBags: raw.spcs_largeBags,
+        spcs_smallBags: raw.spcs_smallBags,
+        spcs_engineSize: raw.spcs_engineSize,
+        spcs_transmission: raw.spcs_transmission,
+        spcs_fuelType: raw.spcs_fuelType,
+        spcs_fuelEfficiency: raw.spcs_fuelEfficiency,
+        spcs_vehicleType: raw.info_carType,
+      }
+    : null;
 
-const DEFAULT_OTHER = [
-  "Keyless entry",
-  "5 Star ANCAP Rating",
-  '8" Touchscreen Entertainment',
-  "Apple Carplay and Android Auto",
-  "Bluetooth Audio",
-];
-
-const fallbackIcon = FaCogs;
-
-function iconForKey(key = "") {
-  const k = String(key).toLowerCase();
-  if (k.includes("seat")) return FaUsers;
-  if ((k.includes("large") && k.includes("bag")) || k.includes("largebags"))
-    return FaSuitcaseRolling;
-  if ((k.includes("small") && k.includes("bag")) || k.includes("smallbags") || k.includes("luggage"))
-    return FaSuitcase;
-  if (k.includes("engine")) return FaCogs;
-  if (k.includes("transmission")) return FaCogs;
-  if (k.includes("fuel") && k.includes("efficiency")) return FaTachometerAlt;
-  if (k.includes("fuel")) return FaGasPump;
-  if (k.includes("age") || k.includes("year")) return FaCalendarAlt;
-  return fallbackIcon;
-}
-
-const CarProfile = ({ specs = DEFAULT_SPECS, otherDesc = DEFAULT_OTHER }) => {
-  // Normalize specs: accept strings or {key, value} or {label, icon}
-  const normalizedSpecs = (specs || []).map((s) => {
-    if (typeof s === "string") return { label: s, icon: fallbackIcon };
-    if (s && typeof s === "object")
-      return {
-        label: s.label || String(s.value || ""),
-        icon: s.icon || iconForKey(s.key || s.label || s.value),
-      };
-    return { label: String(s), icon: fallbackIcon };
-  });
+  const features = otherDesc || raw?.features || [];
 
   return (
     <Box p={6} pt={5} bg="white" mx="auto" borderRadius="md">
-      <Flex gap={8} wrap="wrap">
-        {/* Specification List */}
-        <Box flex="1">
-          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
-            Specification
-          </Heading>
-          <SimpleGrid columns={[1, 2]} spacingY={3} spacingX={6}>
-            {normalizedSpecs.map((item, idx) => (
-              <HStack key={idx} spacing={3} align="center">
-                <item.icon size={20} color="#4A5568" />
-                <Text fontWeight="semibold" color="gray.700">
-                  {item.label}
-                </Text>
-              </HStack>
-            ))}
-          </SimpleGrid>
-        </Box>
+      <VStack align="stretch" spacing={6}>
+        {/* Car Info (5 cols) + Specs + Features (7 cols) */}
+        {formData && (
+          <SimpleGrid columns={{ base: 1, md: 12 }} spacing={6}>
+            {/* Car Info */}
+            <GridItem colSpan={{ base: 12, md: 5 }}>
+              <Heading size="md" mb={3} color="gray.800" fontWeight="semibold">
+                Car Info
+              </Heading>
+              <CarInfoSummary raw={formData} />
+            </GridItem>
 
-        {/* Other Description List */}
-        <Box flex="1">
-          <Heading size="md" mb={4} color="gray.800" fontWeight="semibold">
-            Other Features
-          </Heading>
-          <VStack align="flex-start" spacing={3}>
-            {otherDesc.map((text, idx) => (
-              <HStack key={idx} spacing={3}>
-                <FaCheckCircle size={18} color="green" />
-                <Text fontWeight="semibold" color="gray.700">
-                  {text}
-                </Text>
-              </HStack>
-            ))}
-          </VStack>
-        </Box>
-      </Flex>
+            {/* Specs + Features */}
+            <GridItem colSpan={{ base: 12, md: 7 }}>
+              <VStack align="stretch" spacing={6}>
+                {/* Specifications */}
+                <Box>
+                  <Heading
+                    size="md"
+                    mb={3}
+                    color="gray.800"
+                    fontWeight="semibold"
+                  >
+                    Specifications
+                  </Heading>
+                  <CarSpecsGrid
+                    formData={formData}
+                    columns={{ base: 2, md: 3 }}
+                    spacing={4}
+                  />
+                </Box>
+
+                {/* Features */}
+                {Array.isArray(features) && features.length > 0 && (
+                  <Box>
+                    <Heading
+                      size="md"
+                      mb={3}
+                      color="gray.800"
+                      fontWeight="semibold"
+                    >
+                      Features
+                    </Heading>
+                    <VStack align="flex-start" spacing={3}>
+                      {features.map((text, idx) => (
+                        <HStack key={idx} spacing={3}>
+                          <FaCheckCircle size={18} color="green" />
+                          <span>{text}</span>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </Box>
+                )}
+              </VStack>
+            </GridItem>
+          </SimpleGrid>
+        )}
+      </VStack>
     </Box>
   );
 };
