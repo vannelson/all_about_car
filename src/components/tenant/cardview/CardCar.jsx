@@ -16,10 +16,15 @@ import {
   CardBody,
   CardFooter,
   IconButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 
 import { InfoIcon } from "@chakra-ui/icons";
 import { FaEdit, FaTrash, FaMoneyBillWave } from "react-icons/fa";
+import { FiMoreVertical } from "react-icons/fi";
 
 import BaseListAndIcons from "../../base/BaseListAndIcons";
 import PaymentPanel from "../payment/PaymentPanel";
@@ -282,41 +287,47 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                       <Button
                         flex={1}
                         size="sm"
-                        colorScheme="gray"
+                        colorScheme="blue"
                         leftIcon={<InfoIcon />}
                         onClick={() => onOpenInfo(car)}
                       >
                         More Info
                       </Button>
 
-                      {/* Edit as icon button */}
-                      <IconButton
-                        size="sm"
-                        colorScheme="blue"
-                        aria-label="Edit"
-                        icon={<FaEdit />}
-                        onClick={() => onEdit(car)}
-                      />
-
-                      {/* Delete as icon button */}
-                      <IconButton
-                        size="sm"
-                        colorScheme="red"
-                        aria-label="Delete"
-                        icon={<FaTrash size={14} />}
-                        onClick={() => onDelete(car)}
-                      />
-                      {/* Create Rate */}
-                      <IconButton
-                        size="sm"
-                        colorScheme="purple"
-                        aria-label="Add Rate"
-                        icon={<FaMoneyBillWave />}
-                        onClick={() => {
-                          setSelectedCar(car);
-                          onRateOpen();
-                        }}
-                      />
+                      {/* Actions menu */}
+                      <Menu placement="bottom-end" isLazy>
+                        <MenuButton
+                          as={IconButton}
+                          size="sm"
+                          aria-label="Actions"
+                          icon={<FiMoreVertical />}
+                          variant="ghost"
+                        />
+                        <MenuList>
+                          <MenuItem
+                            icon={<FaEdit />}
+                            onClick={() => onEdit(car)}
+                          >
+                            Update
+                          </MenuItem>
+                          <MenuItem
+                            icon={<FaMoneyBillWave />}
+                            onClick={() => {
+                              setSelectedCar(car);
+                              onRateOpen();
+                            }}
+                          >
+                            Rates
+                          </MenuItem>
+                          <MenuItem
+                            icon={<FaTrash />}
+                            color="red.500"
+                            onClick={() => onDelete(car)}
+                          >
+                            Delete
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
                     </Flex>
                   </CardFooter>
                 </Card>
@@ -349,7 +360,11 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
         </Box>
       </BaseModal>
 
-      <RateCreateModal isOpen={isRateOpen} onClose={onRateClose} car={selectedCar} />
+      <RateCreateModal
+        isOpen={isRateOpen}
+        onClose={onRateClose}
+        car={selectedCar}
+      />
 
       {/* Booking modal removed on Units page */}
     </Box>

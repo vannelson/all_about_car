@@ -17,9 +17,13 @@ import {
   Tbody,
   Tr,
   Td,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 
-import { InfoIcon } from "@chakra-ui/icons";
+import { InfoIcon, ChevronDownIcon } from "@chakra-ui/icons";
 
 import {
   FaBolt,
@@ -33,6 +37,8 @@ import {
   FaCalendarDay,
   FaChair,
   FaCar,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 import BaseListAndIcons from "../../base/BaseListAndIcons";
 import CarRates from "../cardview/CarRates";
@@ -325,45 +331,48 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
                         w="full"
                         align="stretch"
                       >
-                        {/* Edit */}
-                        <Button
-                          size="sm"
-                          w="full"
-                          colorScheme="blue"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(car);
-                          }}
-                        >
-                          Edit
-                        </Button>
-
-                        {/* Delete */}
-                        <Button
-                          size="sm"
-                          w="full"
-                          colorScheme="red"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(car);
-                          }}
-                        >
-                          Delete
-                        </Button>
-
-                        {/* Rate */}
-                        <Button
-                          size="sm"
-                          w="full"
-                          colorScheme="purple"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCar(car);
-                            onRateOpen();
-                          }}
-                        >
-                          Rate
-                        </Button>
+                        {/* Actions dropdown */}
+                        <Menu isLazy>
+                          <MenuButton
+                            as={Button}
+                            size="sm"
+                            w="full"
+                            rightIcon={<ChevronDownIcon />}
+                          >
+                            Actions
+                          </MenuButton>
+                          <MenuList>
+                            <MenuItem
+                              icon={<FaEdit />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(car);
+                              }}
+                            >
+                              Update
+                            </MenuItem>
+                            <MenuItem
+                              icon={<FaMoneyBillWave />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCar(car);
+                                onRateOpen();
+                              }}
+                            >
+                              Rates
+                            </MenuItem>
+                            <MenuItem
+                              icon={<FaTrash />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(car);
+                              }}
+                              color="red.500"
+                            >
+                              Delete
+                            </MenuItem>
+                          </MenuList>
+                        </Menu>
 
                         {/* More */}
                         <Button
