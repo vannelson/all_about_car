@@ -49,8 +49,7 @@ function Units() {
 
   return (
     <Box p={4}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading size="md">Units</Heading>
+      <Flex justify="space-between" align="center">
         {isMobile && (
           <Button colorScheme="blue" onClick={onOpen}>
             Filter
@@ -90,8 +89,11 @@ function Units() {
 
 function CarListTableOrCard({ query, onQueryChange, filters }) {
   const [isCardView, setIsCardView] = useState(true);
-  const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } =
-    useDisclosure();
+  const {
+    isOpen: isModalOpen,
+    onOpen: onModalOpen,
+    onClose: onModalClose,
+  } = useDisclosure();
 
   const handleToggleView = () => {
     setIsCardView((prev) => !prev);

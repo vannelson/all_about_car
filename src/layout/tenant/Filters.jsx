@@ -16,7 +16,9 @@ import {
 
 const Filters = ({ value, onChange }) => {
   const [price, setPrice] = useState(value?.price ?? 7000);
-  const [availability, setAvailability] = useState(value?.availability ?? "all");
+  const [availability, setAvailability] = useState(
+    value?.availability ?? "all"
+  );
   const [brand, setBrand] = useState(value?.brand ?? "");
   const [carType, setCarType] = useState(value?.carType ?? "");
   const [seats, setSeats] = useState(value?.seats ?? "");
@@ -26,32 +28,61 @@ const Filters = ({ value, onChange }) => {
 
   useEffect(() => {
     if (onChange) {
-      onChange({ availability, price, brand, carType, seats, transmission, plateNumber, vin });
+      onChange({
+        availability,
+        price,
+        brand,
+        carType,
+        seats,
+        transmission,
+        plateNumber,
+        vin,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availability, price, brand, carType, seats, transmission, plateNumber, vin]);
+  }, [
+    availability,
+    price,
+    brand,
+    carType,
+    seats,
+    transmission,
+    plateNumber,
+    vin,
+  ]);
 
   return (
     <Box pt={2}>
-      <Box border="1px solid #e2e8f0" borderRadius="lg" boxShadow="sm" p={5} bg="white">
+      <Box
+        border="1px solid #e2e8f0"
+        borderRadius="lg"
+        boxShadow="sm"
+        p={5}
+        bg="white"
+      >
         <VStack align="start" spacing={3} w="full">
-          <Heading as="h3" size="md" mb={1}>
-            Filter By
-          </Heading>
-
           {/* Availability */}
           <Box w="full">
             <Text fontWeight="semibold" mb={2}>
               Availability
             </Text>
             <HStack spacing={5}>
-              <Checkbox isChecked={availability === "yes"} onChange={() => setAvailability("yes")}>
+              <Checkbox
+                isChecked={availability === "yes"}
+                onChange={() => setAvailability("yes")}
+              >
                 Yes
               </Checkbox>
-              <Checkbox isChecked={availability === "no"} onChange={() => setAvailability("no")}>
+              <Checkbox
+                isChecked={availability === "no"}
+                onChange={() => setAvailability("no")}
+              >
                 No
               </Checkbox>
-              <Checkbox isChecked={availability === "all"} onChange={() => setAvailability("all")}>
+              <Checkbox
+                isChecked={availability === "all"}
+                onChange={() => setAvailability("all")}
+              >
                 All
               </Checkbox>
             </HStack>
@@ -62,7 +93,11 @@ const Filters = ({ value, onChange }) => {
             <Text fontWeight="semibold" mb={2}>
               Brand
             </Text>
-            <Select placeholder="Select brand" value={brand} onChange={(e) => setBrand(e.target.value)}>
+            <Select
+              placeholder="Select brand"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+            >
               <option value="Toyota">Toyota</option>
               <option value="Honda">Honda</option>
               <option value="Ford">Ford</option>
@@ -78,7 +113,11 @@ const Filters = ({ value, onChange }) => {
             <Text fontWeight="semibold" mb={2}>
               Car Type
             </Text>
-            <Select placeholder="Select type" value={carType} onChange={(e) => setCarType(e.target.value)}>
+            <Select
+              placeholder="Select type"
+              value={carType}
+              onChange={(e) => setCarType(e.target.value)}
+            >
               <option value="Sedan">Sedan</option>
               <option value="SUV">SUV</option>
               <option value="Pickup">Pickup</option>
@@ -96,7 +135,13 @@ const Filters = ({ value, onChange }) => {
             <Text fontSize="sm" color="gray.600" mb={2}>
               Up to {price.toLocaleString()}/day
             </Text>
-            <Slider value={price} min={500} max={10000} step={50} onChange={(val) => setPrice(val)}>
+            <Slider
+              value={price}
+              min={500}
+              max={10000}
+              step={50}
+              onChange={(val) => setPrice(val)}
+            >
               <SliderTrack>
                 <SliderFilledTrack />
               </SliderTrack>
@@ -109,7 +154,11 @@ const Filters = ({ value, onChange }) => {
             <Text fontWeight="semibold" mb={2}>
               Seating Capacity
             </Text>
-            <Select placeholder="Select seats" value={seats} onChange={(e) => setSeats(e.target.value)}>
+            <Select
+              placeholder="Select seats"
+              value={seats}
+              onChange={(e) => setSeats(e.target.value)}
+            >
               <option value="2">2</option>
               <option value="4">4</option>
               <option value="5">5</option>
