@@ -6,6 +6,7 @@ import {
   useDisclosure,
   Text,
   HStack,
+  VStack,
   Flex,
   Badge,
   Divider,
@@ -38,8 +39,11 @@ function buildSliderImages(selectedCar) {
   if (selectedCar.image) {
     imgs.push({ image: selectedCar.image, alt: selectedCar.name });
   }
-  const disp = selectedCar.images?.displayImages || selectedCar.raw?.displayImages || [];
-  (disp || []).forEach((url) => imgs.push({ image: url, alt: selectedCar?.name || "Car" }));
+  const disp =
+    selectedCar.images?.displayImages || selectedCar.raw?.displayImages || [];
+  (disp || []).forEach((url) =>
+    imgs.push({ image: url, alt: selectedCar?.name || "Car" })
+  );
   return imgs;
 }
 const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
@@ -221,14 +225,16 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                   </CardHeader>
 
                   <CardBody fontSize="sm" flex="1">
-                    <Text
-                      fontWeight="bold"
-                      fontSize="lg"
-                      color="gray.700"
-                      isTruncated
-                    >
-                      {car.name}
-                    </Text>
+                    <VStack align="start" spacing={0} mb={2}>
+                      <Text fontWeight="bold" color="gray.800" noOfLines={1}>
+                        {car?.raw?.info_make || car.name || "-"}
+                      </Text>
+                      {car?.raw?.info_model && (
+                        <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                          {car.raw.info_model}
+                        </Text>
+                      )}
+                    </VStack>
 
                     <CarRates rates={car.rates} />
                     <Divider my={3} />
@@ -300,7 +306,12 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
         onClose={onModalClose}
         size="4xl"
       >
-        <BaseSlider images={buildSliderImages(selectedCar)} speed={500} slidesToShow={1} slidesToScroll={1} />
+        <BaseSlider
+          images={buildSliderImages(selectedCar)}
+          speed={500}
+          slidesToShow={1}
+          slidesToScroll={1}
+        />
         <Box mt={4}>
           <CarProfile
             specs={selectedCar?.specification || []}
