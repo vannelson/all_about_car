@@ -267,7 +267,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                       model={car?.raw?.info_model}
                     />
 
-                    <CarRates rates={car.rates} />
+                    <CarRates rates={car?.raw?.rates || car.rates} />
                     <Divider my={3} />
                     {car.status == "Available" ? (
                       <>

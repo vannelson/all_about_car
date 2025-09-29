@@ -99,6 +99,66 @@ sample output
     "status": "success",
     "message": "Cars retrieved successfully!",
     "data": [
+             {
+            "id": 37,
+            "company_id": 5,
+            "company": {
+                "id": 5,
+                "name": "Fadel-Pacocha",
+                "address": "756 Weissnat Divide Apt. 030\nWest Kellie, LA 57307",
+                "industry": "doloribus",
+                "user_id": 8
+            },
+            "info_make": "Jeep",
+            "info_model": "Tesla",
+            "info_year": "2025",
+            "info_age": "4-6",
+            "info_carType": "VAN",
+            "info_plateNumber": "12122",
+            "info_vin": "22122",
+            "info_availabilityStatus": "available",
+            "info_location": "21",
+            "info_mileage": 0,
+            "spcs_seats": 5,
+            "spcs_largeBags": 1,
+            "spcs_smallBags": 2,
+            "spcs_engineSize": 1998,
+            "spcs_transmission": "Automatic",
+            "spcs_fuelType": "Electric",
+            "spcs_fuelEfficiency": "7.60",
+            "features": [
+                "Keyless Entry",
+                "5 Star ANCAP Rating",
+                "8\" Touchscreen Entertainment",
+                "Sunroof"
+            ],
+            "profileImage": "http://127.0.0.1:8000/storage/cars/37/profileImage/SKIehhOBXId3k2uI25vl1X803VbMifEg1zdXYVdj.png",
+            "displayImages": [
+                "http://127.0.0.1:8000/storage/cars/37/displayImages/Ug6ISbZOWUsf2MafDxj1PAiWwBRCB5tJTQygPfcC.png",
+                "http://127.0.0.1:8000/storage/cars/37/displayImages/2CuWEeFFJrdEkmL91Yv7npzfv2evyiy93XFd4M1c.png",
+                "http://127.0.0.1:8000/storage/cars/37/displayImages/xAu3VXCS8OLYV08k2dyoPeb8oaoY6PcQjOfzTFv3.png"
+            ],
+            "rates": [
+                {
+                    "id": 18,
+                    "car_id": 37,
+                    "name": "Regular Rate",
+                    "rate": "5000.00",
+                    "rate_type": "daily",
+                    "start_date": "2025-09-29",
+                    "status": "inactive"
+                },
+                {
+                    "id": 19,
+                    "car_id": 37,
+                    "name": "Christmas Rate",
+                    "rate": "7000.00",
+                    "rate_type": "daily",
+                    "start_date": "2025-09-29",
+                    "status": "active"
+                }
+            ]
+        },
         {
             "id": 35,
             "company_id": 5,
@@ -140,7 +200,26 @@ sample output
                 "http://127.0.0.1:8000/storage/cars/35/displayImages/pYZs7Hq7BbSI8eCXFchBpCEPUjiacavulP8zyirp.png",
                 "http://127.0.0.1:8000/storage/cars/35/displayImages/BGRHSghPb2KESXETN1VamPMZslROBTJuGNhA8BlZ.png"
             ],
-            "rates": []
+            "rates": [
+                {
+                    "id": 21,
+                    "car_id": 35,
+                    "name": "Christmas Rate",
+                    "rate": "7000.00",
+                    "rate_type": "daily",
+                    "start_date": "2025-09-29",
+                    "status": "inactive"
+                },
+                {
+                    "id": 23,
+                    "car_id": 35,
+                    "name": "Regular Rate",
+                    "rate": "6700.00",
+                    "rate_type": "daily",
+                    "start_date": "2025-09-29",
+                    "status": "active"
+                }
+            ]
         },
        
     ],

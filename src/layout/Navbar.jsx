@@ -21,6 +21,7 @@ import {
 } from "@chakra-ui/icons";
 
 import { FaUser } from "react-icons/fa";
+import { FiLogOut } from "react-icons/fi";
 
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
@@ -65,14 +66,16 @@ export default function Navbar({
 
         {/* Logo / Brand */}
         <Flex flex={{ base: 1 }} justify={{ base: "center", md: "start" }}>
-          <Text
-            textAlign={{ base: "center", md: "left" }}
-            fontFamily={"heading"}
-            color={useColorModeValue("gray.800", "white")}
-            fontWeight="bold"
-          >
-            My App
-          </Text>
+          <RouterLink to="/">
+            <Text
+              textAlign={{ base: "center", md: "left" }}
+              fontFamily={"heading"}
+              color={useColorModeValue("gray.800", "white")}
+              fontWeight="bold"
+            >
+              My Logo
+            </Text>
+          </RouterLink>
 
           {/* Desktop Menu */}
           <Flex display={{ base: "none", md: "flex" }} ml={10}>
@@ -111,22 +114,14 @@ export default function Navbar({
               >
                 <BellIcon boxSize={6} />
               </Button>
-              <Button
-                as="a"
+              <IconButton
+                aria-label="Account settings"
                 display={{ base: "none", md: "inline-flex" }}
-                fontSize="sm"
-                fontWeight={600}
-                color="white"
-                bg="blue.400"
-                p="3"
-                href="#"
-                _hover={{ bg: "blue.300" }}
+                colorScheme="blue"
+                icon={<Icon as={FaUser} />}
                 onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
-                leftIcon={<Icon as={FaUser} />}
-              >
-                {user?.name || "Account"}
-              </Button>
-              <Button variant="outline" onClick={onLogout}>
+              />
+              <Button variant="outline" onClick={onLogout} leftIcon={<FiLogOut />}>
                 Logout
               </Button>
             </>

@@ -300,7 +300,7 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
 
                     {/* Rates */}
                     <Td>
-                      <CarRates rates={car.rates} direction={"vertical"} />
+                      <CarRates rates={car?.raw?.rates || car.rates} direction={"vertical"} />
                     </Td>
 
                     {/* Payment Details */}

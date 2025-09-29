@@ -1,99 +1,59 @@
-import {
-  Box,
-  Text,
-  Stack,
-  Flex,
-  Divider,
-  useColorModeValue,
-} from "@chakra-ui/react";
-import { FaClock, FaCalendarDay } from "react-icons/fa";
+import { Box, Text, Flex, useColorModeValue } from "@chakra-ui/react";
+import { Calendar, Clock } from "lucide-react"; // ✅ cleaner outline icons
 import React from "react";
 
-// Props:
-// - rates: { daily?: number, hourly?: number }
-// - direction: 'horizontal' | 'vertical'
-// - hideZero?: boolean — optional: hide items with 0 value
-const CarRates = ({
-  rates = {},
-  direction = "horizontal",
-  hideZero = false,
-}) => {
-  const config = [
-    { key: "daily", label: "Daily", icon: FaCalendarDay, unit: "/day" },
-    { key: "hourly", label: "Hourly", icon: FaClock, unit: "/hr" },
-  ];
-
-  const borderColor = useColorModeValue("gray.300", "gray.600");
-  const textColor = useColorModeValue("gray.700", "gray.200");
+const CarRates = ({ rates = [] }) => {
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const textColor = useColorModeValue("gray.800", "whiteAlpha.900");
   const subTextColor = useColorModeValue("gray.500", "gray.400");
+  const bg = useColorModeValue("white", "gray.800");
+
+  // Pick active daily/hourly rate from API
+  const normalized = React.useMemo(() => {
+    if (!Array.isArray(rates)) return {};
+    const active = rates.find(
+      (r) => String(r.status).toLowerCase() === "active"
+    );
+    if (!active) return {};
+    const amount = Number(active.rate ?? active.amount ?? 0);
+    return { [active.rate_type]: Number.isFinite(amount) ? amount : 0 };
+  }, [rates]);
+
+  // Show only the active type
+  const config = [
+    { key: "daily", label: "Daily", icon: Calendar, unit: "Daily" },
+    { key: "hourly", label: "Hourly", icon: Clock, unit: "Hourly" },
+  ].filter((c) => normalized[c.key] > 0);
+
+  if (!config.length) return null;
+
+  const rate = config[0];
+  const Icon = rate.icon;
+  const price = normalized[rate.key].toLocaleString();
 
   return (
-    <Box mt={3}>
-      <Stack
-        direction={direction === "horizontal" ? "row" : "column"}
-        spacing={direction === "horizontal" ? 6 : 3}
-        p={4}
-        border="1px solid"
-        borderColor={borderColor}
-        borderRadius="lg"
-        align="center"
-        justify="center"
-        bg={useColorModeValue("white", "gray.800")}
-        boxShadow="sm"
-      >
-        {config.map((rate, idx) => {
-          const Icon = rate.icon;
-          const amount = Number(rates[rate.key]) || 0;
-
-          if (hideZero && amount === 0) return null;
-
-          const price = amount.toLocaleString();
-
-          const content =
-            direction === "horizontal" ? (
-              <Flex align="center" gap={2}>
-                <Icon size={16} color={subTextColor} />
-                <Text fontWeight="bold" fontSize="md" color={textColor}>
-                  ₱{price}
-                </Text>
-                <Text fontSize="sm" color={subTextColor}>
-                  {rate.unit}
-                </Text>
-              </Flex>
-            ) : (
-              <Flex align="center" justify="space-between" w="100%">
-                <Flex align="center" gap={2}>
-                  <Icon size={16} color={subTextColor} />
-                  <Text color={subTextColor} fontSize="sm">
-                    {rate.label}
-                  </Text>
-                </Flex>
-                <Text fontWeight="bold" color={textColor}>
-                  ₱{price}
-                  <Text as="span" fontSize="sm" color={subTextColor} ml={1}>
-                    {rate.unit}
-                  </Text>
-                </Text>
-              </Flex>
-            );
-
-          return (
-            <React.Fragment key={rate.key}>
-              {content}
-              {direction === "horizontal" &&
-                idx < config.length - 1 &&
-                (!hideZero ||
-                  (hideZero && Number(rates[config[idx + 1]?.key]) > 0)) && (
-                  <Divider
-                    orientation="vertical"
-                    h="20px"
-                    borderColor={borderColor}
-                  />
-                )}
-            </React.Fragment>
-          );
-        })}
-      </Stack>
+    <Box
+      mt={3}
+      p={3}
+      border="1px solid"
+      borderColor={borderColor}
+      borderRadius="md"
+      bg={bg}
+    >
+      <Flex align="center" justify="space-between">
+        <Text fontSize="sm" color={subTextColor}>
+          Rate
+        </Text>
+        <Flex align="center" gap={2}>
+          <Calendar size={15} />
+          <Text fontWeight="semibold" fontSize="sm" color={textColor}>
+            ₱ {price}
+            <Text as="span" fontSize="xs" color={subTextColor} ml={1}>
+              {rate.unit}
+            </Text>
+          </Text>
+        </Flex>
+      </Flex>
     </Box>
   );
 };
