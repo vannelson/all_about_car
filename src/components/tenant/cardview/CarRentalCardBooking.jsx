@@ -64,7 +64,6 @@ export default function CarRentalCardBooking() {
           variant="unstyled"
           w="100%"
           h="170px"
-          bg="#fcfcfc"
           boxShadow={"sm"}
           className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
         >

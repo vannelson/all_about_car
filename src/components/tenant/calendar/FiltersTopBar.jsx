@@ -43,7 +43,6 @@ export default function FiltersTopBar() {
             minW="150px"
             borderColor={inputBorder}
             icon={<MdArrowDropDown />}
-            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             <option value="automatic">Automatic</option>
             <option value="manual">Manual</option>
@@ -58,7 +57,6 @@ export default function FiltersTopBar() {
             minW="150px"
             icon={<MdArrowDropDown />}
             borderColor={inputBorder}
-            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             <option value="petrol">Petrol</option>
             <option value="diesel">Diesel</option>
@@ -74,7 +72,6 @@ export default function FiltersTopBar() {
             minW="200px"
             borderColor={inputBorder}
             icon={<MdArrowDropDown />}
-            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             <option value="toyota">Toyota</option>
             <option value="honda">Honda</option>
@@ -90,7 +87,6 @@ export default function FiltersTopBar() {
             minW="200px"
             borderColor={inputBorder}
             icon={<MdArrowDropDown />}
-            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             <option value="economy">Economy</option>
             <option value="luxury">Luxury</option>

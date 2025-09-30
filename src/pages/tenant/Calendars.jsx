@@ -13,12 +13,19 @@ export default function Calendars() {
       <Box>
         {/* Replace this with your calendar or content */}
         <SimpleGrid columns={{ base: 1, md: 12 }} spacing={{ base: 2, md: 2 }}>
-          <Box gridColumn={{ base: "1 / -1", md: "span 4" }} bg="white">
+          <Box
+            gridColumn={{ base: "1 / -1", md: "span 4" }}
+            sx={{ "@media (min-width: 1800px)": { gridColumn: "span 3 / span 3" } }}
+            bg="white"
+          >
             <CarRentalCardBooking />
           </Box>
 
           {/* Second column (col-8, empty) */}
-          <Box gridColumn={{ base: "1 / -1", md: "span 8" }}>
+          <Box
+            gridColumn={{ base: "1 / -1", md: "span 8" }}
+            sx={{ "@media (min-width: 1800px)": { gridColumn: "span 9 / span 9" } }}
+          >
             <FullCalendarPanel />
           </Box>
         </SimpleGrid>
