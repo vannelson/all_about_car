@@ -26,7 +26,7 @@ export default function CarRentalCardBooking() {
       image:
         "http://127.0.0.1:8000/storage/cars/37/profileImage/SKIehhOBXId3k2uI25vl1X803VbMifEg1zdXYVdj.png",
       rating: 4.7,
-      price: 62,
+      price: "5,000",
       specs: ["Auto", "7 seats", "Gasoline"],
       available: true,
     },
@@ -38,7 +38,7 @@ export default function CarRentalCardBooking() {
       image:
         "http://127.0.0.1:8000/storage/cars/35/profileImage/SgHJkNM5KojaiXFxr1V9mHXgC1apesBWzmUZSyZ8.png",
       rating: 4.8,
-      price: 49,
+      price: "3,500",
       specs: ["Auto", "5 seats", "Gasoline"],
       available: true,
     },
@@ -50,7 +50,7 @@ export default function CarRentalCardBooking() {
       image:
         "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
       rating: 4.6,
-      price: 55,
+      price: "3,500",
       specs: ["Manual", "5 seats", "Gasoline"],
       available: false,
     },
@@ -64,7 +64,7 @@ export default function CarRentalCardBooking() {
           variant="unstyled"
           w="100%"
           h="170px"
-          boxShadow={"sm"}
+          boxShadow={"lg"}
           className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
         >
           <Flex h="100%">
@@ -135,7 +135,8 @@ export default function CarRentalCardBooking() {
                     {car.brand}
                   </Text>
                 </Box>
-                <Flex wrap="wrap">
+
+                <VStack align="start" spacing={1} mt={1} mb={1}>
                   {car.specs.map((s) => {
                     let SpecIcon = null;
                     const label = s.toLowerCase();
@@ -150,23 +151,29 @@ export default function CarRentalCardBooking() {
                       label.includes("electric")
                     )
                       SpecIcon = BsFuelPump;
+
                     return (
                       <Box
                         key={s}
-                        className="flex items-center gap-3 rounded-full  border-gray-200  py-0.5 text-[12px] text-gray-700"
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                        fontSize="sm"
+                        color="gray.700"
                       >
-                        {SpecIcon ? (
+                        {SpecIcon && (
                           <Icon
                             as={SpecIcon}
                             boxSize={4}
-                            className="text-gray-600"
+                            color="gray.600"
+                            mr={2}
                           />
-                        ) : null}
+                        )}
                         {s}
                       </Box>
                     );
                   })}
-                </Flex>
+                </VStack>
               </VStack>
 
               <VStack align="flex-end" justify="space-between" w="120px">
