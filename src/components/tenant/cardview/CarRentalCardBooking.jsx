@@ -94,7 +94,8 @@ export default function CarRentalCardBooking() {
   ];
 
   return (
-    <div className="flex flex-col items-center gap-3 px-3 py-3">
+    <Box position="sticky" top="72px" maxH="calc(100vh - 100px)" overflowY="auto" className="no-scrollbar">
+      <div className="flex flex-col items-center gap-3 px-3 py-3">
       {cars.map((car) => (
         <Card
           key={car.id}
@@ -262,7 +263,8 @@ export default function CarRentalCardBooking() {
           </Flex>
         </Card>
       ))}
-    </div>
+      </div>
+    </Box>
   );
 }
 import { useState } from "react";
