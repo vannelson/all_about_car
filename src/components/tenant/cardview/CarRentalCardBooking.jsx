@@ -113,6 +113,7 @@ export default function CarRentalCardBooking() {
           w="100%"
           h="150px"
           boxShadow={"sm"}
+          bg="gray.50"
           className={`${
             selectedId === car.id
               ? "group overflow-hidden rounded-xl border border-blue-400 ring-2 ring-blue-500 shadow-xl scale-[1.005]"
@@ -133,21 +134,42 @@ export default function CarRentalCardBooking() {
               />
               {car.available && (
                 <Box pos="absolute" top="8px" left="8px">
-                  <Badge colorScheme="green" variant="solid" className="rounded-md shadow px-2 py-0.5 text-[10px]">
+                  <Badge
+                    colorScheme="green"
+                    variant="solid"
+                    className="rounded-md shadow px-2 py-0.5 text-[10px]"
+                  >
                     Available
                   </Badge>
                 </Box>
               )}
               {selectedId === car.id && (
                 <Box pos="absolute" top="8px" right="8px">
-                  <Badge colorScheme="blue" variant="solid" className="rounded-md shadow px-2 py-0.5 text-[10px]">
+                  <Badge
+                    colorScheme="blue"
+                    variant="solid"
+                    className="rounded-md shadow px-2 py-0.5 text-[10px]"
+                  >
                     Selected
                   </Badge>
                 </Box>
               )}
-              <HStack pos="absolute" bottom="8px" left="8px" spacing={1} bg="whiteAlpha.900" px={2} py={0.5} borderRadius="md" boxShadow="sm" className="backdrop-blur-sm">
+              <HStack
+                pos="absolute"
+                bottom="8px"
+                left="8px"
+                spacing={1}
+                bg="whiteAlpha.900"
+                px={2}
+                py={0.5}
+                borderRadius="md"
+                boxShadow="sm"
+                className="backdrop-blur-sm"
+              >
                 <Icon as={FaStar} color="yellow.400" boxSize={3} mr={1} />
-                <Text fontSize="xs" fontWeight="medium">{car.rating.toFixed(1)}</Text>
+                <Text fontSize="xs" fontWeight="medium">
+                  {car.rating.toFixed(1)}
+                </Text>
               </HStack>
             </Box>
 
@@ -158,12 +180,23 @@ export default function CarRentalCardBooking() {
                   <HStack spacing={2} align="center">
                     <CarBrandLogo brand={car.brand} size={18} mr={1} />
                     <HStack spacing={2} align="baseline">
-                      <Text fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" className="tracking-wide text-gray-800">
+                      <Text
+                        fontWeight="semibold"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        className="tracking-wide text-gray-800"
+                      >
                         {car.model}
                       </Text>
                     </HStack>
                   </HStack>
-                  <Text fontSize="sm" fontWeight="semibold" noOfLines={1} ml="6" className="text-gray-500">
+                  <Text
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    noOfLines={1}
+                    ml="6"
+                    className="text-gray-500"
+                  >
                     {car.brand}
                   </Text>
                 </Box>
@@ -194,7 +227,12 @@ export default function CarRentalCardBooking() {
                         color="gray.700"
                       >
                         {SpecIcon && (
-                          <Icon as={SpecIcon} boxSize={4} color="gray.600" mr={2} />
+                          <Icon
+                            as={SpecIcon}
+                            boxSize={4}
+                            color="gray.600"
+                            mr={2}
+                          />
                         )}
                         {s}
                       </Box>

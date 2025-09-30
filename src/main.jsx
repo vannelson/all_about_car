@@ -11,13 +11,7 @@ import App from "./App.jsx";
 
 // ✅ Define theme before usage
 const theme = extendTheme({
-  styles: {
-    global: {
-      body: {
-        bg: "#fbfbfb",
-      },
-    },
-  },
+  styles: {},
 });
 
 createRoot(document.getElementById("root")).render(
