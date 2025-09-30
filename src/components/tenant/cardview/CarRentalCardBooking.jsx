@@ -64,7 +64,8 @@ export default function CarRentalCardBooking() {
           variant="unstyled"
           w="100%"
           h="170px"
-          boxShadow={"lg"}
+          bg="#fcfcfc"
+          boxShadow={"sm"}
           className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
         >
           <Flex h="100%">
@@ -178,7 +179,7 @@ export default function CarRentalCardBooking() {
 
               <VStack align="flex-end" justify="space-between" w="120px">
                 <Box textAlign="right">
-                  <Text fontSize="xl" fontWeight="bold" color="blue.600">
+                  <Text fontSize="xl" fontWeight="bold" color="gray.600">
                     {car.price}
                   </Text>
                   <Text fontSize="10px" color="gray.500">
