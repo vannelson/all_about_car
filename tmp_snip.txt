@@ -1,6 +1,0 @@
-color={statusColors[b.status] || "blue"}
-            label={`${b.title || "Booking"} • ${b.status}`}
-          />
-        ))}
-      </Box>
-      <Di
