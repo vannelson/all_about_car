@@ -1,7 +1,6 @@
 import {
   Box,
   Flex,
-  Text,
   IconButton,
   Icon,
   Button,
@@ -9,7 +8,6 @@ import {
   Collapse,
   useColorModeValue,
   useDisclosure,
-  Image,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -25,6 +23,7 @@ import { FiLogOut } from "react-icons/fi";
 
 import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
+import Logo from "../components/Logo";
 
 export default function Navbar({
   navItems = [],
@@ -67,16 +66,9 @@ export default function Navbar({
         {/* Logo / Brand */}
         <Flex flex={{ base: 1 }} justify={{ base: "center", md: "start" }}>
           <RouterLink to="/">
-            <Text
-              textAlign={{ base: "center", md: "left" }}
-              fontFamily={"heading"}
-              color={useColorModeValue("gray.800", "white")}
-              fontWeight="bold"
-            >
-              My Logo
-            </Text>
+            <Logo height={44} />
           </RouterLink>
-
+        
           {/* Desktop Menu */}
           <Flex display={{ base: "none", md: "flex" }} ml={10}>
             <DesktopNav navItems={navItems} />
