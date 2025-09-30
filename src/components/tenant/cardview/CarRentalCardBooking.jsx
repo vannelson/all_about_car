@@ -1,122 +1,226 @@
 import {
-  Box,
   Card,
-  Button,
-  Text,
+  Box,
   Image,
-  Icon,
+  Text,
   HStack,
   VStack,
   Flex,
-  useBreakpointValue,
+  Button,
+  Icon,
+  Badge,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
+import { FiUsers, FiSettings } from "react-icons/fi";
+import { BsFuelPump } from "react-icons/bs";
+import CarBrandLogo from "../../tenant/CarBrandLogo";
 
 export default function CarRentalCardBooking() {
-  const cardDirection = useBreakpointValue({ base: "column", md: "row" });
+  const cars = [
+    {
+      id: 37,
+      brand: "Mitsubishi",
+      model: "Xpander",
+      owner: "Host • A. Santos",
+      image:
+        "http://127.0.0.1:8000/storage/cars/37/profileImage/SKIehhOBXId3k2uI25vl1X803VbMifEg1zdXYVdj.png",
+      rating: 4.7,
+      price: 62,
+      specs: ["Auto", "7 seats", "Gasoline"],
+      available: true,
+    },
+    {
+      id: 35,
+      brand: "Toyota",
+      model: "Vios",
+      owner: "Host • C. Lim",
+      image:
+        "http://127.0.0.1:8000/storage/cars/35/profileImage/SgHJkNM5KojaiXFxr1V9mHXgC1apesBWzmUZSyZ8.png",
+      rating: 4.8,
+      price: 49,
+      specs: ["Auto", "5 seats", "Gasoline"],
+      available: true,
+    },
+    {
+      id: 34,
+      brand: "Nissan",
+      model: "Almera",
+      owner: "Host • J. Cruz",
+      image:
+        "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
+      rating: 4.6,
+      price: 55,
+      specs: ["Manual", "5 seats", "Gasoline"],
+      available: false,
+    },
+    {
+      id: 35,
+      brand: "Toyota",
+      model: "Vios",
+      owner: "Host • C. Lim",
+      image:
+        "http://127.0.0.1:8000/storage/cars/35/profileImage/SgHJkNM5KojaiXFxr1V9mHXgC1apesBWzmUZSyZ8.png",
+      rating: 4.8,
+      price: 49,
+      specs: ["Auto", "5 seats", "Gasoline"],
+      available: true,
+    },
+    {
+      id: 34,
+      brand: "Nissan",
+      model: "Almera",
+      owner: "Host • J. Cruz",
+      image:
+        "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
+      rating: 4.6,
+      price: 55,
+      specs: ["Manual", "5 seats", "Gasoline"],
+      available: false,
+    },
+  ];
 
   return (
-    <Box p={2}>
-      <Card
-        direction={cardDirection}
-        overflow="hidden"
-        variant="outline"
-        borderRadius="md"
-        w="100%"
-        maxW="500px"
-        h="150px"
-        mx="auto"
-        boxShadow="sm"
-      >
-        {/* Image Section */}
-        <Box
-          position="relative"
-          flexShrink={0}
-          w={{ base: "100%", md: "200px" }}
-          h="150px"
-          p={2}
+    <div className="flex flex-col items-center gap-4 px-4 py-4">
+      {cars.map((car) => (
+        <Card
+          key={car.id}
+          variant="unstyled"
+          w="100%"
+          bg="gray.50"
+          h="170px"
+          mb={5}
+          boxShadow={"sm"}
+          className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
         >
-          <Image
-            objectFit="cover"
-            w="100%"
-            h="100%"
-            src="http://127.0.0.1:8000/storage/cars/33/profileImage/wEEYlX0LEWeCjplwAVa21ErwMnYOD51vusq9KvSA.png"
-            alt="Tesla Model 3"
-          />
-          {/* Star Rating - Bottom Left */}
-          <HStack
-            position="absolute"
-            bottom={2}
-            left={2}
-            bg="white"
-            px={2}
-            py={1}
-            borderRadius="md"
-            spacing={1}
-            boxShadow="sm"
-          >
-            <Icon as={FaStar} color="yellow.400" boxSize={3} />
-            <Text fontSize="sm" fontWeight="medium">
-              4.8
-            </Text>
-          </HStack>
-        </Box>
-
-        {/* Content Section */}
-        <Flex p={3} w="full" h="full" justify="space-between">
-          <VStack align="flex-start" spacing={2} flex={1}>
-            {/* Header with Tesla Logo */}
-            <VStack align="flex-start" spacing={0}>
-              <HStack spacing={2}>
-                <Text
-                  fontSize="sm"
-                  fontWeight="bold"
-                  color="red.500"
-                  letterSpacing="wider"
-                >
-                  TESLA
-                </Text>
-                <Text fontSize="md" fontWeight="bold">
-                  Model 3
+          <Flex h="100%">
+            {/* Image */}
+            <Box pos="relative" w="190px" h="100%" className="shrink-0">
+              <Image
+                src={car.image}
+                alt={`${car.brand} ${car.model}`}
+                w="100%"
+                h="100%"
+                objectFit="cover"
+                className="transition duration-300 group-hover:scale-[1.02]"
+                loading="lazy"
+              />
+              {car.available && (
+                <Box pos="absolute" top="8px" left="8px">
+                  <Badge
+                    colorScheme="green"
+                    variant="solid"
+                    className="rounded-md shadow px-2 py-0.5 text-[11px]"
+                  >
+                    Available
+                  </Badge>
+                </Box>
+              )}
+              <HStack
+                pos="absolute"
+                bottom="8px"
+                left="8px"
+                spacing={1}
+                bg="whiteAlpha.900"
+                px={2}
+                py={1}
+                borderRadius="md"
+                boxShadow="sm"
+                className="backdrop-blur-sm"
+              >
+                <Icon as={FaStar} color="yellow.400" boxSize={3.5} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">
+                  {car.rating.toFixed(1)}
                 </Text>
               </HStack>
-              <Text fontSize="sm" color="gray.600">
-                B Desai
-              </Text>
-            </VStack>
+            </Box>
 
-            {/* Specs */}
-            <VStack align="flex-start" spacing={1}>
-              <Text fontSize="sm">Electric • 5 seats • Auto</Text>
-              <Text fontSize="sm" color="gray.600">
-                250mi range • Premium
-              </Text>
-            </VStack>
-          </VStack>
+            {/* Content */}
+            <Flex flex="1" justify="space-between" p={4}>
+              <VStack align="flex-start" spacing={2} flex="1" pr={3}>
+                <Box>
+                  <HStack spacing={2} align="center">
+                    <CarBrandLogo brand={car.brand} size={18} />
+                    <HStack spacing={2} align="baseline">
+                      <Text
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                        className="tracking-wide text-blue-600"
+                      >
+                        {car.brand}
+                      </Text>
+                      <Text
+                        fontSize="sm"
+                        fontWeight="semibold"
+                        noOfLines={1}
+                        className="text-gray-900"
+                      >
+                        {car.model}
+                      </Text>
+                    </HStack>
+                  </HStack>
+                  <Text fontSize="xs" color="gray.500">
+                    {car.owner}
+                  </Text>
+                </Box>
 
-          {/* Price & CTA */}
-          <VStack align="flex-end" justify="space-between">
-            <VStack align="flex-end" spacing={0}>
-              <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                $89
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                per day
-              </Text>
-            </VStack>
-            <Button
-              colorScheme="blue"
-              size="sm"
-              px={4}
-              borderRadius="md"
-              fontWeight="bold"
-              variant="solid"
-            >
-              RENT
-            </Button>
-          </VStack>
-        </Flex>
-      </Card>
-    </Box>
+                <Flex wrap="wrap" gap={1.5}>
+                  {car.specs.map((s) => {
+                    let SpecIcon = null;
+                    const label = s.toLowerCase();
+                    if (label.includes("seat")) SpecIcon = FiUsers;
+                    else if (label.includes("auto") || label.includes("manual"))
+                      SpecIcon = FiSettings;
+                    else if (
+                      label.includes("gas") ||
+                      label.includes("fuel") ||
+                      label.includes("petrol") ||
+                      label.includes("diesel") ||
+                      label.includes("electric")
+                    )
+                      SpecIcon = BsFuelPump;
+                    return (
+                      <Box
+                        key={s}
+                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] text-gray-700"
+                      >
+                        {SpecIcon ? (
+                          <Icon
+                            as={SpecIcon}
+                            boxSize={3.5}
+                            mr={2}
+                            className="text-gray-600"
+                          />
+                        ) : null}
+                        {s}
+                      </Box>
+                    );
+                  })}
+                </Flex>
+              </VStack>
+
+              <VStack align="flex-end" justify="space-between" w="120px">
+                <Box textAlign="right">
+                  <Text fontSize="lg" fontWeight="extrabold" color="blue.600">
+                    ${car.price}
+                  </Text>
+                  <Text fontSize="10px" color="gray.500">
+                    per day
+                  </Text>
+                </Box>
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  className="px-3 py-1.5 text-xs font-semibold"
+                >
+                  Rent
+                </Button>
+              </VStack>
+            </Flex>
+          </Flex>
+        </Card>
+      ))}
+    </div>
   );
 }

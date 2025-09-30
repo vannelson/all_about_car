@@ -9,10 +9,10 @@ export default function Calendars() {
       <FiltersTopBar />
 
       {/* Content Area */}
-      <Box p={2}>
+      <Box>
         {/* Replace this with your calendar or content */}
         <SimpleGrid columns={{ base: 1, md: 12 }} spacing={4}>
-          <Box gridColumn={{ base: "1 / -1", md: "span 4" }}>
+          <Box gridColumn={{ base: "1 / -1", md: "span 4" }} bg="white" p={2}>
             <CarRentalCardBooking />
           </Box>
 
