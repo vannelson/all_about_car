@@ -9,6 +9,7 @@ import {
   Button,
   Icon,
   Badge,
+  Divider,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
 import { FiUsers, FiSettings } from "react-icons/fi";
@@ -53,30 +54,6 @@ export default function CarRentalCardBooking() {
       specs: ["Manual", "5 seats", "Gasoline"],
       available: false,
     },
-    {
-      id: 35,
-      brand: "Toyota",
-      model: "Vios",
-      owner: "Host • C. Lim",
-      image:
-        "http://127.0.0.1:8000/storage/cars/35/profileImage/SgHJkNM5KojaiXFxr1V9mHXgC1apesBWzmUZSyZ8.png",
-      rating: 4.8,
-      price: 49,
-      specs: ["Auto", "5 seats", "Gasoline"],
-      available: true,
-    },
-    {
-      id: 34,
-      brand: "Nissan",
-      model: "Almera",
-      owner: "Host • J. Cruz",
-      image:
-        "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
-      rating: 4.6,
-      price: 55,
-      specs: ["Manual", "5 seats", "Gasoline"],
-      available: false,
-    },
   ];
 
   return (
@@ -86,9 +63,7 @@ export default function CarRentalCardBooking() {
           key={car.id}
           variant="unstyled"
           w="100%"
-          bg="gray.50"
           h="170px"
-          mb={5}
           boxShadow={"sm"}
           className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
         >
@@ -128,9 +103,7 @@ export default function CarRentalCardBooking() {
                 className="backdrop-blur-sm"
               >
                 <Icon as={FaStar} color="yellow.400" boxSize={3.5} mr={1} />
-                <Text fontSize="xs" fontWeight="medium">
-                  {car.rating.toFixed(1)}
-                </Text>
+                <Text fontWeight="medium">{car.rating.toFixed(1)}</Text>
               </HStack>
             </Box>
 
@@ -139,33 +112,31 @@ export default function CarRentalCardBooking() {
               <VStack align="flex-start" spacing={2} flex="1" pr={3}>
                 <Box>
                   <HStack spacing={2} align="center">
-                    <CarBrandLogo brand={car.brand} size={18} />
+                    <CarBrandLogo brand={car.brand} size={20} mr={1} />
                     <HStack spacing={2} align="baseline">
                       <Text
-                        fontSize="xs"
+                        fontSize="lg"
                         fontWeight="semibold"
                         textTransform="uppercase"
                         letterSpacing="wider"
-                        className="tracking-wide text-blue-600"
-                      >
-                        {car.brand}
-                      </Text>
-                      <Text
-                        fontSize="sm"
-                        fontWeight="semibold"
-                        noOfLines={1}
-                        className="text-gray-900"
+                        className="tracking-wide text-gray-800"
                       >
                         {car.model}
                       </Text>
                     </HStack>
                   </HStack>
-                  <Text fontSize="xs" color="gray.500">
-                    {car.owner}
+                  <Text
+                    fontSize="md"
+                    fontWeight="semibold"
+                    noOfLines={1}
+                    ml="7"
+                    className="text-gray-500"
+                  >
+                    {car.brand}
                   </Text>
                 </Box>
-
-                <Flex wrap="wrap" gap={1.5}>
+                <Divider />
+                <Flex wrap="wrap" gap={2}>
                   {car.specs.map((s) => {
                     let SpecIcon = null;
                     const label = s.toLowerCase();
@@ -183,13 +154,12 @@ export default function CarRentalCardBooking() {
                     return (
                       <Box
                         key={s}
-                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] text-gray-700"
+                        className="flex items-center gap-2 rounded-full border border-gray-200  py-0.5 text-[12px] text-gray-700"
                       >
                         {SpecIcon ? (
                           <Icon
                             as={SpecIcon}
-                            boxSize={3.5}
-                            mr={2}
+                            boxSize={5}
                             className="text-gray-600"
                           />
                         ) : null}
@@ -202,8 +172,8 @@ export default function CarRentalCardBooking() {
 
               <VStack align="flex-end" justify="space-between" w="120px">
                 <Box textAlign="right">
-                  <Text fontSize="lg" fontWeight="extrabold" color="blue.600">
-                    ${car.price}
+                  <Text fontSize="xl" fontWeight="bold" color="blue.600">
+                    {car.price}
                   </Text>
                   <Text fontSize="10px" color="gray.500">
                     per day
