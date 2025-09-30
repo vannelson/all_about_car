@@ -135,8 +135,7 @@ export default function CarRentalCardBooking() {
                     {car.brand}
                   </Text>
                 </Box>
-                <Divider />
-                <Flex wrap="wrap" gap={2}>
+                <Flex wrap="wrap">
                   {car.specs.map((s) => {
                     let SpecIcon = null;
                     const label = s.toLowerCase();
@@ -154,12 +153,12 @@ export default function CarRentalCardBooking() {
                     return (
                       <Box
                         key={s}
-                        className="flex items-center gap-2 rounded-full border border-gray-200  py-0.5 text-[12px] text-gray-700"
+                        className="flex items-center gap-3 rounded-full  border-gray-200  py-0.5 text-[12px] text-gray-700"
                       >
                         {SpecIcon ? (
                           <Icon
                             as={SpecIcon}
-                            boxSize={5}
+                            boxSize={4}
                             className="text-gray-600"
                           />
                         ) : null}
