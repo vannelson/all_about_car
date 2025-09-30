@@ -8,7 +8,7 @@ export default function DesktopNav({ navItems }) {
   return (
     <Stack direction={"row"} spacing={4}>
       {navItems.map((navItem) => (
-        <Box key={navItem.label}>
+        <Box key={navItem.label} mt={3}>
           <Link
             as={RouterLink}
             p={2}

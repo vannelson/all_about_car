@@ -90,6 +90,7 @@ export default function FiltersTopBar() {
             minW="200px"
             borderColor={inputBorder}
             icon={<MdArrowDropDown />}
+            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             <option value="economy">Economy</option>
             <option value="luxury">Luxury</option>
@@ -107,6 +108,7 @@ export default function FiltersTopBar() {
             color="gray.600"
             fontWeight="normal"
             _hover={{ bg: hoverBg }}
+            boxShadow="rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px"
           >
             Clear All
           </Button>
@@ -138,4 +140,3 @@ export default function FiltersTopBar() {
     </HStack>
   );
 }
-
