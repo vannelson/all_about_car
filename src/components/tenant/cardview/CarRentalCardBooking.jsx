@@ -178,7 +178,6 @@ export default function CarRentalCardBooking() {
                     <CarBrandLogo brand={car.brand} size={20} mr={1} />
                     <HStack spacing={2} align="baseline">
                       <Text
-                        fontSize="lg"
                         fontWeight="semibold"
                         textTransform="uppercase"
                         letterSpacing="wider"
@@ -189,7 +188,7 @@ export default function CarRentalCardBooking() {
                     </HStack>
                   </HStack>
                   <Text
-                    fontSize="md"
+                    fontSize="sm"
                     fontWeight="semibold"
                     noOfLines={1}
                     ml="7"

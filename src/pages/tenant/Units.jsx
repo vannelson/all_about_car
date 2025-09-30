@@ -40,29 +40,34 @@ function Units() {
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   // Search and filters state (controlled)
-  const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState({
-    availability: "all",
-    price: 7000,
-    brand: "",
-    carType: "",
-    seats: "",
-    transmission: "",
-    plateNumber: "",
-    vin: "",
-  });
+  const [topbar, setTopbar] = useState({ gear: "", fuel: "", brand: "", availability: "", search: "" });
+  const [filters, setFilters] = useState({});
 
   return (
     <>
       {/* Sticky Blue Filters Top Bar */}
-      <FiltersTopBar showRegister onRegister={onRegOpen} />
+      <FiltersTopBar
+        value={topbar}
+        onChange={(v)=>{
+          setTopbar(v);
+          // map to API filters: brand->info_make, transmission->spcs_transmission, plate/model via search
+          const mapped = {
+            brand: v.brand,
+            transmission: v.gear,
+            fuel: v.fuel, // backend to support later; still pass as param
+            availability: v.availability,
+            plateNumber: v.search,
+            model: v.search,
+          };
+          setFilters(mapped);
+        }}
+        onReset={()=>{ setTopbar({ gear:"", fuel:"", brand:"", search:"" }); setFilters({}); }}
+        showRegister
+        onRegister={onRegOpen}
+      />
 
       <Box p={4}>
-        <CarListTableOrCard
-          query={query}
-          onQueryChange={setQuery}
-          filters={filters}
-        />
+        <CarListTableOrCard query={topbar.search} onQueryChange={(q)=> setTopbar((p)=> ({...p, search:q}))} filters={filters} />
       </Box>
 
       {/* Car Registration Modal */}

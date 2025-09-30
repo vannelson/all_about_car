@@ -79,6 +79,8 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
   const apiFilters = useMemo(() => {
     const f = {};
     if (filters?.brand) f["info_make"] = filters.brand;
+    if (filters?.model) f["info_model"] = filters.model;
+    if (filters?.fuel) f["spcs_fuelType"] = filters.fuel;
     if (filters?.carType) f["info_carType"] = filters.carType;
     if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
     if (filters?.availability === "yes")
@@ -142,7 +144,13 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
     return list.filter((car) => {
       const nameOk =
         !q ||
-        String(car.name || "")
+        [
+          String(car.name || ""),
+          String(car.raw?.info_make || ""),
+          String(car.raw?.info_model || ""),
+          String(car.raw?.info_plateNumber || ""),
+        ]
+          .join(" ")
           .toLowerCase()
           .includes(q);
       const status = String(car.status || "");

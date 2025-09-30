@@ -18,12 +18,24 @@ import { MdArrowDropDown } from "react-icons/md";
 import { FiFilter, FiRotateCcw, FiSettings, FiSearch } from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import { FaCar } from "react-icons/fa";
+import {
+  CAR_BRANDS,
+  GEAR_TYPES,
+  FUEL_TYPES,
+  STATUS_OPTIONS,
+} from "../../../utils/options";
 
 const FilterSm = chakra(FiFilter, {
   baseStyle: { w: "14px", h: "14px" },
 });
 
-export default function FiltersTopBar({ showRegister = false, onRegister }) {
+export default function FiltersTopBar({
+  value = {},
+  onChange,
+  onReset,
+  showRegister = false,
+  onRegister,
+}) {
   const borderCol = useColorModeValue("blue.700", "blue.800");
   const inputBorder = useColorModeValue("whiteAlpha.400", "whiteAlpha.500");
   const hoverBg = useColorModeValue("whiteAlpha.200", "whiteAlpha.300");
@@ -43,10 +55,23 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
     },
   };
 
-  const SelectWithIcon = ({ icon: LeftIcon, placeholder, minW = "170px", options = [] }) => (
+  const SelectWithIcon = ({
+    icon: LeftIcon,
+    placeholder,
+    minW = "170px",
+    options = [],
+    value,
+    onChange,
+  }) => (
     <HStack spacing={2}>
       <Icon as={LeftIcon} />
-      <Select placeholder={placeholder} minW={minW} {...baseSelectProps}>
+      <Select
+        placeholder={placeholder}
+        minW={minW}
+        {...baseSelectProps}
+        value={value || ""}
+        onChange={onChange}
+      >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
@@ -90,10 +115,11 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
             icon={FiSettings}
             placeholder="Gear Type"
             minW="170px"
-            options={[
-              { value: "automatic", label: "Automatic" },
-              { value: "manual", label: "Manual" },
-            ]}
+            options={GEAR_TYPES}
+            value={value.gear}
+            onChange={(e) =>
+              onChange && onChange({ ...value, gear: e.target.value })
+            }
           />
         </WrapItem>
 
@@ -102,11 +128,11 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
             icon={BsFuelPump}
             placeholder="Fuel Type"
             minW="170px"
-            options={[
-              { value: "petrol", label: "Petrol" },
-              { value: "diesel", label: "Diesel" },
-              { value: "electric", label: "Electric" },
-            ]}
+            options={FUEL_TYPES}
+            value={value.fuel}
+            onChange={(e) =>
+              onChange && onChange({ ...value, fuel: e.target.value })
+            }
           />
         </WrapItem>
 
@@ -115,17 +141,17 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
             icon={FaCar}
             placeholder="Brand"
             minW="200px"
-            options={[
-              { value: "toyota", label: "Toyota" },
-              { value: "honda", label: "Honda" },
-              { value: "bmw", label: "BMW" },
-            ]}
+            options={CAR_BRANDS}
+            value={value.brand}
+            onChange={(e) =>
+              onChange && onChange({ ...value, brand: e.target.value })
+            }
           />
         </WrapItem>
 
         <WrapItem>
           <HStack spacing={2}>
-            <InputGroup minW="240px">
+            <InputGroup minW="280px">
               <InputLeftElement pointerEvents="none">
                 <Icon as={FiSearch} color="gray.400" />
               </InputLeftElement>
@@ -140,6 +166,10 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
                   borderColor: "whiteAlpha.700",
                   boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
                 }}
+                value={value.search || ""}
+                onChange={(e) =>
+                  onChange && onChange({ ...value, search: e.target.value })
+                }
               />
             </InputGroup>
           </HStack>
@@ -156,6 +186,7 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
               size="md"
               color="white"
               _hover={{ bg: hoverBg }}
+              onClick={() => onReset && onReset()}
             />
           </Tooltip>
         </WrapItem>
@@ -164,10 +195,10 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
       {/* Sort */}
       <HStack spacing={1} align="center">
         <Select
-          placeholder="Sort by"
+          placeholder="Status"
           variant="filled"
           borderRadius="lg"
-          minW="120px"
+          minW="140px"
           size="md"
           icon={<FilterSm />}
           iconSize="0.9rem"
@@ -180,10 +211,16 @@ export default function FiltersTopBar({ showRegister = false, onRegister }) {
             borderColor: "whiteAlpha.700",
             boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
           }}
+          value={value.availability || ""}
+          onChange={(e) =>
+            onChange && onChange({ ...value, availability: e.target.value })
+          }
         >
-          <option value="1">Available</option>
-          <option value="2">Unavailalble</option>
-          <option value="4">Popularity</option>
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </Select>
         {showRegister ? (
           <Button colorScheme="green" onClick={onRegister}>
