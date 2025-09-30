@@ -17,6 +17,7 @@ import { BsFuelPump } from "react-icons/bs";
 import CarBrandLogo from "../../tenant/CarBrandLogo";
 
 export default function CarRentalCardBooking() {
+  const [selectedId, setSelectedId] = useState(null);
   const cars = [
     {
       id: 37,
@@ -61,11 +62,25 @@ export default function CarRentalCardBooking() {
       {cars.map((car) => (
         <Card
           key={car.id}
+          onClick={() => setSelectedId(car.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setSelectedId(car.id);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-pressed={selectedId === car.id}
+          aria-selected={selectedId === car.id}
           variant="unstyled"
           w="100%"
           h="170px"
           boxShadow={"sm"}
-          className="group overflow-hidden rounded-2xl border border-gray-200 shadow-md transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
+          className={`${selectedId === car.id
+              ? "group overflow-hidden rounded-2xl border border-blue-400 ring-2 ring-blue-500 shadow-2xl scale-[1.01]"
+              : "group overflow-hidden rounded-2xl border border-gray-200 shadow-md hover:border-blue-300 hover:shadow-xl"
+            } transition-all duration-200`}
         >
           <Flex h="100%">
             {/* Image */}
@@ -87,6 +102,17 @@ export default function CarRentalCardBooking() {
                     className="rounded-md shadow px-2 py-0.5 text-[11px]"
                   >
                     Available
+                  </Badge>
+                </Box>
+              )}
+              {selectedId === car.id && (
+                <Box pos="absolute" top="8px" right="8px">
+                  <Badge
+                    colorScheme="blue"
+                    variant="solid"
+                    className="rounded-md shadow px-2 py-0.5 text-[11px]"
+                  >
+                    Selected
                   </Badge>
                 </Box>
               )}
@@ -200,3 +226,4 @@ export default function CarRentalCardBooking() {
     </div>
   );
 }
+import { useState } from "react";
