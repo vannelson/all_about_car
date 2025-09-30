@@ -94,7 +94,7 @@ export default function CarRentalCardBooking() {
   ];
 
   return (
-    <div className="flex flex-col items-center gap-4 px-4 py-4">
+    <div className="flex flex-col items-center gap-3 px-3 py-3">
       {cars.map((car) => (
         <Card
           key={car.id}
@@ -111,89 +111,59 @@ export default function CarRentalCardBooking() {
           aria-selected={selectedId === car.id}
           variant="unstyled"
           w="100%"
-          h="170px"
+          h="150px"
           boxShadow={"sm"}
           className={`${
             selectedId === car.id
-              ? "group overflow-hidden rounded-2xl border border-blue-400 ring-2 ring-blue-500 shadow-2xl scale-[1.01]"
-              : "group overflow-hidden rounded-2xl border border-gray-200 shadow-md hover:border-blue-300 hover:shadow-xl"
-          } transition-all duration-200`}
+              ? "group overflow-hidden rounded-xl border border-blue-400 ring-2 ring-blue-500 shadow-xl scale-[1.005]"
+              : "group overflow-hidden rounded-xl border border-gray-200 shadow-md hover:border-blue-300 hover:shadow-lg"
+          } transition-all duration-150`}
         >
           <Flex h="100%">
             {/* Image */}
-            <Box pos="relative" w="190px" h="100%" className="shrink-0">
+            <Box pos="relative" w="160px" h="100%" className="shrink-0">
               <Image
                 src={car.image}
                 alt={`${car.brand} ${car.model}`}
                 w="100%"
                 h="100%"
                 objectFit="cover"
-                className="transition duration-300 group-hover:scale-[1.02]"
+                className="transition duration-200 group-hover:scale-[1.01]"
                 loading="lazy"
               />
               {car.available && (
                 <Box pos="absolute" top="8px" left="8px">
-                  <Badge
-                    colorScheme="green"
-                    variant="solid"
-                    className="rounded-md shadow px-2 py-0.5 text-[11px]"
-                  >
+                  <Badge colorScheme="green" variant="solid" className="rounded-md shadow px-2 py-0.5 text-[10px]">
                     Available
                   </Badge>
                 </Box>
               )}
               {selectedId === car.id && (
                 <Box pos="absolute" top="8px" right="8px">
-                  <Badge
-                    colorScheme="blue"
-                    variant="solid"
-                    className="rounded-md shadow px-2 py-0.5 text-[11px]"
-                  >
+                  <Badge colorScheme="blue" variant="solid" className="rounded-md shadow px-2 py-0.5 text-[10px]">
                     Selected
                   </Badge>
                 </Box>
               )}
-              <HStack
-                pos="absolute"
-                bottom="8px"
-                left="8px"
-                spacing={1}
-                bg="whiteAlpha.900"
-                px={2}
-                py={1}
-                borderRadius="md"
-                boxShadow="sm"
-                className="backdrop-blur-sm"
-              >
-                <Icon as={FaStar} color="yellow.400" boxSize={3.5} mr={1} />
-                <Text fontWeight="medium">{car.rating.toFixed(1)}</Text>
+              <HStack pos="absolute" bottom="8px" left="8px" spacing={1} bg="whiteAlpha.900" px={2} py={0.5} borderRadius="md" boxShadow="sm" className="backdrop-blur-sm">
+                <Icon as={FaStar} color="yellow.400" boxSize={3} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{car.rating.toFixed(1)}</Text>
               </HStack>
             </Box>
 
             {/* Content */}
-            <Flex flex="1" justify="space-between" p={4}>
-              <VStack align="flex-start" spacing={2} flex="1" pr={3}>
+            <Flex flex="1" justify="space-between" p={3}>
+              <VStack align="flex-start" spacing={2} flex="1" pr={2}>
                 <Box>
                   <HStack spacing={2} align="center">
-                    <CarBrandLogo brand={car.brand} size={20} mr={1} />
+                    <CarBrandLogo brand={car.brand} size={18} mr={1} />
                     <HStack spacing={2} align="baseline">
-                      <Text
-                        fontWeight="semibold"
-                        textTransform="uppercase"
-                        letterSpacing="wider"
-                        className="tracking-wide text-gray-800"
-                      >
+                      <Text fontWeight="semibold" textTransform="uppercase" letterSpacing="wider" className="tracking-wide text-gray-800">
                         {car.model}
                       </Text>
                     </HStack>
                   </HStack>
-                  <Text
-                    fontSize="sm"
-                    fontWeight="semibold"
-                    noOfLines={1}
-                    ml="7"
-                    className="text-gray-500"
-                  >
+                  <Text fontSize="sm" fontWeight="semibold" noOfLines={1} ml="6" className="text-gray-500">
                     {car.brand}
                   </Text>
                 </Box>
@@ -224,12 +194,7 @@ export default function CarRentalCardBooking() {
                         color="gray.700"
                       >
                         {SpecIcon && (
-                          <Icon
-                            as={SpecIcon}
-                            boxSize={4}
-                            color="gray.600"
-                            mr={2}
-                          />
+                          <Icon as={SpecIcon} boxSize={4} color="gray.600" mr={2} />
                         )}
                         {s}
                       </Box>
