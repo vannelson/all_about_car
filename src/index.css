@@ -5,8 +5,13 @@ body {
 }
 
 /* Hide scrollbars for horizontal spec rows while keeping scroll functionality */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* FullCalendar light polish for clean visuals */
 .fc .fc-toolbar-title {
@@ -14,25 +19,62 @@ body {
   font-weight: 700;
 }
 .fc {
-  font-family: var(--chakra-fonts-body, Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji");
+  font-family: var(
+    --chakra-fonts-body,
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Ubuntu,
+    Cantarell,
+    Noto Sans,
+    Helvetica Neue,
+    Arial,
+    "Apple Color Emoji",
+    "Segoe UI Emoji"
+  );
   font-size: 0.92rem;
 }
+.fc .fc-button {
+  border-radius: 10px;
+  padding: 6px 12px;
+}
 .fc .fc-button-primary {
-  background-color: #3b82f6; /* blue-500 */
-  border-color: #2563eb; /* blue-600 */
+  /* minimal gradient to match Filters Top Bar */
+  background-color: #2563eb; /* fallback */
+  background-image: linear-gradient(90deg, #2563eb, #1e40af);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 .fc .fc-button-primary:disabled {
-  background-color: #93c5fd; /* blue-300 */
-  border-color: #60a5fa; /* blue-400 */
+  opacity: 0.6;
 }
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:hover {
-  background-color: #2563eb; /* blue-600 */
-  border-color: #1d4ed8; /* blue-700 */
+  background-color: #1d4ed8; /* fallback */
+  background-image: linear-gradient(90deg, #1d4ed8, #1e3a8a);
+  color: #ffffff;
+}
+.fc .fc-button-group .fc-button {
+  border-radius: 0;
+}
+.fc .fc-button-group .fc-button:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.fc .fc-button-group .fc-button:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.fc .fc-toolbar-chunk {
+  gap: 0.5rem;
 }
 .fc .fc-daygrid-event,
 .fc .fc-timegrid-event {
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   padding: 2px 6px;
 }
 .fc .fc-daygrid-dot-event .fc-event-title {

@@ -55,6 +55,42 @@ export default function CarRentalCardBooking() {
       specs: ["Manual", "5 seats", "Gasoline"],
       available: false,
     },
+    {
+      id: 67,
+      brand: "Mitsubishi",
+      model: "Xpander",
+      owner: "Host • A. Santos",
+      image:
+        "http://127.0.0.1:8000/storage/cars/37/profileImage/SKIehhOBXId3k2uI25vl1X803VbMifEg1zdXYVdj.png",
+      rating: 4.7,
+      price: "5,000",
+      specs: ["Auto", "7 seats", "Gasoline"],
+      available: true,
+    },
+    {
+      id: 65,
+      brand: "Toyota",
+      model: "Vios",
+      owner: "Host • C. Lim",
+      image:
+        "http://127.0.0.1:8000/storage/cars/35/profileImage/SgHJkNM5KojaiXFxr1V9mHXgC1apesBWzmUZSyZ8.png",
+      rating: 4.8,
+      price: "3,500",
+      specs: ["Auto", "5 seats", "Gasoline"],
+      available: true,
+    },
+    {
+      id: 64,
+      brand: "Nissan",
+      model: "Almera",
+      owner: "Host • J. Cruz",
+      image:
+        "http://127.0.0.1:8000/storage/cars/34/profileImage/Ea5RFEvwa5stb0bxlJnVtqMec2kpRfFgpztJQiqH.png",
+      rating: 4.6,
+      price: "3,500",
+      specs: ["Manual", "5 seats", "Gasoline"],
+      available: false,
+    },
   ];
 
   return (
@@ -64,7 +100,7 @@ export default function CarRentalCardBooking() {
           key={car.id}
           onClick={() => setSelectedId(car.id)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               setSelectedId(car.id);
             }
@@ -77,10 +113,11 @@ export default function CarRentalCardBooking() {
           w="100%"
           h="170px"
           boxShadow={"sm"}
-          className={`${selectedId === car.id
+          className={`${
+            selectedId === car.id
               ? "group overflow-hidden rounded-2xl border border-blue-400 ring-2 ring-blue-500 shadow-2xl scale-[1.01]"
               : "group overflow-hidden rounded-2xl border border-gray-200 shadow-md hover:border-blue-300 hover:shadow-xl"
-            } transition-all duration-200`}
+          } transition-all duration-200`}
         >
           <Flex h="100%">
             {/* Image */}

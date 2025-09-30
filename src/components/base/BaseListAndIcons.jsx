@@ -2,21 +2,7 @@ import { useState } from "react";
 import { Box, Text, Flex, Button } from "@chakra-ui/react";
 import { carIcons } from "../../utils/carIcons";
 
-import {
-  FaGasPump,
-  FaCogs,
-  FaSuitcase,
-  FaUser,
-  FaUsers,
-  FaCalendarAlt,
-  FaTachometerAlt,
-  FaBook,
-  FaCalculator,
-  FaMoneyBillWave,
-  FaClock,
-  FaExclamationCircle,
-  FaCalendarDay,
-} from "react-icons/fa";
+import {} from "react-icons/fa";
 
 const BaseListAndIcons = ({
   specs = [],

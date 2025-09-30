@@ -1,6 +1,21 @@
-import { Box, HStack, Select, Wrap, WrapItem, Button, useColorModeValue, chakra, Icon, InputGroup, InputLeftElement, Input } from "@chakra-ui/react";
+import {
+  Box,
+  HStack,
+  Select,
+  Wrap,
+  WrapItem,
+  Button,
+  IconButton,
+  Tooltip,
+  useColorModeValue,
+  chakra,
+  Icon,
+  InputGroup,
+  InputLeftElement,
+  Input,
+} from "@chakra-ui/react";
 import { MdArrowDropDown } from "react-icons/md";
-import { FiFilter, FiX, FiSettings, FiSearch } from "react-icons/fi";
+import { FiFilter, FiRotateCcw, FiSettings, FiSearch } from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import { FaCar } from "react-icons/fa";
 
@@ -8,10 +23,38 @@ const FilterSm = chakra(FiFilter, {
   baseStyle: { w: "14px", h: "14px" },
 });
 
-export default function FiltersTopBar() {
+export default function FiltersTopBar({ showRegister = false, onRegister }) {
   const borderCol = useColorModeValue("blue.700", "blue.800");
   const inputBorder = useColorModeValue("whiteAlpha.400", "whiteAlpha.500");
   const hoverBg = useColorModeValue("whiteAlpha.200", "whiteAlpha.300");
+
+  const baseSelectProps = {
+    variant: "filled",
+    borderRadius: "lg",
+    bg: "white",
+    color: "gray.800",
+    border: "1px solid",
+    borderColor: inputBorder,
+    icon: <MdArrowDropDown />,
+    _hover: { bg: "white" },
+    _focusVisible: {
+      borderColor: "whiteAlpha.700",
+      boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
+    },
+  };
+
+  const SelectWithIcon = ({ icon: LeftIcon, placeholder, minW = "170px", options = [] }) => (
+    <HStack spacing={2}>
+      <Icon as={LeftIcon} />
+      <Select placeholder={placeholder} minW={minW} {...baseSelectProps}>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </Select>
+    </HStack>
+  );
 
   return (
     <HStack
@@ -36,78 +79,48 @@ export default function FiltersTopBar() {
         opacity={0.08}
         style={{
           backgroundImage:
-            "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"160\" height=\"160\" viewBox=\"0 0 160 160\"><defs><pattern id=\"p\" width=\"40\" height=\"40\" patternUnits=\"userSpaceOnUse\"><path d=\"M0 40 L40 0 M-10 10 L10 -10 M30 50 L50 30\" stroke=\"%23ffffff\" stroke-width=\"1\" opacity=\"0.6\"/></pattern></defs><rect width=\"100%\" height=\"100%\" fill=\"url(%23p)\"/></svg>')",
+            'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><defs><pattern id="p" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0 M-10 10 L10 -10 M30 50 L50 30" stroke="%23ffffff" stroke-width="1" opacity="0.6"/></pattern></defs><rect width="100%" height="100%" fill="url(%23p)"/></svg>\')',
           backgroundRepeat: "repeat",
         }}
       />
       {/* Filters */}
       <Wrap align="center" spacing={3}>
         <WrapItem>
-          <HStack spacing={2}>
-            <Icon as={FiSettings} />
-            <Select
-              placeholder="Gear Type"
-              variant="filled"
-              borderRadius="lg"
-              minW="170px"
-              bg="white"
-              color="gray.800"
-              border="1px solid"
-              borderColor={inputBorder}
-              icon={<MdArrowDropDown />}
-              _hover={{ bg: "white" }}
-              _focusVisible={{ borderColor: "whiteAlpha.700", boxShadow: "0 0 0 1px rgba(255,255,255,0.4)" }}
-            >
-              <option value="automatic">Automatic</option>
-              <option value="manual">Manual</option>
-            </Select>
-          </HStack>
+          <SelectWithIcon
+            icon={FiSettings}
+            placeholder="Gear Type"
+            minW="170px"
+            options={[
+              { value: "automatic", label: "Automatic" },
+              { value: "manual", label: "Manual" },
+            ]}
+          />
         </WrapItem>
 
         <WrapItem>
-          <HStack spacing={2}>
-            <Icon as={BsFuelPump} />
-            <Select
-              placeholder="Fuel Type"
-              variant="filled"
-              borderRadius="lg"
-              minW="170px"
-              icon={<MdArrowDropDown />}
-              bg="white"
-              color="gray.800"
-              border="1px solid"
-              borderColor={inputBorder}
-              _hover={{ bg: "white" }}
-              _focusVisible={{ borderColor: "whiteAlpha.700", boxShadow: "0 0 0 1px rgba(255,255,255,0.4)" }}
-            >
-              <option value="petrol">Petrol</option>
-              <option value="diesel">Diesel</option>
-              <option value="electric">Electric</option>
-            </Select>
-          </HStack>
+          <SelectWithIcon
+            icon={BsFuelPump}
+            placeholder="Fuel Type"
+            minW="170px"
+            options={[
+              { value: "petrol", label: "Petrol" },
+              { value: "diesel", label: "Diesel" },
+              { value: "electric", label: "Electric" },
+            ]}
+          />
         </WrapItem>
 
         <WrapItem>
-          <HStack spacing={2}>
-            <Icon as={FaCar} />
-            <Select
-              placeholder="Brand"
-              variant="filled"
-              borderRadius="lg"
-              minW="200px"
-              bg="white"
-              color="gray.800"
-              border="1px solid"
-              borderColor={inputBorder}
-              icon={<MdArrowDropDown />}
-              _hover={{ bg: "white" }}
-              _focusVisible={{ borderColor: "whiteAlpha.700", boxShadow: "0 0 0 1px rgba(255,255,255,0.4)" }}
-            >
-              <option value="toyota">Toyota</option>
-              <option value="honda">Honda</option>
-              <option value="bmw">BMW</option>
-            </Select>
-          </HStack>
+          <SelectWithIcon
+            icon={FaCar}
+            placeholder="Brand"
+            minW="200px"
+            options={[
+              { value: "toyota", label: "Toyota" },
+              { value: "honda", label: "Honda" },
+              { value: "bmw", label: "BMW" },
+            ]}
+          />
         </WrapItem>
 
         <WrapItem>
@@ -123,36 +136,38 @@ export default function FiltersTopBar() {
                 borderRadius="lg"
                 borderColor={inputBorder}
                 _hover={{ bg: "white" }}
-                _focusVisible={{ borderColor: "whiteAlpha.700", boxShadow: "0 0 0 1px rgba(255,255,255,0.4)" }}
+                _focusVisible={{
+                  borderColor: "whiteAlpha.700",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
+                }}
               />
             </InputGroup>
           </HStack>
         </WrapItem>
 
         <WrapItem>
-          <Button
-            leftIcon={<FiX size={14} />}
-            variant="outline"
-            colorScheme="whiteAlpha"
-            borderRadius="lg"
-            size="md"
-            color="white"
-            fontWeight="semibold"
-            _hover={{ bg: hoverBg }}
-          >
-            Clear All
-          </Button>
+          <Tooltip label="Reset filters">
+            <IconButton
+              aria-label="Reset filters"
+              icon={<FiRotateCcw size={18} />}
+              variant="outline"
+              colorScheme="whiteAlpha"
+              borderRadius="lg"
+              size="md"
+              color="white"
+              _hover={{ bg: hoverBg }}
+            />
+          </Tooltip>
         </WrapItem>
       </Wrap>
 
       {/* Sort */}
-      <HStack spacing={2} align="center">
-        <Icon as={FilterSm} />
+      <HStack spacing={1} align="center">
         <Select
           placeholder="Sort by"
           variant="filled"
           borderRadius="lg"
-          minW="200px"
+          minW="120px"
           size="md"
           icon={<FilterSm />}
           iconSize="0.9rem"
@@ -161,12 +176,20 @@ export default function FiltersTopBar() {
           border="1px solid"
           borderColor={inputBorder}
           _hover={{ bg: "white" }}
-          _focusVisible={{ borderColor: "whiteAlpha.700", boxShadow: "0 0 0 1px rgba(255,255,255,0.4)" }}
+          _focusVisible={{
+            borderColor: "whiteAlpha.700",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.4)",
+          }}
         >
-          <option value="price-low-high">Price: Low to High</option>
-          <option value="price-high-low">Price: High to Low</option>
-          <option value="popularity">Popularity</option>
+          <option value="1">Available</option>
+          <option value="2">Unavailalble</option>
+          <option value="4">Popularity</option>
         </Select>
+        {showRegister ? (
+          <Button colorScheme="green" onClick={onRegister}>
+            Add Unit
+          </Button>
+        ) : null}
       </HStack>
     </HStack>
   );
