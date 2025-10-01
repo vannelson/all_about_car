@@ -73,3 +73,22 @@
 .fc-theme-standard th {
   border-color: #e5e7eb; /* gray-200 */
 }
+
+/* Shared gradient header to match FiltersTopBar */
+.tc-modal-header {
+  position: relative;
+  color: #ffffff;
+  background: linear-gradient(to right, #1d4ed8, #2563eb, #1d4ed8); /* blue.700 -> blue.600 -> blue.700 */
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+.tc-modal-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><defs><pattern id="p" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40 L40 0 M-10 10 L10 -10 M30 50 L50 30" stroke="%23ffffff" stroke-width="1" opacity="0.6"/></pattern></defs><rect width="100%" height="100%" fill="url(%23p)"/></svg>');
+}

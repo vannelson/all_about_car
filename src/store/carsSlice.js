@@ -62,7 +62,7 @@ const carsSlice = createSlice({
     listError: null,
     items: [],
     page: 1,
-    limit: 6,
+    limit: 10,
     hasNext: false,
     meta: null,
   },
@@ -123,7 +123,7 @@ export default carsSlice.reducer;
 // Thunks
 export const fetchCars = createAsyncThunk(
   "cars/fetchList",
-  async ({ page = 1, limit = 6, filters = {} } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10, filters = {} } = {}, { rejectWithValue }) => {
     try {
       const res = await listCarsApi({ page, limit, includes: ["rates", "company"], filters });
       const raw = res?.data || [];

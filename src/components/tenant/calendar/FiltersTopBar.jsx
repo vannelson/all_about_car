@@ -15,7 +15,13 @@ import {
   Input,
 } from "@chakra-ui/react";
 import { MdArrowDropDown } from "react-icons/md";
-import { FiFilter, FiRotateCcw, FiSettings, FiSearch } from "react-icons/fi";
+import {
+  FiFilter,
+  FiRotateCcw,
+  FiSettings,
+  FiSearch,
+  FiPlus,
+} from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import { FaCar } from "react-icons/fa";
 import {
@@ -223,8 +229,12 @@ export default function FiltersTopBar({
           ))}
         </Select>
         {showRegister ? (
-          <Button colorScheme="green" onClick={onRegister}>
-            Add Unit
+          <Button
+            colorScheme="green"
+            onClick={onRegister}
+            leftIcon={<FiPlus size={20} />}
+          >
+            Add
           </Button>
         ) : null}
       </HStack>

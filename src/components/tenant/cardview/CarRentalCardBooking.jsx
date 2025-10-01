@@ -11,7 +11,7 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
-import { FiUsers, FiSettings } from "react-icons/fi";
+import { FiUsers, FiSettings, FiArrowRight } from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import CarBrandLogo from "../../tenant/CarBrandLogo";
 import { useEffect, useMemo, useState } from "react";
@@ -67,11 +67,11 @@ export default function CarRentalCardBooking({ filters }) {
   const { items: storeItems, listLoading } = useSelector((s) => s.cars);
 
   useEffect(() => {
-    dispatch(fetchCars({ page: 1, limit: 3, filters: toApiFilters(filters) }));
+    dispatch(fetchCars({ page: 1, limit: 10, filters: toApiFilters(filters) }));
   }, [dispatch, filters]);
 
   const cars = useMemo(() => {
-    return (storeItems || []).slice(0, 3).map((vm) => {
+    return (storeItems || []).slice(0, 10).map((vm) => {
       const raw = vm?.raw || {};
       const brand = raw.info_make || "";
       const model = raw.info_model || vm.name || "";
@@ -148,7 +148,8 @@ export default function CarRentalCardBooking({ filters }) {
               w="100%"
               h="150px"
               boxShadow={selected ? "lg" : "none"}
-              bg="gray.50"
+              bg="white"
+              bgGradient="linear(to-r, white, gray.50)"
               position="relative"
               className={`${baseClasses} ${
                 selected
@@ -163,9 +164,7 @@ export default function CarRentalCardBooking({ filters }) {
                   top="0"
                   bottom="0"
                   w="4px"
-                  bg="#fafafa"
-                  borderTopRightRadius="12px"
-                  borderBottomRightRadius="12px"
+                  bgGradient="linear(to-b, blue.700, blue.600, blue.700)"
                 />
               )}
               <Flex h="100%">
@@ -260,10 +259,20 @@ export default function CarRentalCardBooking({ filters }) {
                     </Box>
                     <Button
                       size="sm"
-                      colorScheme="blue"
+                      rightIcon={<FiArrowRight />}
+                      bgGradient="linear(to-r, blue.700, blue.600, blue.700)"
+                      color="white"
+                      borderRadius="md"
                       className="px-3 py-1.5 text-xs font-semibold"
+                      _hover={{
+                        bgGradient:
+                          "linear(to-r, blue.800, blue.700, blue.800)",
+                        transform: "translateY(-1px)",
+                        boxShadow: "md",
+                      }}
+                      _active={{ transform: "translateY(0)" }}
                     >
-                      Rent
+                      Rent Now
                     </Button>
                   </VStack>
                 </Flex>

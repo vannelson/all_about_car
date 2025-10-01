@@ -28,7 +28,7 @@ const BaseModal = ({
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader bg={theme} color="white" fontWeight={"bold"}>
+        <ModalHeader className="tc-modal-header" fontWeight={"bold"}>
           {title}
         </ModalHeader>
         <ModalCloseButton size="16" color="white" mt="4" mr="3" />

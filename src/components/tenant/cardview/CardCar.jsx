@@ -22,7 +22,7 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 
-import { InfoIcon } from "@chakra-ui/icons";
+// Removed Info icon from More Info button
 import { FaEdit, FaTrash, FaMoneyBillWave } from "react-icons/fa";
 import { FiMoreVertical } from "react-icons/fi";
 
@@ -70,7 +70,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
 
   useEffect(() => {
     if (!cars || cars.length === 0) {
-      dispatch(fetchCars({ page: 1, limit: 6 }));
+      dispatch(fetchCars({ page: 1, limit: 10 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,10 +98,10 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
   useEffect(() => {
     const hasFilters = Object.keys(apiFilters).length > 0;
     if (hasFilters) {
-      dispatch(fetchCars({ page: 1, limit: limit || 6, filters: apiFilters }));
+      dispatch(fetchCars({ page: 1, limit: limit || 10, filters: apiFilters }));
     } else {
       // If filters cleared, reload unfiltered list
-      dispatch(fetchCars({ page: 1, limit: limit || 6 }));
+      dispatch(fetchCars({ page: 1, limit: limit || 10 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiFilters]);
@@ -301,8 +301,11 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                       <Button
                         flex={1}
                         size="sm"
-                        colorScheme="blue"
-                        leftIcon={<InfoIcon />}
+                        bgGradient="linear(to-r, blue.700, blue.600, blue.700)"
+                        color="white"
+                        borderRadius="md"
+                        _hover={{ bgGradient: "linear(to-r, blue.800, blue.700, blue.800)", transform: "translateY(-1px)", boxShadow: "md" }}
+                        _active={{ transform: "translateY(0)" }}
                         onClick={() => onOpenInfo(car)}
                       >
                         More Info
