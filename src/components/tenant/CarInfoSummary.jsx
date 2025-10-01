@@ -6,8 +6,11 @@ import {
   Tr,
   Td,
   Text,
+  Badge,
+  HStack,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { FiMapPin, FiHash } from "react-icons/fi";
 
 const fields = [
   { key: "info_make", label: "Brand" },
@@ -68,9 +71,25 @@ const CarInfoSummary = ({ raw = {} }) => {
                 color={valueColor}
                 borderColor={border}
               >
-                {row.label === "Mileage"
-                  ? `${Number(row.value).toLocaleString()} km`
-                  : String(row.value)}
+                {row.label === "Status" ? (
+                  <Badge colorScheme={String(row.value).toLowerCase() === "available" ? "green" : "red"} variant="subtle">
+                    {String(row.value).charAt(0).toUpperCase() + String(row.value).slice(1)}
+                  </Badge>
+                ) : row.label === "Mileage" ? (
+                  `${Number(row.value).toLocaleString()} km`
+                ) : row.label === "Plate Number" || row.label === "VIN" ? (
+                  <HStack spacing={2}>
+                    <FiHash />
+                    <Text as="span" fontFamily="mono">{String(row.value)}</Text>
+                  </HStack>
+                ) : row.label === "Location" ? (
+                  <HStack spacing={2}>
+                    <FiMapPin />
+                    <Text as="span">{String(row.value)}</Text>
+                  </HStack>
+                ) : (
+                  String(row.value)
+                )}
               </Td>
             </Tr>
           ))}

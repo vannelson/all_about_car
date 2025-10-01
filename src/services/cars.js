@@ -150,12 +150,19 @@ export function mapCarToViewModel(apiCar) {
     (r) => String(r?.status || "active").toLowerCase() === "active"
   );
   const findRate = (key) => {
-    // try common keys
-    const r = rates.find(
-      (x) =>
-        String(x?.type || x?.name || "").toLowerCase().includes(String(key).toLowerCase()) ||
-        String(x?.unit || "").toLowerCase().includes(String(key).toLowerCase())
-    );
+    const k = String(key).toLowerCase();
+    const r = rates.find((x) => {
+      const type = String(x?.type || "").toLowerCase();
+      const name = String(x?.name || "").toLowerCase();
+      const unit = String(x?.unit || "").toLowerCase();
+      const rateType = String(x?.rate_type || "").toLowerCase();
+      return (
+        type.includes(k) ||
+        name.includes(k) ||
+        unit.includes(k) ||
+        rateType.includes(k)
+      );
+    });
     const amount = r?.amount ?? r?.price ?? r?.rate ?? 0;
     return Number(amount) || 0;
   };

@@ -17,15 +17,58 @@ import CarBrandLogo from "../../tenant/CarBrandLogo";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
+import CarRentalCardSkeleton from "../loading/CarRentalCardSkeleton";
 
-export default function CarRentalCardBooking() {
+function toApiFilters(ui) {
+  const f = {};
+  if (!ui) return f;
+  if (ui.brand) f["info_make"] = ui.brand;
+  if (ui.gear) f["spcs_transmission"] = ui.gear;
+  if (ui.fuel) f["spcs_fuelType"] = ui.fuel;
+  if (ui.availability) f["info_availabilityStatus"] = ui.availability;
+  if (ui.search) f["info_model"] = ui.search; // simple search by model
+  return f;
+}
+
+function getSpecIcon(label) {
+  const l = String(label || "").toLowerCase();
+  if (l.includes("seat")) return FiUsers;
+  if (l.includes("auto") || l.includes("manual")) return FiSettings;
+  if (
+    l.includes("gas") ||
+    l.includes("fuel") ||
+    l.includes("petrol") ||
+    l.includes("diesel") ||
+    l.includes("electric")
+  )
+    return BsFuelPump;
+  return null;
+}
+
+function SpecItem({ label }) {
+  const IconCmp = getSpecIcon(label);
+  return (
+    <Box
+      display="flex"
+      alignItems="center"
+      gap={1}
+      fontSize="sm"
+      color="gray.700"
+    >
+      {IconCmp && <Icon as={IconCmp} boxSize={4} color="gray.600" mr={2} />}
+      {label}
+    </Box>
+  );
+}
+
+export default function CarRentalCardBooking({ filters }) {
   const dispatch = useDispatch();
   const [selectedId, setSelectedId] = useState(null);
   const { items: storeItems, listLoading } = useSelector((s) => s.cars);
 
   useEffect(() => {
-    dispatch(fetchCars({ page: 1, limit: 3 }));
-  }, [dispatch]);
+    dispatch(fetchCars({ page: 1, limit: 3, filters: toApiFilters(filters) }));
+  }, [dispatch, filters]);
 
   const cars = useMemo(() => {
     return (storeItems || []).slice(0, 3).map((vm) => {
@@ -40,8 +83,14 @@ export default function CarRentalCardBooking() {
       const fuel = raw.spcs_fuelType || null;
       const specs = [transmission, seats, fuel].filter(Boolean).slice(0, 3);
       const image = vm.image;
-      const available = String(raw.info_availabilityStatus || "").toLowerCase() === "available";
+      const available =
+        String(raw.info_availabilityStatus || "").toLowerCase() === "available";
       const companyName = raw.company?.name ? `Host - ${raw.company.name}` : "";
+
+      // Prefer active daily, else hourly
+      const hasDaily = Number(vm?.rates?.daily || 0) > 0;
+      const hasHourly = Number(vm?.rates?.hourly || 0) > 0;
+      const unit = hasDaily ? "day" : hasHourly ? "hour" : "day";
 
       return {
         id: vm.id,
@@ -51,6 +100,7 @@ export default function CarRentalCardBooking() {
         image,
         rating: 0,
         price,
+        unit,
         specs,
         available,
       };
@@ -58,160 +108,169 @@ export default function CarRentalCardBooking() {
   }, [storeItems]);
 
   return (
-    <Box position="sticky" top="72px" maxH="calc(100vh - 100px)" overflowY="auto" className="no-scrollbar">
+    <Box
+      position="sticky"
+      top="72px"
+      maxH="calc(100vh - 100px)"
+      overflowY="auto"
+      className="no-scrollbar"
+    >
       <div className="flex flex-col items-center gap-3 px-3 py-3">
-        {listLoading && cars.length === 0 && (
-          <Text fontSize="sm" color="gray.500">Loading cars...</Text>
-        )}
+        {listLoading &&
+          cars.length === 0 &&
+          Array.from({ length: 3 }).map((_, idx) => (
+            <CarRentalCardSkeleton key={`sk-${idx}`} />
+          ))}
         {!listLoading && cars.length === 0 && (
-          <Text fontSize="sm" color="gray.500">No cars found.</Text>
+          <Text fontSize="sm" color="gray.500">
+            No cars found.
+          </Text>
         )}
-        {cars.map((car) => (
-          <Card
-            key={car.id}
-            onClick={() => setSelectedId(car.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setSelectedId(car.id);
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            aria-pressed={selectedId === car.id}
-            aria-selected={selectedId === car.id}
-            variant="unstyled"
-            w="100%"
-            h="150px"
-            boxShadow={selectedId === car.id ? "lg" : "none"}
-            bg="gray.50"
-            position="relative"
-            className={`${
-              selectedId === car.id
-                ? "group overflow-hidden rounded-xl border-2 border-blue-500 shadow-lg"
-                : "group overflow-hidden rounded-xl border border-gray-200 hover:border-blue-300"
-            } transition-all duration-150`}
-          >
-            {selectedId === car.id && (
-              <Box
-                pos="absolute"
-                right="0"
-                top="0"
-                bottom="0"
-                w="4px"
-                bg="blue.500"
-                borderTopRightRadius="12px"
-                borderBottomRightRadius="12px"
-              />
-            )}
-            <Flex h="100%">
-              {/* Image */}
-              <Box pos="relative" w="150px" h="100%" className="shrink-0">
-                <Image
-                  src={car.image}
-                  alt={`${car.brand} ${car.model}`}
-                  w="100%"
-                  h="100%"
-                  objectFit="cover"
-                  className="transition duration-200 group-hover:scale-[1.01]"
-                  loading="lazy"
-                />
-                {car.available && (
-                  <Box pos="absolute" top="8px" left="8px">
-                    <Badge colorScheme="green" variant="solid" className="rounded-md px-2 py-0.5 text-[10px]">
-                      Available
-                    </Badge>
-                  </Box>
-                )}
-                {/* Removed Selected badge; elevation + border indicate selection */}
-                <HStack
+        {cars.map((car) => {
+          const selected = selectedId === car.id;
+          const baseClasses =
+            "group overflow-hidden rounded-xl transition-all duration-150";
+          return (
+            <Card
+              key={car.id}
+              onClick={() => setSelectedId(car.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedId(car.id);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-pressed={selected}
+              aria-selected={selected}
+              variant="unstyled"
+              w="100%"
+              h="150px"
+              boxShadow={selected ? "lg" : "none"}
+              bg="gray.50"
+              position="relative"
+              className={`${baseClasses} ${
+                selected
+                  ? "border-2 border-blue-500 shadow-lg"
+                  : "border border-gray-200 hover:border-blue-300"
+              }`}
+            >
+              {selected && (
+                <Box
                   pos="absolute"
-                  bottom="8px"
-                  left="8px"
-                  spacing={1}
-                  bg="whiteAlpha.900"
-                  px={2}
-                  py={0.5}
-                  borderRadius="md"
-                  boxShadow="sm"
-                  className="backdrop-blur-sm"
-                >
-                  <Icon as={FaStar} color="yellow.400" boxSize={3} mr={1} />
-                  <Text fontSize="xs" fontWeight="medium">
-                    {Number(car.rating || 0).toFixed(1)}
-                  </Text>
-                </HStack>
-              </Box>
+                  right="0"
+                  top="0"
+                  bottom="0"
+                  w="4px"
+                  bg="#fafafa"
+                  borderTopRightRadius="12px"
+                  borderBottomRightRadius="12px"
+                />
+              )}
+              <Flex h="100%">
+                {/* Image */}
+                <Box pos="relative" w="150px" h="100%" className="shrink-0">
+                  <Image
+                    src={car.image}
+                    alt={`${car.brand} ${car.model}`}
+                    w="100%"
+                    h="100%"
+                    objectFit="cover"
+                    className="transition duration-200 group-hover:scale-[1.01]"
+                    loading="lazy"
+                  />
+                  {car.available && (
+                    <Box pos="absolute" top="8px" left="8px">
+                      <Badge
+                        colorScheme="green"
+                        variant="solid"
+                        className="rounded-md px-2 py-0.5 text-[10px]"
+                      >
+                        Available
+                      </Badge>
+                    </Box>
+                  )}
+                  {/* Removed Selected badge; elevation + border indicate selection */}
+                  <HStack
+                    pos="absolute"
+                    bottom="8px"
+                    left="8px"
+                    spacing={1}
+                    bg="whiteAlpha.900"
+                    px={2}
+                    py={0.5}
+                    borderRadius="md"
+                    boxShadow="sm"
+                    className="backdrop-blur-sm"
+                  >
+                    <Icon as={FaStar} color="yellow.400" boxSize={3} mr={1} />
+                    <Text fontSize="xs" fontWeight="medium">
+                      {Number(car.rating || 0).toFixed(1)}
+                    </Text>
+                  </HStack>
+                </Box>
 
-              {/* Content */}
-              <Flex flex="1" justify="space-between" p={2}>
-                <VStack align="flex-start" spacing={1} flex="1" pr={2}>
-                  <Box>
-                    <HStack spacing={2} align="center">
-                      <CarBrandLogo brand={car.brand} size={18} mr={1} />
-                      <HStack spacing={2} align="baseline">
-                        <Text
-                          fontWeight="semibold"
-                          textTransform="uppercase"
-                          letterSpacing="wider"
-                          className="tracking-wide text-gray-800"
-                          noOfLines={1}
-                          title={car.model}
-                        >
-                          {car.model}
-                        </Text>
+                {/* Content */}
+                <Flex flex="1" justify="space-between" p={2}>
+                  <VStack align="flex-start" spacing={1} flex="1" pr={2}>
+                    <Box>
+                      <HStack spacing={2} align="center">
+                        <CarBrandLogo brand={car.brand} size={18} mr={1} />
+                        <HStack spacing={2} align="baseline">
+                          <Text
+                            fontWeight="semibold"
+                            textTransform="uppercase"
+                            letterSpacing="wider"
+                            className="tracking-wide text-gray-800"
+                            noOfLines={1}
+                            title={car.model}
+                          >
+                            {car.model}
+                          </Text>
+                        </HStack>
                       </HStack>
-                    </HStack>
-                    <Text
-                      fontSize="sm"
-                      fontWeight="semibold"
-                      noOfLines={1}
-                      ml="6"
-                      className="text-gray-500"
-                    >
-                      {car.owner || car.brand}
-                    </Text>
-                  </Box>
+                      <Text
+                        fontSize="sm"
+                        fontWeight="semibold"
+                        noOfLines={1}
+                        ml="6"
+                        className="text-gray-500"
+                      >
+                        {car.brand}
+                      </Text>
+                    </Box>
 
-                  <VStack align="start" spacing={1} mt={1}>
-                    {car.specs.map((s) => {
-                      let SpecIcon = null;
-                      const label = s.toLowerCase();
-                      if (label.includes("seat")) SpecIcon = FiUsers;
-                      else if (label.includes("auto") || label.includes("manual")) SpecIcon = FiSettings;
-                      else if (
-                        label.includes("gas") ||
-                        label.includes("fuel") ||
-                        label.includes("petrol") ||
-                        label.includes("diesel") ||
-                        label.includes("electric")
-                      ) SpecIcon = BsFuelPump;
-
-                      return (
-                        <Box key={s} display="flex" alignItems="center" gap={1} fontSize="sm" color="gray.700">
-                          {SpecIcon && <Icon as={SpecIcon} boxSize={4} color="gray.600" mr={2} />}
-                          {s}
-                        </Box>
-                      );
-                    })}
+                    <VStack align="start" spacing={1} mt={1}>
+                      {car.specs.map((s) => (
+                        <SpecItem key={s} label={s} />
+                      ))}
+                    </VStack>
                   </VStack>
-                </VStack>
 
-                <VStack align="flex-end" justify="space-between" w="110px">
-                  <Box textAlign="right">
-                    <Text fontSize="xl" fontWeight="bold" color="gray.600">
-                      {car.price}
-                    </Text>
-                    <Text fontSize="10px" color="gray.500">per day</Text>
-                  </Box>
-                  <Button size="sm" colorScheme="blue" className="px-3 py-1.5 text-xs font-semibold">
-                    Rent
-                  </Button>
-                </VStack>
+                  <VStack align="flex-end" justify="space-between" w="110px">
+                    <Box textAlign="right">
+                      <Text fontSize="xl" fontWeight="bold" color="gray.600">
+                        {car.price}
+                      </Text>
+                      <Text
+                        fontSize="10px"
+                        color="gray.500"
+                      >{`per ${car.unit}`}</Text>
+                    </Box>
+                    <Button
+                      size="sm"
+                      colorScheme="blue"
+                      className="px-3 py-1.5 text-xs font-semibold"
+                    >
+                      Rent
+                    </Button>
+                  </VStack>
+                </Flex>
               </Flex>
-            </Flex>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </Box>
   );

@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
-import { Box, Text, VStack, HStack, Button } from "@chakra-ui/react";
+import { useMemo, useState, useCallback } from "react";
+import { Box } from "@chakra-ui/react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import BookingModal from "../booking/BookingModal";
+import BaseModal from "../../base/BaseModal";
+import CarProfile from "../CarProfile";
+import { useSelector } from "react-redux";
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -23,6 +26,9 @@ function addHours(base, h) {
 
 export default function FullCalendarPanel() {
   const [isBookingOpen, setBookingOpen] = useState(false);
+  const [isProfileOpen, setProfileOpen] = useState(false);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const { items: cars } = useSelector((s) => s.cars);
 
   const initialEvents = useMemo(() => {
     const now = new Date();
@@ -45,6 +51,7 @@ export default function FullCalendarPanel() {
       {
         id: "md1",
         title: "Booking: Toyota Vios",
+        extendedProps: { carModel: "Vios" },
         start: new Date(y, m, d + 1),
         end: new Date(y, m, d + 4),
         backgroundColor: colors.blue.bg,
@@ -55,6 +62,7 @@ export default function FullCalendarPanel() {
       {
         id: "md2",
         title: "Booking: Mitsubishi Xpander",
+        extendedProps: { carModel: "Xpander" },
         start: new Date(y, m, d + 5),
         end: new Date(y, m, d + 8),
         backgroundColor: colors.green.bg,
@@ -65,6 +73,7 @@ export default function FullCalendarPanel() {
       {
         id: "md3",
         title: "Booking: Honda City",
+        extendedProps: { carModel: "City" },
         start: new Date(y, m, d + 9),
         end: new Date(y, m, d + 13),
         backgroundColor: colors.purple.bg,
@@ -75,6 +84,7 @@ export default function FullCalendarPanel() {
       {
         id: "md4",
         title: "Booking: Ford Ranger",
+        extendedProps: { carModel: "Ranger" },
         start: new Date(y, m, d + 14),
         end: new Date(y, m, d + 17),
         backgroundColor: colors.amber.bg,
@@ -85,6 +95,7 @@ export default function FullCalendarPanel() {
       {
         id: "md5",
         title: "Booking: Nissan Patrol",
+        extendedProps: { carModel: "Patrol" },
         start: new Date(y, m, d + 18),
         end: new Date(y, m, d + 22),
         backgroundColor: colors.slate.bg,
@@ -105,6 +116,7 @@ export default function FullCalendarPanel() {
       {
         id: "t1",
         title: "Pickup: BMW 3 Series",
+        extendedProps: { carModel: "3 Series" },
         start: addHours(new Date(y, m, d + 4, 10), 0),
         end: addHours(new Date(y, m, d + 4, 12), 0),
         backgroundColor: colors.amber.bg,
@@ -114,6 +126,7 @@ export default function FullCalendarPanel() {
       {
         id: "t2",
         title: "Return: Nissan Almera",
+        extendedProps: { carModel: "Almera" },
         start: addHours(new Date(y, m, d + 7, 15), 0),
         end: addHours(new Date(y, m, d + 7, 18), 0),
         backgroundColor: colors.slate.bg,
@@ -139,6 +152,34 @@ export default function FullCalendarPanel() {
   };
   const onEventResize = onEventDrop;
 
+  const resolveCarByModel = useCallback(
+    (model) => {
+      const list = Array.isArray(cars) ? cars : [];
+      const lower = String(model || "").toLowerCase();
+      return (
+        list.find((c) => String(c?.raw?.info_model || c?.name || "").toLowerCase().includes(lower)) ||
+        list[0] ||
+        null
+      );
+    },
+    [cars]
+  );
+
+  const onEventDidMount = useCallback(
+    (info) => {
+      const el = info.el;
+      const model = info.event.extendedProps?.carModel;
+      el.addEventListener("dblclick", () => {
+        const car = resolveCarByModel(model);
+        if (car) {
+          setSelectedCar(car);
+          setProfileOpen(true);
+        }
+      });
+    },
+    [resolveCarByModel]
+  );
+
   return (
     <Box className=" border border-gray-200 bg-white p-2" overflow="hidden">
       <FullCalendar
@@ -159,6 +200,7 @@ export default function FullCalendarPanel() {
         eventDrop={onEventDrop}
         eventResize={onEventResize}
         eventDisplay="block"
+        eventDidMount={onEventDidMount}
         dayMaxEventRows={3}
         nowIndicator={true}
         firstDay={1}
@@ -168,6 +210,16 @@ export default function FullCalendarPanel() {
         isOpen={isBookingOpen}
         onClose={() => setBookingOpen(false)}
       />
+
+      <BaseModal
+        title={selectedCar?.name || "Car Profile"}
+        isOpen={isProfileOpen}
+        onClose={() => setProfileOpen(false)}
+        size="5xl"
+        hassFooter={false}
+      >
+        {selectedCar ? <CarProfile raw={selectedCar.raw} /> : null}
+      </BaseModal>
     </Box>
   );
 }
