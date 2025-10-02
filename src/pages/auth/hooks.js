@@ -44,7 +44,7 @@ export function useLoginHandler({ email, password }) {
   return { onSubmit, loading };
 }
 
-export function useRegisterHandler({ name, email, password }) {
+export function useRegisterHandler({ firstName, middleName, lastName, email, password, confirmPassword }) {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -58,15 +58,30 @@ export function useRegisterHandler({ name, email, password }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await registerApi({ name, email, password, password_confirmation: password, type, role });
+      if (password !== confirmPassword) {
+        toast({ title: "Passwords do not match", status: "error" });
+        setLoading(false);
+        return;
+      }
+      await registerApi({
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
+        email,
+        password,
+        password_confirmation: confirmPassword || password,
+        type,
+        role,
+      });
       const loginRes = await loginApi({ email, password });
       const apiUser = loginRes?.data?.user || loginRes?.user || {};
       const token = loginRes?.data?.token || loginRes?.token;
       const derivedRole = apiUser?.type || apiUser?.role || type;
+      const displayName = [firstName, middleName, lastName].filter(Boolean).join(" ");
 
       dispatch(
         registerSuccess({
-          user: { name: apiUser?.name || name, email: apiUser?.email || email },
+          user: { name: apiUser?.name || displayName, email: apiUser?.email || email },
           role: derivedRole,
           token,
         })
@@ -84,4 +99,3 @@ export function useRegisterHandler({ name, email, password }) {
 
   return { onSubmit, loading };
 }
-

@@ -17,6 +17,8 @@ import {
   Center,
   FormControl,
   FormLabel,
+  SimpleGrid,
+  GridItem,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import "./auth.css";
@@ -36,11 +38,22 @@ import { useRegisterHandler } from "./hooks";
 import { primaryButtonProps } from "./styles";
 
 export default function Register() {
-  const [show, setShow] = useState(false);
-  const [name, setName] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { onSubmit, loading } = useRegisterHandler({ name, email, password });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const { onSubmit, loading } = useRegisterHandler({
+    firstName,
+    middleName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+  });
 
   // Color values
   const cardBg = useColorModeValue("white", "gray.800");
@@ -160,7 +173,7 @@ export default function Register() {
         position="absolute"
         top="-20%"
         right="-10%"
-        w="400px"
+        w="600px"
         h="400px"
         borderRadius="full"
         bgGradient="linear-gradient(135deg, blue.200 0%, purple.200 50%, pink.200 100%)"
@@ -224,6 +237,8 @@ export default function Register() {
           shadow="xl"
           borderWidth="1px"
           borderColor={borderColor}
+          w="full"
+          maxW={{ base: "100%", md: "1000px" }}
           position="relative"
           backdropFilter="blur(10px)"
         >
@@ -240,161 +255,337 @@ export default function Register() {
                   alignItems="center"
                   gap={2}
                 >
-                  Full Name
+                  Account Details
                 </FormLabel>
-                <InputGroup>
-                  <Input
-                    placeholder="Enter your full name"
-                    className="auth-input"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    size="lg"
-                    borderRadius="lg"
-                    borderColor={borderColor}
-                    transition="all 0.3s"
-                    pl="12"
-                    _focus={{
-                      borderColor: accent,
-                      boxShadow: `0 0 0 2px ${useColorModeValue(
-                        "blue.100",
-                        "blue.900"
-                      )}`,
-                      transform: "scale(1.02)",
-                    }}
-                    _hover={{
-                      borderColor: useColorModeValue("gray.300", "gray.500"),
-                    }}
-                  />
-                  <Box
-                    position="absolute"
-                    left="3"
-                    top="50%"
-                    transform="translateY(-50%)"
-                    color={useColorModeValue("gray.400", "gray.500")}
-                    zIndex={2}
-                  >
-                    <FaUser size={18} />
-                  </Box>
-                </InputGroup>
+                <SimpleGrid columns={{ base: 1, md: 1 }} spacing={4}>
+                  {/* Row 1 */}
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      First Name
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        placeholder="First name"
+                        className="auth-input"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaUser size={18} />
+                      </Box>
+                    </InputGroup>
+                  </GridItem>
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      Last Name
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        placeholder="Last name"
+                        className="auth-input"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaUser size={18} />
+                      </Box>
+                    </InputGroup>
+                  </GridItem>
+
+                  {/* Row 2 */}
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      Middle Name
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        placeholder="Middle name"
+                        className="auth-input"
+                        value={middleName}
+                        onChange={(e) => setMiddleName(e.target.value)}
+                        required
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaUser size={18} />
+                      </Box>
+                    </InputGroup>
+                  </GridItem>
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      Email Address
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        type="email"
+                        placeholder="Enter your email address"
+                        className="auth-input"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaEnvelope size={18} />
+                      </Box>
+                    </InputGroup>
+                  </GridItem>
+
+                  {/* Row 3 */}
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      Password
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        type={showPass ? "text" : "password"}
+                        placeholder="Create a password"
+                        className="auth-input"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={4}
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaLock size={18} />
+                      </Box>
+                      <InputRightElement height="100%" mr={1}>
+                        <IconButton
+                          aria-label={
+                            showPass ? "Hide password" : "Show password"
+                          }
+                          icon={showPass ? <FaEyeSlash /> : <FaEye />}
+                          variant="ghost"
+                          color={iconColor}
+                          onClick={() => setShowPass(!showPass)}
+                          _hover={{
+                            bg: useColorModeValue("gray.100", "gray.600"),
+                            transform: "scale(1.1)",
+                          }}
+                          transition="all 0.2s"
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                  </GridItem>
+                  <GridItem>
+                    <FormLabel
+                      fontSize="xs"
+                      color={useColorModeValue("gray.600", "gray.400")}
+                      mb={1}
+                    >
+                      Confirm Password
+                    </FormLabel>
+                    <InputGroup>
+                      <Input
+                        type={showConfirm ? "text" : "password"}
+                        placeholder="Confirm password"
+                        className="auth-input"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={4}
+                        size="lg"
+                        borderRadius="lg"
+                        borderColor={borderColor}
+                        transition="all 0.3s"
+                        pl="12"
+                        _focus={{
+                          borderColor: accent,
+                          boxShadow: `0 0 0 2px ${useColorModeValue(
+                            "blue.100",
+                            "blue.900"
+                          )}`,
+                          transform: "scale(1.02)",
+                        }}
+                        _hover={{
+                          borderColor: useColorModeValue(
+                            "gray.300",
+                            "gray.500"
+                          ),
+                        }}
+                      />
+                      <Box
+                        position="absolute"
+                        left="3"
+                        top="50%"
+                        transform="translateY(-50%)"
+                        color={useColorModeValue("gray.400", "gray.500")}
+                        zIndex={2}
+                      >
+                        <FaLock size={18} />
+                      </Box>
+                      <InputRightElement height="100%" mr={1}>
+                        <IconButton
+                          aria-label={
+                            showConfirm ? "Hide password" : "Show password"
+                          }
+                          icon={showConfirm ? <FaEyeSlash /> : <FaEye />}
+                          variant="ghost"
+                          color={iconColor}
+                          onClick={() => setShowConfirm(!showConfirm)}
+                          _hover={{
+                            bg: useColorModeValue("gray.100", "gray.600"),
+                            transform: "scale(1.1)",
+                          }}
+                          transition="all 0.2s"
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                  </GridItem>
+                </SimpleGrid>
               </FormControl>
 
-              {/* Email Field with Icon */}
-              <FormControl>
-                <FormLabel
-                  fontSize="sm"
-                  fontWeight="600"
-                  color={useColorModeValue("gray.700", "gray.300")}
-                  mb={2}
-                  display="flex"
-                  alignItems="center"
-                  gap={2}
-                >
-                  Email Address
-                </FormLabel>
-                <InputGroup>
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="auth-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    size="lg"
-                    borderRadius="lg"
-                    borderColor={borderColor}
-                    transition="all 0.3s"
-                    pl="12"
-                    _focus={{
-                      borderColor: accent,
-                      boxShadow: `0 0 0 2px ${useColorModeValue(
-                        "blue.100",
-                        "blue.900"
-                      )}`,
-                      transform: "scale(1.02)",
-                    }}
-                    _hover={{
-                      borderColor: useColorModeValue("gray.300", "gray.500"),
-                    }}
-                  />
-                  <Box
-                    position="absolute"
-                    left="3"
-                    top="50%"
-                    transform="translateY(-50%)"
-                    color={useColorModeValue("gray.400", "gray.500")}
-                    zIndex={2}
-                  >
-                    <FaEnvelope size={18} />
-                  </Box>
-                </InputGroup>
-              </FormControl>
-
-              {/* Password Field with Icon */}
-              <FormControl>
-                <FormLabel
-                  fontSize="sm"
-                  fontWeight="600"
-                  color={useColorModeValue("gray.700", "gray.300")}
-                  mb={2}
-                  display="flex"
-                  alignItems="center"
-                  gap={2}
-                >
-                  Password
-                </FormLabel>
-                <InputGroup>
-                  <Input
-                    type={show ? "text" : "password"}
-                    placeholder="Create a password"
-                    className="auth-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={4}
-                    size="lg"
-                    borderRadius="lg"
-                    borderColor={borderColor}
-                    transition="all 0.3s"
-                    pl="12"
-                    _focus={{
-                      borderColor: accent,
-                      boxShadow: `0 0 0 2px ${useColorModeValue(
-                        "blue.100",
-                        "blue.900"
-                      )}`,
-                      transform: "scale(1.02)",
-                    }}
-                    _hover={{
-                      borderColor: useColorModeValue("gray.300", "gray.500"),
-                    }}
-                  />
-                  <Box
-                    position="absolute"
-                    left="3"
-                    top="50%"
-                    transform="translateY(-50%)"
-                    color={useColorModeValue("gray.400", "gray.500")}
-                    zIndex={2}
-                  >
-                    <FaLock size={18} />
-                  </Box>
-                  <InputRightElement height="100%" mr={1}>
-                    <IconButton
-                      aria-label={show ? "Hide password" : "Show password"}
-                      icon={show ? <FaEyeSlash /> : <FaEye />}
-                      variant="ghost"
-                      color={iconColor}
-                      onClick={() => setShow(!show)}
-                      _hover={{
-                        bg: useColorModeValue("gray.100", "gray.600"),
-                        transform: "scale(1.1)",
-                      }}
-                      transition="all 0.2s"
-                    />
-                  </InputRightElement>
-                </InputGroup>
-              </FormControl>
+              {/* Old single password block removed in favor of 2-column grid above */}
 
               {/* Account type and role are static (borrower/user) per requirements */}
 

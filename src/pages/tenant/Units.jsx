@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -30,6 +30,7 @@ import TableCar from "../../components/tenant/tableview/TableCar";
 import CardCar from "../../components/tenant/cardview/CardCar";
 import BaseModal from "../../components/base/BaseModal";
 import CarRegistrationSteps from "../../components/tenant/CarRegistrationSteps";
+import { loadTopbarFilters, saveTopbarFilters } from "../../utils/helpers/filterPersistence";
 
 function Units() {
   const {
@@ -40,8 +41,23 @@ function Units() {
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   // Search and filters state (controlled)
-  const [topbar, setTopbar] = useState({ gear: "", fuel: "", brand: "", availability: "", search: "" });
+  const [topbar, setTopbar] = useState(() => loadTopbarFilters());
   const [filters, setFilters] = useState({});
+
+  useEffect(() => {
+    // Map initial topbar -> filters on mount (and when loaded from storage)
+    const v = topbar || {};
+    const mapped = {
+      brand: v.brand,
+      transmission: v.gear,
+      fuel: v.fuel,
+      availability: v.availability,
+      plateNumber: v.search,
+      model: v.search,
+      vin: v.search,
+    };
+    setFilters(mapped);
+  }, []);
 
   return (
     <>
@@ -50,18 +66,25 @@ function Units() {
         value={topbar}
         onChange={(v)=>{
           setTopbar(v);
+          saveTopbarFilters(v);
           // map to API filters: brand->info_make, transmission->spcs_transmission, plate/model via search
           const mapped = {
             brand: v.brand,
             transmission: v.gear,
-            fuel: v.fuel, // backend to support later; still pass as param
+            fuel: v.fuel,
             availability: v.availability,
             plateNumber: v.search,
             model: v.search,
+            vin: v.search,
           };
           setFilters(mapped);
         }}
-        onReset={()=>{ setTopbar({ gear:"", fuel:"", brand:"", search:"" }); setFilters({}); }}
+        onReset={()=>{
+          const cleared = { gear:"", fuel:"", brand:"", availability:"", search:"" };
+          setTopbar(cleared);
+          saveTopbarFilters(cleared);
+          setFilters({});
+        }}
         showRegister
         onRegister={onRegOpen}
       />

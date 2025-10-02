@@ -8,10 +8,20 @@ export async function loginApi({ email, password }) {
   return res;
 }
 
-export async function registerApi({ name, email, password, password_confirmation, type, role }) {
-  const res = await apiRequest("/users", {
-    method: "POST",
-    body: { name, email, password, password_confirmation, type, role },
-  });
+export async function registerApi({ first_name, middle_name, last_name, email, password, password_confirmation, type, role, name }) {
+  // For compatibility, if backend still supports `name`, send both.
+  const fullName = name || [first_name, middle_name, last_name].filter(Boolean).join(" ");
+  const body = {
+    first_name,
+    middle_name,
+    last_name,
+    name: fullName || undefined,
+    email,
+    password,
+    password_confirmation,
+    type,
+    role,
+  };
+  const res = await apiRequest("/users", { method: "POST", body });
   return res;
 }

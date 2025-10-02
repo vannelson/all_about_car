@@ -1,19 +1,28 @@
 import { Box, SimpleGrid } from "@chakra-ui/react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import CarRentalCardBooking from "../../components/tenant/cardview/CarRentalCardBooking";
 import FiltersTopBar from "../../components/tenant/calendar/FiltersTopBar";
 import FullCalendarPanel from "../../components/tenant/calendar/FullCalendarPanel";
+import { loadTopbarFilters, saveTopbarFilters } from "../../utils/helpers/filterPersistence";
 
 export default function Calendars() {
-  const [filters, setFilters] = useState({});
+  const [topbar, setTopbar] = useState(() => loadTopbarFilters());
 
-  const handleFiltersChange = useCallback((next) => setFilters(next), []);
-  const handleFiltersReset = useCallback(() => setFilters({}), []);
+  // Persist on change
+  const handleFiltersChange = useCallback((next) => {
+    setTopbar(next);
+    saveTopbarFilters(next);
+  }, []);
+  const handleFiltersReset = useCallback(() => {
+    const cleared = { gear: "", fuel: "", brand: "", availability: "", search: "" };
+    setTopbar(cleared);
+    saveTopbarFilters(cleared);
+  }, []);
 
   return (
     <Box>
       {/* Sticky Top bar */}
-      <FiltersTopBar value={filters} onChange={handleFiltersChange} onReset={handleFiltersReset} />
+      <FiltersTopBar value={topbar} onChange={handleFiltersChange} onReset={handleFiltersReset} />
 
       {/* Content Area */}
       <Box>
@@ -24,7 +33,7 @@ export default function Calendars() {
             sx={{ "@media (min-width: 1800px)": { gridColumn: "span 3 / span 3" } }}
             bg="white"
           >
-            <CarRentalCardBooking filters={filters} />
+            <CarRentalCardBooking filters={topbar} />
           </Box>
 
           {/* Second column (col-8, empty) */}
