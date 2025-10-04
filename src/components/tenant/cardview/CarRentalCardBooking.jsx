@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
 import CarRentalCardSkeleton from "../loading/CarRentalCardSkeleton";
+import { getCarIdFromCard } from "../../../utils/cars";
 
 function toApiFilters(ui) {
   const f = {};
@@ -61,7 +62,7 @@ function SpecItem({ label }) {
   );
 }
 
-export default function CarRentalCardBooking({ filters }) {
+export default function CarRentalCardBooking({ filters, onRent }) {
   const dispatch = useDispatch();
   const [selectedId, setSelectedId] = useState(null);
   const { items: storeItems, listLoading } = useSelector((s) => s.cars);
@@ -106,6 +107,20 @@ export default function CarRentalCardBooking({ filters }) {
       };
     });
   }, [storeItems]);
+
+  // Persist selected car info (full raw payload) to localStorage whenever selection changes
+  useEffect(() => {
+    try {
+      const selected = (cars || []).find((c) => c.id === selectedId);
+      if (selected) {
+        const id = getCarIdFromCard(selected) || selected.id;
+        // find the full VM from Redux items to fetch the raw payload
+        const fullVm = (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
+        const payload = fullVm?.raw || { id, brand: selected.brand, model: selected.model };
+        localStorage.setItem("selectedCarInfo", JSON.stringify(payload));
+      }
+    } catch {}
+  }, [selectedId, cars]);
 
   return (
     <Box
@@ -271,6 +286,17 @@ export default function CarRentalCardBooking({ filters }) {
                         boxShadow: "md",
                       }}
                       _active={{ transform: "translateY(0)" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedId(car.id);
+                        try {
+                          const id = getCarIdFromCard(car) || car.id;
+                          const fullVm = (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
+                          const payload = fullVm?.raw || { id, brand: car.brand, model: car.model };
+                          localStorage.setItem("selectedCarInfo", JSON.stringify(payload));
+                        } catch {}
+                        onRent && onRent(car);
+                      }}
                     >
                       Rent Now
                     </Button>

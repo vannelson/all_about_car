@@ -1,12 +1,15 @@
 import { Box, SimpleGrid } from "@chakra-ui/react";
 import { useState, useCallback, useEffect } from "react";
 import CarRentalCardBooking from "../../components/tenant/cardview/CarRentalCardBooking";
+import BookingModal from "../../components/tenant/booking/BookingModal";
 import FiltersTopBar from "../../components/tenant/calendar/FiltersTopBar";
 import FullCalendarPanel from "../../components/tenant/calendar/FullCalendarPanel";
 import { loadTopbarFilters, saveTopbarFilters } from "../../utils/helpers/filterPersistence";
 
 export default function Calendars() {
   const [topbar, setTopbar] = useState(() => loadTopbarFilters());
+  const [isCardBookingOpen, setCardBookingOpen] = useState(false);
+  const [cardSelectedCar, setCardSelectedCar] = useState(null);
 
   // Persist on change
   const handleFiltersChange = useCallback((next) => {
@@ -33,7 +36,13 @@ export default function Calendars() {
             sx={{ "@media (min-width: 1800px)": { gridColumn: "span 3 / span 3" } }}
             bg="white"
           >
-            <CarRentalCardBooking filters={topbar} />
+            <CarRentalCardBooking
+              filters={topbar}
+              onRent={(carVm) => {
+                setCardSelectedCar(carVm);
+                setCardBookingOpen(true);
+              }}
+            />
           </Box>
 
           {/* Second column (col-8, empty) */}
@@ -45,6 +54,11 @@ export default function Calendars() {
           </Box>
         </SimpleGrid>
       </Box>
+      <BookingModal
+        isOpen={isCardBookingOpen}
+        onClose={() => setCardBookingOpen(false)}
+        car={cardSelectedCar || {}}
+      />
     </Box>
   );
 }

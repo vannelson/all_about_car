@@ -23,6 +23,7 @@ export function useLoginHandler({ email, password }) {
       dispatch(
         loginSuccess({
           user: {
+            id: apiUser?.id || apiUser?.user_id || apiUser?.uid || null,
             name: apiUser?.name || (email ? email.split("@")[0] : "User"),
             email: apiUser?.email || email,
           },
@@ -81,7 +82,11 @@ export function useRegisterHandler({ firstName, middleName, lastName, email, pas
 
       dispatch(
         registerSuccess({
-          user: { name: apiUser?.name || displayName, email: apiUser?.email || email },
+          user: {
+            id: apiUser?.id || apiUser?.user_id || apiUser?.uid || null,
+            name: apiUser?.name || displayName,
+            email: apiUser?.email || email,
+          },
           role: derivedRole,
           token,
         })

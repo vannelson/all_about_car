@@ -14,7 +14,7 @@ export const axiosInstance = axios.create({
 });
 
 // Keep this in sync with store persistence key
-const AUTH_PERSIST_KEY = "travelcars_auth_v1";
+const AUTH_PERSIST_KEY = "user";
 
 // Attach token from persisted auth (if present)
 axiosInstance.interceptors.request.use((config) => {

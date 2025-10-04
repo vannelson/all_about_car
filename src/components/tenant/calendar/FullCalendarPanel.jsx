@@ -28,6 +28,8 @@ export default function FullCalendarPanel() {
   const [isBookingOpen, setBookingOpen] = useState(false);
   const [isProfileOpen, setProfileOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState(null);
+  const [selectedStart, setSelectedStart] = useState("");
+  const [selectedEnd, setSelectedEnd] = useState("");
   const { items: cars } = useSelector((s) => s.cars);
 
   const initialEvents = useMemo(() => {
@@ -138,8 +140,24 @@ export default function FullCalendarPanel() {
   }, []);
 
   const [events, setEvents] = useState(initialEvents);
+  const toLocalInput = (date) => {
+    try {
+      const d = new Date(date);
+      const pad = (n) => String(n).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    } catch {
+      return "";
+    }
+  };
   const onSelect = (info) => {
-    // Show booking modal on date range select
+    // Highlight selection dates into booking modal fields
+    setSelectedStart(toLocalInput(info?.start));
+    setSelectedEnd(toLocalInput(info?.end));
     setBookingOpen(true);
   };
   const onEventDrop = (info) => {
@@ -209,6 +227,8 @@ export default function FullCalendarPanel() {
       <BookingModal
         isOpen={isBookingOpen}
         onClose={() => setBookingOpen(false)}
+        startAt={selectedStart}
+        endAt={selectedEnd}
       />
 
       <BaseModal

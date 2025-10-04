@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
 import carsReducer from "./carsSlice";
 
-const PERSIST_KEY = "travelcars_auth_v1";
+const PERSIST_KEY = "user";
 
 function loadState() {
   try {
