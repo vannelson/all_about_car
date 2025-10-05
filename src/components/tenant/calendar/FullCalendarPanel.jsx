@@ -1,5 +1,5 @@
-import { useMemo, useState, useCallback } from "react";
-import { Box } from "@chakra-ui/react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { Box, Badge, Icon } from "@chakra-ui/react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -8,6 +8,8 @@ import BookingModal from "../booking/BookingModal";
 import BaseModal from "../../base/BaseModal";
 import CarProfile from "../CarProfile";
 import { useSelector } from "react-redux";
+import { listBookingsApi } from "../../../services/bookings";
+import { FaUser, FaCar } from "react-icons/fa";
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -31,115 +33,86 @@ export default function FullCalendarPanel() {
   const [selectedStart, setSelectedStart] = useState("");
   const [selectedEnd, setSelectedEnd] = useState("");
   const { items: cars } = useSelector((s) => s.cars);
+  const calendarRef = useRef(null);
 
-  const initialEvents = useMemo(() => {
-    const now = new Date();
-    const monday = startOfWeek(now);
-    const y = monday.getFullYear();
-    const m = monday.getMonth();
-    const d = monday.getDate();
+  const [events, setEvents] = useState([]);
+  const [currentMonth, setCurrentMonth] = useState("");
 
-    // Solid but clean palette with white text
-    const colors = {
-      blue: { bg: "#2563EB", border: "#1D4ED8" },
-      green: { bg: "#059669", border: "#047857" },
-      purple: { bg: "#7C3AED", border: "#6D28D9" },
-      amber: { bg: "#D97706", border: "#B45309" },
-      slate: { bg: "#475569", border: "#334155" },
-    };
+  const formatMonth = (dateLike) => {
+    const d = new Date(dateLike);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${yyyy}-${mm}`;
+  };
 
-    const e = [
-      // 3+ day bookings (all-day)
-      {
-        id: "md1",
-        title: "Booking: Toyota Vios",
-        extendedProps: { carModel: "Vios" },
-        start: new Date(y, m, d + 1),
-        end: new Date(y, m, d + 4),
-        backgroundColor: colors.blue.bg,
-        borderColor: colors.blue.border,
-        textColor: "#FFFFFF",
-        allDay: true,
-      },
-      {
-        id: "md2",
-        title: "Booking: Mitsubishi Xpander",
-        extendedProps: { carModel: "Xpander" },
-        start: new Date(y, m, d + 5),
-        end: new Date(y, m, d + 8),
-        backgroundColor: colors.green.bg,
-        borderColor: colors.green.border,
-        textColor: "#FFFFFF",
-        allDay: true,
-      },
-      {
-        id: "md3",
-        title: "Booking: Honda City",
-        extendedProps: { carModel: "City" },
-        start: new Date(y, m, d + 9),
-        end: new Date(y, m, d + 13),
-        backgroundColor: colors.purple.bg,
-        borderColor: colors.purple.border,
-        textColor: "#FFFFFF",
-        allDay: true,
-      },
-      {
-        id: "md4",
-        title: "Booking: Ford Ranger",
-        extendedProps: { carModel: "Ranger" },
-        start: new Date(y, m, d + 14),
-        end: new Date(y, m, d + 17),
-        backgroundColor: colors.amber.bg,
-        borderColor: colors.amber.border,
-        textColor: "#FFFFFF",
-        allDay: true,
-      },
-      {
-        id: "md5",
-        title: "Booking: Nissan Patrol",
-        extendedProps: { carModel: "Patrol" },
-        start: new Date(y, m, d + 18),
-        end: new Date(y, m, d + 22),
-        backgroundColor: colors.slate.bg,
-        borderColor: colors.slate.border,
-        textColor: "#FFFFFF",
-        allDay: true,
-      },
-      // background maintenance block
-      {
-        id: "bg1",
-        title: "Maintenance",
-        start: new Date(y, m, d + 2),
-        end: new Date(y, m, d + 3),
-        display: "background",
-        backgroundColor: "#F1F5F9",
-      },
-      // timed examples
-      {
-        id: "t1",
-        title: "Pickup: BMW 3 Series",
-        extendedProps: { carModel: "3 Series" },
-        start: addHours(new Date(y, m, d + 4, 10), 0),
-        end: addHours(new Date(y, m, d + 4, 12), 0),
-        backgroundColor: colors.amber.bg,
-        borderColor: colors.amber.border,
-        textColor: "#FFFFFF",
-      },
-      {
-        id: "t2",
-        title: "Return: Nissan Almera",
-        extendedProps: { carModel: "Almera" },
-        start: addHours(new Date(y, m, d + 7, 15), 0),
-        end: addHours(new Date(y, m, d + 7, 18), 0),
-        backgroundColor: colors.slate.bg,
-        borderColor: colors.slate.border,
-        textColor: "#FFFFFF",
-      },
+  const mapBookingToEvent = (b) => {
+    const start = b?.start_date ? new Date(b.start_date) : null;
+    const end = b?.end_date ? new Date(b.end_date) : null;
+
+    const fullName = [
+      b?.renter_first_name,
+      b?.renter_middle_name,
+      b?.renter_last_name,
+    ]
+      .filter(Boolean)
+      .join(" ") || "Renter";
+
+    const carLabel =
+      b?.car?.info_model ||
+      [b?.car?.info_make, b?.car?.info_model].filter(Boolean).join(" ") ||
+      b?.car?.name ||
+      b?.car_model ||
+      b?.car_name ||
+      "Car";
+
+    const palette = [
+      { bg: "#2563EB", border: "#1D4ED8" }, // blue
+      { bg: "#059669", border: "#047857" }, // green
+      { bg: "#7C3AED", border: "#6D28D9" }, // purple
+      { bg: "#D97706", border: "#B45309" }, // amber
+      { bg: "#EF4444", border: "#DC2626" }, // red
+      { bg: "#0EA5E9", border: "#0284C7" }, // sky
+      { bg: "#10B981", border: "#059669" }, // emerald
+      { bg: "#475569", border: "#334155" }, // slate
     ];
-    return e;
+    const key = String(b?.id || `${carLabel}-${fullName}`);
+    let acc = 0;
+    for (let i = 0; i < key.length; i++) acc = (acc + key.charCodeAt(i)) % 9973;
+    const idx = acc % palette.length;
+    const colors = palette[idx];
+
+    return {
+      id: String(b.id ?? key),
+      title: `${carLabel} — ${fullName}`,
+      start,
+      end,
+      allDay: true,
+      backgroundColor: colors.bg,
+      borderColor: colors.border,
+      textColor: "#FFFFFF",
+      extendedProps: { booking: b, carModel: carLabel },
+    };
+  };
+
+  const fetchMonth = useCallback(async (monthStr) => {
+    try {
+      const res = await listBookingsApi({ month: monthStr, page: 1 });
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setEvents(list.map(mapBookingToEvent));
+      setCurrentMonth(monthStr);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to load bookings", err);
+      setEvents([]);
+      setCurrentMonth(monthStr);
+    }
   }, []);
 
-  const [events, setEvents] = useState(initialEvents);
+  // Initial fetch for current month
+  useEffect(() => {
+    const now = new Date();
+    fetchMonth(formatMonth(now));
+  }, [fetchMonth]);
   const toLocalInput = (date) => {
     try {
       const d = new Date(date);
@@ -198,6 +171,96 @@ export default function FullCalendarPanel() {
     [resolveCarByModel]
   );
 
+  const eventContent = useCallback(
+    (arg) => {
+      const b = arg?.event?.extendedProps?.booking || {};
+      // Derive car label: prefer booking payload; fallback to store by car_id
+      let carLabel =
+        b?.car?.info_model ||
+        [b?.car?.info_make, b?.car?.info_model].filter(Boolean).join(" ") ||
+        b?.car?.name ||
+        arg?.event?.extendedProps?.carModel;
+      if (!carLabel || carLabel === "Car") {
+        const vm = (cars || []).find((c) => Number(c?.id) === Number(b?.car_id));
+        if (vm?.name) carLabel = vm.name;
+      }
+      carLabel = carLabel || `Car #${b?.car_id ?? ""}`;
+
+      // Renter full name
+      const fullName = [
+        b?.renter_first_name,
+        b?.renter_middle_name,
+        b?.renter_last_name,
+      ]
+        .filter(Boolean)
+        .join(" ") || "Renter";
+
+      const status = b?.status || "";
+      const isOngoing = String(status).toLowerCase() === "ongoing";
+
+      return (
+        <div style={{ padding: "2px 4px", lineHeight: 1.15 }}>
+          {/* Inline keyframes for tiny pulse dot */}
+          {isOngoing ? (
+            <style>
+              {`@keyframes tc-pulse { 0%{opacity:.4; transform: scale(.9);} 50%{opacity:1; transform: scale(1);} 100%{opacity:.4; transform: scale(.9);} }`}
+            </style>
+          ) : null}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Icon as={FaCar} boxSize={3} />
+            <span style={{ fontSize: "0.92rem", fontWeight: 800 }}>{carLabel}</span>
+            {status ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                {isOngoing ? (
+                  <span
+                    aria-label="ongoing"
+                    title="Ongoing"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.85)",
+                      animation: "tc-pulse 1.2s ease-in-out infinite",
+                    }}
+                  />
+                ) : null}
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    padding: "1px 6px",
+                    background: "rgba(255,255,255,0.22)",
+                    borderRadius: 8,
+                  }}
+                >
+                  {status}
+                </span>
+              </span>
+            ) : null}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
+            <Icon as={FaUser} boxSize={3} />
+            <span style={{ fontSize: "0.84rem", fontWeight: 600, opacity: 0.95 }}>{fullName}</span>
+          </div>
+        </div>
+      );
+    },
+    [cars]
+  );
+
+  const onDatesSet = useCallback(
+    (arg) => {
+      // Use the active view's start date to derive month
+      const view = arg?.view;
+      const base = view?.currentStart || arg?.start || new Date();
+      const monthStr = formatMonth(base);
+      if (monthStr !== currentMonth) {
+        fetchMonth(monthStr);
+      }
+    },
+    [currentMonth, fetchMonth]
+  );
+
   return (
     <Box className=" border border-gray-200 bg-white p-2" overflow="hidden">
       <FullCalendar
@@ -219,9 +282,12 @@ export default function FullCalendarPanel() {
         eventResize={onEventResize}
         eventDisplay="block"
         eventDidMount={onEventDidMount}
+        eventContent={eventContent}
         dayMaxEventRows={3}
         nowIndicator={true}
         firstDay={1}
+        datesSet={onDatesSet}
+        ref={calendarRef}
       />
 
       <BookingModal

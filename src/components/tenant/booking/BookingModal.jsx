@@ -100,6 +100,7 @@ export default function BookingModal({
   const [idNumber, setIdNumber] = useState("");
   const [idImages, setIdImages] = useState([]);
   const [extraPayment, setExtraPayment] = useState(0);
+  const [bookingStatus, setBookingStatus] = useState("Completed");
   const [submitting, setSubmitting] = useState(false);
 
   const auth = useSelector((s) => s.auth);
@@ -224,7 +225,7 @@ export default function BookingModal({
         renter_first_name: renterFirstName,
         renter_middle_name: renterMiddleName,
         renter_last_name: renterLastName,
-        renter_phone: renterPhone,
+        renter_phone_number: renterPhone,
         renter_email: renterEmail,
         renter_address: renterAddress,
 
@@ -249,11 +250,12 @@ export default function BookingModal({
         quantity: Number(quantities.qty) || 0,
         base_amount: Number(baseAmount) || 0,
         extra_payment: Number(extraPayment) || 0,
+        discount: 0,
         total_amount: Number(total) || 0,
 
         // required statuses (per backend enum)
         payment_status: "Paid",
-        status: "Completed",
+        status: bookingStatus,
       };
 
       await createBookingApi(body);
@@ -308,17 +310,19 @@ export default function BookingModal({
               <Box p={{ base: 4, md: 5 }}>
                 {activeStep === 0 && (
                   <Stack spacing={4}>
-                    <BookingTripForm
-                      pickupAt={pickupAt}
-                      setPickupAt={setPickupAt}
-                      returnAt={returnAt}
-                      setReturnAt={setReturnAt}
-                      pickupLocation={pickupLocation}
-                      setPickupLocation={setPickupLocation}
-                      dropoffLocation={dropoffLocation}
-                      setDropoffLocation={setDropoffLocation}
-                      primaryColor={primaryColor}
-                    />
+                <BookingTripForm
+                  pickupAt={pickupAt}
+                  setPickupAt={setPickupAt}
+                  returnAt={returnAt}
+                  setReturnAt={setReturnAt}
+                  pickupLocation={pickupLocation}
+                  setPickupLocation={setPickupLocation}
+                  dropoffLocation={dropoffLocation}
+                  setDropoffLocation={setDropoffLocation}
+                  primaryColor={primaryColor}
+                  bookingStatus={bookingStatus}
+                  setBookingStatus={setBookingStatus}
+                />
                     {quantities.qty > 0 && (
                       <Alert
                         status="success"
@@ -339,31 +343,31 @@ export default function BookingModal({
 
                 {activeStep === 1 && (
                   <Stack spacing={4}>
-                    <BookingRenterForm
-                      primaryColor={primaryColor}
-                      renterLastName={renterLastName}
-                      setRenterLastName={setRenterLastName}
-                      renterFirstName={renterFirstName}
-                      setRenterFirstName={setRenterFirstName}
-                      renterMiddleName={renterMiddleName}
-                      setRenterMiddleName={setRenterMiddleName}
-                      renterPhone={renterPhone}
-                      setRenterPhone={setRenterPhone}
-                      renterEmail={renterEmail}
-                      setRenterEmail={setRenterEmail}
-                      renterAddress={renterAddress}
-                      setRenterAddress={setRenterAddress}
-                      idType={idType}
-                      setIdType={setIdType}
-                      idNumber={idNumber}
-                      setIdNumber={setIdNumber}
-                      idLabel={idLabel}
-                      setIdLabel={setIdLabel}
-                      idImages={idImages}
-                      setIdImages={setIdImages}
-                      extraPayment={extraPayment}
-                      setExtraPayment={setExtraPayment}
-                    />
+                <BookingRenterForm
+                  primaryColor={primaryColor}
+                  renterLastName={renterLastName}
+                  setRenterLastName={setRenterLastName}
+                  renterFirstName={renterFirstName}
+                  setRenterFirstName={setRenterFirstName}
+                  renterMiddleName={renterMiddleName}
+                  setRenterMiddleName={setRenterMiddleName}
+                  renterPhone={renterPhone}
+                  setRenterPhone={setRenterPhone}
+                  renterEmail={renterEmail}
+                  setRenterEmail={setRenterEmail}
+                  renterAddress={renterAddress}
+                  setRenterAddress={setRenterAddress}
+                  idType={idType}
+                  setIdType={setIdType}
+                  idNumber={idNumber}
+                  setIdNumber={setIdNumber}
+                  idLabel={idLabel}
+                  setIdLabel={setIdLabel}
+                  idImages={idImages}
+                  setIdImages={setIdImages}
+                  extraPayment={extraPayment}
+                  setExtraPayment={setExtraPayment}
+                />
                   </Stack>
                 )}
 
