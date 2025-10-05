@@ -203,9 +203,17 @@ export default function BookingModal({
       setSubmitting(true);
       // Map to backend-required fields
       const tenantId = auth?.user?.id || null;
-      const carId = effectiveCar?.id || car?.id || (() => {
-        try { return JSON.parse(localStorage.getItem("selectedCarInfo")||"{}").id; } catch { return null; }
-      })();
+      const carId =
+        effectiveCar?.id ||
+        car?.id ||
+        (() => {
+          try {
+            return JSON.parse(localStorage.getItem("selectedCarInfo") || "{}")
+              .id;
+          } catch {
+            return null;
+          }
+        })();
 
       const body = {
         // required identifiers
@@ -262,92 +270,6 @@ export default function BookingModal({
     }
   };
 
-  // Download printable summary
-  const handleDownloadPdf = () => {
-    try {
-      const w = window.open("", "_blank");
-      if (!w) return;
-      const fullName =
-        [renterFirstName, renterMiddleName, renterLastName]
-          .filter(Boolean)
-          .join(" ") || "-";
-      const html = `
-        <html>
-          <head>
-            <title>Booking Summary</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { font-size: 18px; margin-bottom: 10px; }
-              h2 { font-size: 16px; margin-top: 18px; }
-              .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
-              .label { color: #666; }
-              .val { font-weight: 600; }
-            </style>
-          </head>
-          <body>
-            <h1>Booking Summary</h1>
-            <h2>Trip</h2>
-            <div class="row"><div class="label">Pickup</div><div class="val">${
-              pickupAt ? new Date(pickupAt).toLocaleString() : "-"
-            }</div></div>
-            <div class="row"><div class="label">Return</div><div class="val">${
-              returnAt ? new Date(returnAt).toLocaleString() : "-"
-            }</div></div>
-            <div class="row"><div class="label">Pickup Location</div><div class="val">${
-              pickupLocation || "-"
-            }</div></div>
-            <div class="row"><div class="label">Drop-off Location</div><div class="val">${
-              dropoffLocation || "-"
-            }</div></div>
-            <h2>Renter</h2>
-            <div class="row"><div class="label">Name</div><div class="val">${fullName}</div></div>
-            <div class="row"><div class="label">Phone</div><div class="val">${
-              renterPhone || "-"
-            }</div></div>
-            <div class="row"><div class="label">Email</div><div class="val">${
-              renterEmail || "-"
-            }</div></div>
-            <div class="row"><div class="label">Address</div><div class="val">${
-              renterAddress || "-"
-            }</div></div>
-            <div class="row"><div class="label">ID Type</div><div class="val">${
-              idType || "-"
-            }</div></div>
-            <div class="row"><div class="label">ID Number</div><div class="val">${
-              idNumber || "-"
-            }</div></div>
-            <div class="row"><div class="label">ID Label</div><div class="val">${
-              idLabel || "-"
-            }</div></div>
-            <h2>Pricing</h2>
-            <div class="row"><div class="label">Rate</div><div class="val">${(
-              Number(baseRate) || 0
-            ).toLocaleString()} / ${chosenRateType}</div></div>
-            <div class="row"><div class="label">Quantity</div><div class="val">${
-              quantities.qty
-            } ${quantities.label}</div></div>
-            <div class="row"><div class="label">Base Amount</div><div class="val">${(
-              Number(baseAmount) || 0
-            ).toLocaleString()}</div></div>
-            <div class="row"><div class="label">Extra Payment</div><div class="val">${(
-              Number(extraPayment) || 0
-            ).toLocaleString()}</div></div>
-            <div class="row"><div class="label">Total</div><div class="val">${(
-              Number(total) || 0
-            ).toLocaleString()}</div></div>
-            <script>window.onload = function(){ window.print(); }</script>
-          </body>
-        </html>
-      `;
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("PDF download failed", e);
-    }
-  };
-
   return (
     <BaseModal
       title={`Book ${car?.name || "Vehicle"}`}
@@ -375,12 +297,8 @@ export default function BookingModal({
                       />
                     </StepIndicator>
                     <Box flexShrink={0} ml={2}>
-                      <StepTitle fontSize="sm" fontWeight="semibold">
-                        {s.title}
-                      </StepTitle>
-                      <StepDescription fontSize="xs">
-                        {s.description}
-                      </StepDescription>
+                      <StepTitle fontWeight="semibold">{s.title}</StepTitle>
+                      <StepDescription>{s.description}</StepDescription>
                     </Box>
                     <StepSeparator />
                   </Step>
@@ -546,14 +464,6 @@ export default function BookingModal({
                     </Button>
                   ) : (
                     <HStack>
-                      <Button
-                        leftIcon={<FaDownload />}
-                        variant="outline"
-                        onClick={handleDownloadPdf}
-                        size="md"
-                      >
-                        Download PDF
-                      </Button>
                       <Button
                         colorScheme="green"
                         onClick={handleConfirm}

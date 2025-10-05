@@ -67,7 +67,8 @@ const ImageUpload = ({
               const updatedImages = [...images, ...newImages];
               setImages(updatedImages);
               onImagesChange && onImagesChange(updatedImages);
-              onFilesSelected && onFilesSelected(validFiles.slice(0, maxFiles - images.length));
+              onFilesSelected &&
+                onFilesSelected(validFiles.slice(0, maxFiles - images.length));
             }
           };
           reader.readAsDataURL(file);
@@ -131,7 +132,7 @@ const ImageUpload = ({
         border="2px dashed"
         borderColor={isDragging ? "blue.400" : "gray.300"}
         borderRadius="md"
-        p={6}
+        p={2}
         textAlign="center"
         cursor="pointer"
         position="relative"
