@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { Box, Badge, Icon } from "@chakra-ui/react";
+import { Box, Badge, Icon, Button, HStack, VStack, Text, useToast } from "@chakra-ui/react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -10,6 +10,7 @@ import CarProfile from "../CarProfile";
 import { useSelector } from "react-redux";
 import { listBookingsApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
+import DateFilterPopover from "./DateFilterPopover";
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -34,11 +35,19 @@ export default function FullCalendarPanel() {
   const [selectedEnd, setSelectedEnd] = useState("");
   const { items: cars } = useSelector((s) => s.cars);
   const calendarRef = useRef(null);
+  const containerRef = useRef(null);
+  const optionAnchorRef = useRef(null);
+  const toast = useToast();
 
   const [events, setEvents] = useState([]);
   const [currentMonth, setCurrentMonth] = useState("");
   const [currentWeekKey, setCurrentWeekKey] = useState("");
   const [currentQueryMode, setCurrentQueryMode] = useState("month");
+  const [optionOpen, setOptionOpen] = useState(false);
+  const [optionPos, setOptionPos] = useState({ x: 0, y: 0 });
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
+  const [availStatus, setAvailStatus] = useState("available");
 
   const formatMonth = (dateLike) => {
     const d = new Date(dateLike);
@@ -165,10 +174,21 @@ export default function FullCalendarPanel() {
     }
   };
   const onSelect = (info) => {
-    // Highlight selection dates into booking modal fields
-    setSelectedStart(toLocalInput(info?.start));
-    setSelectedEnd(toLocalInput(info?.end));
-    setBookingOpen(true);
+    // Set selection range and show small options popover at last pointer position
+    const startStr = toLocalInput(info?.start);
+    const endStr = toLocalInput(info?.end);
+    setSelectedStart(startStr);
+    setSelectedEnd(endStr);
+    setRangeStart(startStr);
+    setRangeEnd(endStr);
+    setAvailStatus((prev) => prev || "available");
+    if (containerRef.current && lastPointer.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setOptionPos({ x: lastPointer.current.x - rect.left, y: lastPointer.current.y - rect.top });
+    } else {
+      setOptionPos({ x: 12, y: 12 });
+    }
+    setOptionOpen(true);
   };
   const onEventDrop = (info) => {
     const { event } = info;
@@ -308,8 +328,15 @@ export default function FullCalendarPanel() {
     [currentMonth, currentWeekKey, currentQueryMode, fetchMonth, fetchWeek]
   );
 
+  // Track last pointer to anchor the small popover near click/drag end
+  const lastPointer = useRef({ x: 0, y: 0 });
+  const handleMouseDown = useCallback((e) => {
+    lastPointer.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+
   return (
-    <Box className=" border border-gray-200 bg-white p-2" overflow="hidden">
+    <Box className=" border border-gray-200 bg-white p-2" overflow="hidden" position="relative" ref={containerRef} onMouseDown={handleMouseDown}>
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
@@ -335,6 +362,27 @@ export default function FullCalendarPanel() {
         firstDay={1}
         datesSet={onDatesSet}
         ref={calendarRef}
+      />
+
+      {/* Tiny options popover anchored to selection pointer */}
+      <DateFilterPopover
+        isOpen={optionOpen}
+        onClose={() => setOptionOpen(false)}
+        anchor={optionPos}
+        startAt={rangeStart}
+        endAt={rangeEnd}
+        onChangeStart={(v) => setRangeStart(v)}
+        onChangeEnd={(v) => setRangeEnd(v)}
+        status={availStatus}
+        onChangeStatus={(v) => setAvailStatus(v)}
+        onCreate={() => setBookingOpen(true)}
+        onApply={() => {
+          try {
+            const ev = new CustomEvent('tc:applyDateFilter', { detail: { start: rangeStart, end: rangeEnd, availability: availStatus } });
+            window.dispatchEvent(ev);
+          } catch {}
+          toast({ title: 'Applied calendar date filter', status: 'info', duration: 2200 });
+        }}
       />
 
       <BookingModal

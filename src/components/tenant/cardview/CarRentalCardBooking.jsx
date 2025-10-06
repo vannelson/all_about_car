@@ -28,6 +28,9 @@ function toApiFilters(ui) {
   if (ui.fuel) f["spcs_fuelType"] = ui.fuel;
   if (ui.availability) f["info_availabilityStatus"] = ui.availability;
   if (ui.search) f["info_model"] = ui.search; // simple search by model
+  // Date range filters (backend should interpret for availability)
+  if (ui.start_date) f["start_date"] = ui.start_date;
+  if (ui.end_date) f["end_date"] = ui.end_date;
   return f;
 }
 

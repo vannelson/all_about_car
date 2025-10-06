@@ -1,4 +1,4 @@
-import { Box, SimpleGrid } from "@chakra-ui/react";
+import { Box, SimpleGrid, HStack, Text, Badge, Button } from "@chakra-ui/react";
 import { useState, useCallback, useEffect } from "react";
 import CarRentalCardBooking from "../../components/tenant/cardview/CarRentalCardBooking";
 import BookingModal from "../../components/tenant/booking/BookingModal";
@@ -17,15 +17,52 @@ export default function Calendars() {
     saveTopbarFilters(next);
   }, []);
   const handleFiltersReset = useCallback(() => {
-    const cleared = { gear: "", fuel: "", brand: "", availability: "", search: "" };
+    const cleared = { gear: "", fuel: "", brand: "", availability: "", search: "", start_date: "", end_date: "" };
     setTopbar(cleared);
     saveTopbarFilters(cleared);
   }, []);
+
+  // Listen to date filter events from FullCalendarPanel tiny popover
+  useEffect(() => {
+    const handler = (e) => {
+      const { start, end, availability } = e?.detail || {};
+      if (!start || !end) return;
+      const next = { ...topbar, start_date: start, end_date: end, availability: availability === "all" ? "" : (availability || "available") };
+      setTopbar(next);
+      saveTopbarFilters(next);
+    };
+    window.addEventListener("tc:applyDateFilter", handler);
+    return () => window.removeEventListener("tc:applyDateFilter", handler);
+  }, [topbar]);
 
   return (
     <Box>
       {/* Sticky Top bar */}
       <FiltersTopBar value={topbar} onChange={handleFiltersChange} onReset={handleFiltersReset} />
+
+      {/* Active date filter banner */}
+      {topbar?.start_date && topbar?.end_date ? (
+        <Box bg="gray.50" border="1px solid" borderColor="gray.200" p={2} mb={2} borderRadius="md">
+          <HStack justify="space-between">
+            <HStack spacing={3}>
+              <Badge colorScheme="blue" variant="subtle">Calendar Filter</Badge>
+              <Text fontSize="sm" color="gray.700">
+                {new Date(topbar.start_date).toLocaleString()} → {new Date(topbar.end_date).toLocaleString()}
+              </Text>
+              {topbar.availability ? (
+                <Badge colorScheme={topbar.availability === 'available' ? 'green' : 'red'}>{topbar.availability}</Badge>
+              ) : (
+                <Badge>All</Badge>
+              )}
+            </HStack>
+            <Button size="xs" variant="outline" onClick={() => {
+              const cleared = { ...topbar, start_date: "", end_date: "" };
+              setTopbar(cleared);
+              saveTopbarFilters(cleared);
+            }}>Clear</Button>
+          </HStack>
+        </Box>
+      ) : null}
 
       {/* Content Area */}
       <Box>
