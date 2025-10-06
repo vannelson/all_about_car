@@ -37,6 +37,8 @@ export default function FullCalendarPanel() {
 
   const [events, setEvents] = useState([]);
   const [currentMonth, setCurrentMonth] = useState("");
+  const [currentWeekKey, setCurrentWeekKey] = useState("");
+  const [currentQueryMode, setCurrentQueryMode] = useState("month");
 
   const formatMonth = (dateLike) => {
     const d = new Date(dateLike);
@@ -96,15 +98,50 @@ export default function FullCalendarPanel() {
 
   const fetchMonth = useCallback(async (monthStr) => {
     try {
-      const res = await listBookingsApi({ month: monthStr, page: 1 });
+      const res = await listBookingsApi({ month: monthStr, page: 1, includes: ["car"] });
       const list = Array.isArray(res?.data) ? res.data : [];
       setEvents(list.map(mapBookingToEvent));
       setCurrentMonth(monthStr);
+      setCurrentQueryMode("month");
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error("Failed to load bookings", err);
       setEvents([]);
       setCurrentMonth(monthStr);
+      setCurrentQueryMode("month");
+    }
+  }, []);
+
+  // ISO week helpers (Monday as first day)
+  const isoWeek = (dateLike) => {
+    const d = new Date(Date.UTC(dateLike.getFullYear(), dateLike.getMonth(), dateLike.getDate()));
+    const dayNum = (d.getUTCDay() + 6) % 7; // Monday=0
+    d.setUTCDate(d.getUTCDate() - dayNum + 3); // Thursday
+    const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const diff = d - firstThursday;
+    return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
+  };
+
+  const isoWeekYear = (dateLike) => {
+    const d = new Date(dateLike);
+    d.setDate(d.getDate() + 4 - ((d.getDay() + 6) % 7));
+    return d.getFullYear();
+  };
+
+  const fetchWeek = useCallback(async (weekNum, yearNum) => {
+    const key = `${yearNum}-W${weekNum}`;
+    try {
+      const res = await listBookingsApi({ week: weekNum, year: yearNum, page: 1, includes: ["car"] });
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setEvents(list.map(mapBookingToEvent));
+      setCurrentWeekKey(key);
+      setCurrentQueryMode("week");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to load weekly bookings", err);
+      setEvents([]);
+      setCurrentWeekKey(key);
+      setCurrentQueryMode("week");
     }
   }, []);
 
@@ -250,15 +287,25 @@ export default function FullCalendarPanel() {
 
   const onDatesSet = useCallback(
     (arg) => {
-      // Use the active view's start date to derive month
       const view = arg?.view;
       const base = view?.currentStart || arg?.start || new Date();
-      const monthStr = formatMonth(base);
-      if (monthStr !== currentMonth) {
-        fetchMonth(monthStr);
+      const type = String(view?.type || "");
+      const isWeek = type.includes("Week") || type === "timeGridWeek" || type === "dayGridWeek";
+      if (isWeek) {
+        const w = isoWeek(base);
+        const y = isoWeekYear(base);
+        const key = `${y}-W${w}`;
+        if (currentQueryMode !== "week" || key !== currentWeekKey) {
+          fetchWeek(w, y);
+        }
+      } else {
+        const monthStr = formatMonth(base);
+        if (currentQueryMode !== "month" || monthStr !== currentMonth) {
+          fetchMonth(monthStr);
+        }
       }
     },
-    [currentMonth, fetchMonth]
+    [currentMonth, currentWeekKey, currentQueryMode, fetchMonth, fetchWeek]
   );
 
   return (

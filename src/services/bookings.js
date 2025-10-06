@@ -9,9 +9,15 @@ export async function createBookingApi(body) {
 }
 
 // List bookings filtered by month (YYYY-MM)
-export async function listBookingsApi({ month, page = 1, limit, includes = ["car"] } = {}) {
+export async function listBookingsApi({ month, week, year, page = 1, limit, includes = ["car"] } = {}) {
   const params = {};
-  if (month) params["filters[month]"] = month;
+  // Prefer week/year if provided; otherwise fall back to month
+  if (week && year) {
+    params["filters[week]"] = week;
+    params["filters[year]"] = year;
+  } else if (month) {
+    params["filters[month]"] = month;
+  }
   if (page) params.page = page;
   if (limit) params.limit = limit;
   if (Array.isArray(includes) && includes.length > 0) {
