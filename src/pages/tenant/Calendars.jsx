@@ -1,4 +1,5 @@
 import { Box, SimpleGrid, HStack, Text, Badge, Button } from "@chakra-ui/react";
+import ActiveDateFilterBanner from "../../components/tenant/calendar/ActiveDateFilterBanner";
 import { useState, useCallback, useEffect } from "react";
 import CarRentalCardBooking from "../../components/tenant/cardview/CarRentalCardBooking";
 import BookingModal from "../../components/tenant/booking/BookingModal";
@@ -42,26 +43,16 @@ export default function Calendars() {
 
       {/* Active date filter banner */}
       {topbar?.start_date && topbar?.end_date ? (
-        <Box bg="gray.50" border="1px solid" borderColor="gray.200" p={2} mb={2} borderRadius="md">
-          <HStack justify="space-between">
-            <HStack spacing={3}>
-              <Badge colorScheme="blue" variant="subtle">Calendar Filter</Badge>
-              <Text fontSize="sm" color="gray.700">
-                {new Date(topbar.start_date).toLocaleString()} → {new Date(topbar.end_date).toLocaleString()}
-              </Text>
-              {topbar.availability ? (
-                <Badge colorScheme={topbar.availability === 'available' ? 'green' : 'red'}>{topbar.availability}</Badge>
-              ) : (
-                <Badge>All</Badge>
-              )}
-            </HStack>
-            <Button size="xs" variant="outline" onClick={() => {
-              const cleared = { ...topbar, start_date: "", end_date: "" };
-              setTopbar(cleared);
-              saveTopbarFilters(cleared);
-            }}>Clear</Button>
-          </HStack>
-        </Box>
+        <ActiveDateFilterBanner
+          start={topbar.start_date}
+          end={topbar.end_date}
+          availability={topbar.availability}
+          onClear={() => {
+            const cleared = { ...topbar, start_date: "", end_date: "" };
+            setTopbar(cleared);
+            saveTopbarFilters(cleared);
+          }}
+        />
       ) : null}
 
       {/* Content Area */}
