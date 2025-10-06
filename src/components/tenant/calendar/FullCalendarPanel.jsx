@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import { listBookingsApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
 import DateFilterPopover from "./DateFilterPopover";
+import EventInfoTooltip from "./EventInfoTooltip";
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -48,6 +49,9 @@ export default function FullCalendarPanel() {
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
   const [availStatus, setAvailStatus] = useState("available");
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [infoPos, setInfoPos] = useState({ x: 0, y: 0 });
+  const [infoBooking, setInfoBooking] = useState(null);
 
   const formatMonth = (dateLike) => {
     const d = new Date(dateLike);
@@ -216,16 +220,21 @@ export default function FullCalendarPanel() {
   const onEventDidMount = useCallback(
     (info) => {
       const el = info.el;
-      const model = info.event.extendedProps?.carModel;
-      el.addEventListener("dblclick", () => {
-        const car = resolveCarByModel(model);
-        if (car) {
-          setSelectedCar(car);
-          setProfileOpen(true);
+      const booking = info.event.extendedProps?.booking;
+      el.addEventListener("dblclick", (ev) => {
+        try {
+          const rect = containerRef.current?.getBoundingClientRect();
+          const x = Math.max(8, (ev?.clientX || 0) - (rect?.left || 0));
+          const y = Math.max(8, (ev?.clientY || 0) - (rect?.top || 0));
+          setInfoPos({ x, y });
+        } catch {
+          setInfoPos({ x: 12, y: 12 });
         }
+        setInfoBooking(booking || null);
+        setInfoOpen(true);
       });
     },
-    [resolveCarByModel]
+    [containerRef]
   );
 
   const eventContent = useCallback(
@@ -383,6 +392,13 @@ export default function FullCalendarPanel() {
           } catch {}
           toast({ title: 'Applied calendar date filter', status: 'info', duration: 2200 });
         }}
+      />
+
+      <EventInfoTooltip
+        isOpen={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        anchor={infoPos}
+        booking={infoBooking}
       />
 
       <BookingModal
