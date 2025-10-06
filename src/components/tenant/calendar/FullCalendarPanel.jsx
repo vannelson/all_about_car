@@ -366,7 +366,7 @@ export default function FullCalendarPanel() {
         eventDisplay="block"
         eventDidMount={onEventDidMount}
         eventContent={eventContent}
-        dayMaxEventRows={3}
+        dayMaxEventRows={5}
         nowIndicator={true}
         firstDay={1}
         datesSet={onDatesSet}

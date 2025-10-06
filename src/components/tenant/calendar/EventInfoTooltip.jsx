@@ -12,7 +12,8 @@ import {
   Icon,
   Divider,
 } from "@chakra-ui/react";
-import { FiUser, FiPhone, FiCreditCard } from "react-icons/fi";
+import { FiUser, FiPhone, FiCreditCard, FiMail, FiClock } from "react-icons/fi";
+import { daysBetween } from "../../../utils/booking";
 
 function fmtMoney(n) {
   const num = Number(n ?? 0) || 0;
@@ -30,12 +31,21 @@ export default function EventInfoTooltip({ isOpen, onClose, anchor = { x: 0, y: 
   const b = booking || {};
   const name = fullName(b);
   const phone = b?.renter_phone_number || b?.renter_phone || "-";
+  const email = b?.renter_email || "-";
   const payStatus = b?.payment_status || "";
   const status = b?.status || "";
   const total = fmtMoney(b?.total_amount);
   const base = fmtMoney(b?.base_amount);
   const extra = fmtMoney(b?.extra_payment);
   const discount = fmtMoney(b?.discount);
+  const dayCount = (() => {
+    try {
+      const d = daysBetween(b?.start_date, b?.end_date);
+      return Number.isFinite(d) ? d : 0;
+    } catch {
+      return 0;
+    }
+  })();
 
   const statusColor = String(status).toLowerCase() === "completed"
     ? "green"
@@ -65,6 +75,16 @@ export default function EventInfoTooltip({ isOpen, onClose, anchor = { x: 0, y: 
               <Icon as={FiPhone} />
               <Text fontSize="sm">{phone}</Text>
             </HStack>
+            <HStack spacing={2} color="gray.600">
+              <Icon as={FiMail} />
+              <Text fontSize="sm">{email}</Text>
+            </HStack>
+            {dayCount > 0 ? (
+              <HStack spacing={2} color="gray.600">
+                <Icon as={FiClock} />
+                <Text fontSize="sm">{dayCount} day{dayCount === 1 ? "" : "s"}</Text>
+              </HStack>
+            ) : null}
             <Divider />
             <HStack spacing={2}>
               <Icon as={FiCreditCard} />
@@ -85,4 +105,3 @@ export default function EventInfoTooltip({ isOpen, onClose, anchor = { x: 0, y: 
     </Popover>
   );
 }
-
