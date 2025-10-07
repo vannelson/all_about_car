@@ -125,7 +125,7 @@ export const fetchCars = createAsyncThunk(
   "cars/fetchList",
   async ({ page = 1, limit = 10, filters = {} } = {}, { rejectWithValue }) => {
     try {
-      const res = await listCarsApi({ page, limit, includes: ["rates", "company"], filters });
+      const res = await listCarsApi({ page, limit, includes: ["rates", "company", "next_available_window"], filters });
       const raw = res?.data || [];
       const items = raw.map((c) => mapCarToViewModel(c)).filter(Boolean);
       const meta = res?.meta || null;

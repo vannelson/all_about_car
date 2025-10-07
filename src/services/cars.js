@@ -119,7 +119,7 @@ export async function updateCarApi({
 }
 
 // Fetch cars with pagination and includes per APIdocs
-export async function listCarsApi({ limit = 6, page = 1, includes = ["rates", "company", "bookings"], filters = {} } = {}) {
+export async function listCarsApi({ limit = 6, page = 1, includes = ["rates", "company", "bookings", "next_available_window"], filters = {} } = {}) {
   const params = { limit, page };
   // Laravel-style include[]= syntax
   (includes || []).forEach((inc, idx) => {
@@ -204,6 +204,8 @@ export function mapCarToViewModel(apiCar) {
   // best-effort bookings passthrough; structure may vary
   const bookings = Array.isArray(apiCar.bookings) ? apiCar.bookings : [];
 
+  const nextWindow = apiCar.next_available_window || null;
+
   return {
     id: apiCar.id,
     name,
@@ -215,6 +217,7 @@ export function mapCarToViewModel(apiCar) {
     specification,
     images: { profileImage: image, displayImages },
     bookings,
+    next_available_window: nextWindow,
     raw: apiCar,
   };
 }

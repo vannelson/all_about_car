@@ -12,6 +12,7 @@ import { listBookingsApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
 import DateFilterPopover from "./DateFilterPopover";
 import EventInfoTooltip from "./EventInfoTooltip";
+import FocusedCarBanner from "./FocusedCarBanner";
 
 function startOfWeek(date) {
   const d = new Date(date);
@@ -52,6 +53,7 @@ export default function FullCalendarPanel() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoPos, setInfoPos] = useState({ x: 0, y: 0 });
   const [infoBooking, setInfoBooking] = useState(null);
+  const [focusedCarId, setFocusedCarId] = useState(null);
 
   const formatMonth = (dateLike) => {
     const d = new Date(dateLike);
@@ -105,7 +107,7 @@ export default function FullCalendarPanel() {
       backgroundColor: colors.bg,
       borderColor: colors.border,
       textColor: "#FFFFFF",
-      extendedProps: { booking: b, carModel: carLabel },
+      extendedProps: { booking: { ...b, car_id: b?.car_id ?? b?.car?.id }, carModel: carLabel },
     };
   };
 
@@ -124,6 +126,35 @@ export default function FullCalendarPanel() {
       setCurrentQueryMode("month");
     }
   }, []);
+
+  // Listen for car focus events from car cards
+  useEffect(() => {
+    const handler = (e) => {
+      const id = e?.detail?.carId;
+      if (id !== undefined && id !== null) setFocusedCarId(Number(id));
+    };
+    window.addEventListener("tc:focusCarSchedules", handler);
+    return () => window.removeEventListener("tc:focusCarSchedules", handler);
+  }, []);
+
+  // Allow ESC to clear focus
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && focusedCarId != null) setFocusedCarId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusedCarId]);
+
+  // Derive visible events if focusedCarId is set
+  const displayEvents = useMemo(() => {
+    if (focusedCarId == null) return events;
+    return (events || []).filter((ev) => {
+      const b = ev?.extendedProps?.booking || {};
+      const candidates = [b?.car_id, b?.car?.id, b?.raw?.id, b?.car?.car_id];
+      return candidates.some((v) => v != null && Number(v) === Number(focusedCarId));
+    });
+  }, [events, focusedCarId]);
 
   // ISO week helpers (Monday as first day)
   const isoWeek = (dateLike) => {
@@ -236,6 +267,24 @@ export default function FullCalendarPanel() {
     },
     [containerRef]
   );
+
+  // React to booking updates to patch local event data
+  useEffect(() => {
+    const handler = (e) => {
+      const { id, status, actual_return_date } = e?.detail || {};
+      setEvents((prev) =>
+        (prev || []).map((ev) => {
+          if (String(ev.id) !== String(id)) return ev;
+          const b = { ...(ev.extendedProps?.booking || {}) };
+          if (status !== undefined) b.status = status;
+          if (actual_return_date !== undefined) b.actual_return_date = actual_return_date;
+          return { ...ev, extendedProps: { ...ev.extendedProps, booking: b } };
+        })
+      );
+    };
+    window.addEventListener('tc:bookingUpdated', handler);
+    return () => window.removeEventListener('tc:bookingUpdated', handler);
+  }, []);
 
   const eventContent = useCallback(
     (arg) => {
@@ -356,7 +405,7 @@ export default function FullCalendarPanel() {
         }}
         height="auto"
         contentHeight={720}
-        events={events}
+        events={displayEvents}
         selectable={true}
         selectMirror={true}
         select={onSelect}
@@ -371,6 +420,12 @@ export default function FullCalendarPanel() {
         firstDay={1}
         datesSet={onDatesSet}
         ref={calendarRef}
+      />
+
+      <FocusedCarBanner
+        focusedCarId={focusedCarId}
+        cars={cars}
+        onClear={() => setFocusedCarId(null)}
       />
 
       {/* Tiny options popover anchored to selection pointer */}

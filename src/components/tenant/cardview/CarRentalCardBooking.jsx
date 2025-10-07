@@ -9,9 +9,10 @@ import {
   Button,
   Icon,
   Badge,
+  Tooltip,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
-import { FiUsers, FiSettings, FiArrowRight } from "react-icons/fi";
+import { FiUsers, FiSettings, FiArrowRight, FiCalendar } from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import CarBrandLogo from "../../tenant/CarBrandLogo";
 import { useEffect, useMemo, useState } from "react";
@@ -87,8 +88,9 @@ export default function CarRentalCardBooking({ filters, onRent }) {
       const fuel = raw.spcs_fuelType || null;
       const specs = [transmission, seats, fuel].filter(Boolean).slice(0, 3);
       const image = vm.image;
-      const available =
-        String(raw.info_availabilityStatus || "").toLowerCase() === "available";
+      const available = String(raw.info_availabilityStatus || "").toLowerCase() === "available";
+      const nextWindow = vm?.next_available_window || raw?.next_available_window || null;
+      const nextLabel = nextWindow?.label || "";
       const companyName = raw.company?.name ? `Host - ${raw.company.name}` : "";
 
       // Prefer active daily, else hourly
@@ -107,6 +109,7 @@ export default function CarRentalCardBooking({ filters, onRent }) {
         unit,
         specs,
         available,
+        nextAvailableLabel: nextLabel,
       };
     });
   }, [storeItems]);
@@ -152,6 +155,13 @@ export default function CarRentalCardBooking({ filters, onRent }) {
             <Card
               key={car.id}
               onClick={() => setSelectedId(car.id)}
+              onDoubleClick={() => {
+                try {
+                  const id = getCarIdFromCard(car) || car.id;
+                  const ev = new CustomEvent('tc:focusCarSchedules', { detail: { carId: id } });
+                  window.dispatchEvent(ev);
+                } catch {}
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -197,21 +207,34 @@ export default function CarRentalCardBooking({ filters, onRent }) {
                     className="transition duration-200 group-hover:scale-[1.01]"
                     loading="lazy"
                   />
-                  {car.available && (
-                    <Box pos="absolute" top="8px" left="8px">
-                      <Badge
-                        colorScheme="green"
-                        variant="solid"
-                        className="rounded-md px-2 py-0.5 text-[10px]"
+                  {car.nextAvailableLabel ? (
+                    <Tooltip label={`Next available: ${car.nextAvailableLabel}`} hasArrow>
+                      <HStack
+                        pos="absolute"
+                        bottom="8px"
+                        left="8px"
+                        spacing={1}
+                        align="center"
+                        bg="whiteAlpha.900"
+                        color="gray.800"
+                        px={2}
+                        py={0.5}
+                        borderRadius="md"
+                        border="1px solid"
+                        borderColor="gray.200"
+                        className="backdrop-blur-sm"
                       >
-                        Available
-                      </Badge>
-                    </Box>
-                  )}
+                        <Icon as={FiCalendar} boxSize={3} color="blue.600" />
+                        <Text fontSize="10px" fontWeight="semibold" noOfLines={1} title={car.nextAvailableLabel}>
+                          {car.nextAvailableLabel}
+                        </Text>
+                      </HStack>
+                    </Tooltip>
+                  ) : null}
                   {/* Removed Selected badge; elevation + border indicate selection */}
                   <HStack
                     pos="absolute"
-                    bottom="8px"
+                    top="8px"
                     left="8px"
                     spacing={1}
                     bg="whiteAlpha.900"

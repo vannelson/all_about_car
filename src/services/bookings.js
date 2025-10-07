@@ -8,6 +8,13 @@ export async function createBookingApi(body) {
   return res.data;
 }
 
+// Update a booking (e.g., status, return dates)
+export async function updateBookingApi({ id, ...fields }) {
+  const payload = { ...fields };
+  const res = await axiosInstance.put(`/bookings/${id}`, payload);
+  return res.data;
+}
+
 // List bookings filtered by month (YYYY-MM)
 export async function listBookingsApi({ month, week, year, page = 1, limit, includes = ["car"] } = {}) {
   const params = {};
