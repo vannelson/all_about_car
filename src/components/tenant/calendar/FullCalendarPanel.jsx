@@ -8,9 +8,10 @@ import BookingModal from "../booking/BookingModal";
 import BaseModal from "../../base/BaseModal";
 import CarProfile from "../CarProfile";
 import { useSelector } from "react-redux";
-import { listBookingsApi } from "../../../services/bookings";
+import { listBookingsApi, updateBookingApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
 import { BOOKING_COLOR_PALETTE } from "../../../utils/calendarColors";
+import { formatDateTimeLocalToApi } from "../../../utils/booking";
 import DateFilterPopover from "./DateFilterPopover";
 import EventInfoTooltip from "./EventInfoTooltip";
 import FocusedCarBanner from "./FocusedCarBanner";
@@ -55,6 +56,38 @@ export default function FullCalendarPanel() {
   const [infoPos, setInfoPos] = useState({ x: 0, y: 0 });
   const [infoBooking, setInfoBooking] = useState(null);
   const [focusedCarId, setFocusedCarId] = useState(null);
+
+  const [pendingEventIds, setPendingEventIds] = useState(() => new Set());
+
+  const markEventPending = useCallback((eventId, pending) => {
+    if (eventId == null) return;
+    const key = String(eventId);
+    setPendingEventIds((prev) => {
+      const next = new Set(prev);
+      if (pending) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const setCalendarEventPending = useCallback(
+    (calendarEvent, pending) => {
+      if (!calendarEvent) return;
+      try {
+        calendarEvent.setExtendedProp("tcPending", pending);
+      } catch {}
+      try {
+        calendarEvent.setProp("editable", !pending);
+      } catch {}
+      try {
+        calendarEvent.setProp("startEditable", !pending);
+      } catch {}
+      try {
+        calendarEvent.setProp("durationEditable", !pending);
+      } catch {}
+    },
+    []
+  );
 
   const formatMonth = (dateLike) => {
     const d = new Date(dateLike);
@@ -254,67 +287,161 @@ export default function FullCalendarPanel() {
     }
     setOptionOpen(true);
   };
-  const onEventDrop = (info) => {
-    const { event } = info;
-    setEvents((prev) =>
-      prev.map((ev) =>
-        ev.id === event.id ? { ...ev, start: event.start, end: event.end } : ev
-      )
-    );
-  };
-  const onEventResize = onEventDrop;
+  const syncEventDates = useCallback(
+    async (info) => {
+      const event = info?.event;
+      const revert = info?.revert;
+      const booking = event?.extendedProps?.booking || {};
+      const bookingId = booking?.id ?? booking?.booking_id ?? event?.id;
 
-  const resolveCarByModel = useCallback(
-    (model) => {
-      const list = Array.isArray(cars) ? cars : [];
-      const lower = String(model || "").toLowerCase();
-      return (
-        list.find((c) => String(c?.raw?.info_model || c?.name || "").toLowerCase().includes(lower)) ||
-        list[0] ||
-        null
-      );
+      if (!event?.start || !bookingId) {
+        if (typeof revert === "function") revert();
+        toast({ title: "Unable to update booking", status: "error" });
+        return;
+      }
+
+      const bookingKey = String(bookingId);
+      if (pendingEventIds.has(bookingKey)) {
+        if (typeof revert === "function") revert();
+        return;
+      }
+
+      setCalendarEventPending(event, true);
+      markEventPending(bookingId, true);
+
+      const startDate = event.start;
+      const parseFromBooking = (value) => {
+        if (!value) return null;
+        const str = String(value);
+        const candidate = new Date(str.includes("T") ? str : str.replace(" ", "T"));
+        return Number.isNaN(candidate.getTime()) ? null : candidate;
+      };
+      const originalStart = parseFromBooking(booking.start_date);
+      const originalEnd = parseFromBooking(booking.end_date);
+      let endDate = event.end;
+      if (!endDate) {
+        if (originalStart && originalEnd) {
+          const duration = Math.max(originalEnd.getTime() - originalStart.getTime(), 60 * 60 * 1000);
+          endDate = new Date(startDate.getTime() + duration);
+        } else {
+          endDate = addHours(startDate, 24);
+        }
+      }
+      const startStr = formatDateTimeLocalToApi(startDate);
+      const endStr = formatDateTimeLocalToApi(endDate);
+
+      try {
+        const response = await updateBookingApi({
+          id: bookingId,
+          start_date: startStr,
+          end_date: endStr,
+        });
+        const updated = response?.data || response || {};
+        const nextBooking = {
+          ...booking,
+          ...updated,
+          start_date: updated?.start_date || startStr,
+          end_date: updated?.end_date || endStr,
+        };
+        const remapped = mapBookingToEvent(nextBooking);
+
+        setEvents((prev) => {
+          const list = Array.isArray(prev) ? prev : [];
+          return list.map((ev) => {
+            if (String(ev.id) !== String(event.id)) return ev;
+            return { ...ev, ...remapped, id: ev.id };
+          });
+        });
+
+        try {
+          window.dispatchEvent(
+            new CustomEvent("tc:bookingUpdated", {
+              detail: {
+                id: bookingId,
+                start_date: nextBooking.start_date,
+                end_date: nextBooking.end_date,
+              },
+            })
+          );
+        } catch {}
+
+        toast({ title: "Booking dates updated", status: "success" });
+      } catch (err) {
+        if (typeof revert === "function") revert();
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to update booking dates";
+        toast({ title: msg, status: "error" });
+      } finally {
+        setCalendarEventPending(event, false);
+        markEventPending(bookingId, false);
+      }
     },
-    [cars]
+    [mapBookingToEvent, markEventPending, pendingEventIds, setCalendarEventPending, toast]
   );
 
-  const onEventDidMount = useCallback(
+  const onEventDrop = useCallback(
     (info) => {
-      const el = info.el;
-      const booking = info.event.extendedProps?.booking;
-      el.addEventListener("dblclick", (ev) => {
-        try {
-          const rect = containerRef.current?.getBoundingClientRect();
-          const x = Math.max(8, (ev?.clientX || 0) - (rect?.left || 0));
-          const y = Math.max(8, (ev?.clientY || 0) - (rect?.top || 0));
-          setInfoPos({ x, y });
-        } catch {
-          setInfoPos({ x: 12, y: 12 });
-        }
-        setInfoBooking(booking || null);
-        setInfoOpen(true);
-      });
+      syncEventDates(info);
     },
-    [containerRef]
+    [syncEventDates]
+  );
+  const onEventResize = useCallback(
+    (info) => {
+      syncEventDates(info);
+    },
+    [syncEventDates]
+  );
+
+  const eventAllow = useCallback(
+    (_dropInfo, draggedEvent) => {
+      const key =
+        draggedEvent?.id != null
+          ? String(draggedEvent.id)
+          : draggedEvent?.extendedProps?.booking?.id != null
+          ? String(draggedEvent.extendedProps.booking.id)
+          : null;
+      if (!key) return true;
+      return !pendingEventIds.has(key);
+    },
+    [pendingEventIds]
   );
 
   // React to booking updates to patch local event data
   useEffect(() => {
     const handler = (e) => {
-      const { id, status, actual_return_date } = e?.detail || {};
+      const { id, status, actual_return_date, start_date, end_date } = e?.detail || {};
+      if (id == null) return;
       setEvents((prev) =>
         (prev || []).map((ev) => {
           if (String(ev.id) !== String(id)) return ev;
-          const b = { ...(ev.extendedProps?.booking || {}) };
-          if (status !== undefined) b.status = status;
-          if (actual_return_date !== undefined) b.actual_return_date = actual_return_date;
-          return { ...ev, extendedProps: { ...ev.extendedProps, booking: b } };
+          const booking = { ...(ev.extendedProps?.booking || {}) };
+          if (status !== undefined) booking.status = status;
+          if (actual_return_date !== undefined) booking.actual_return_date = actual_return_date;
+          if (start_date !== undefined) booking.start_date = start_date;
+          if (end_date !== undefined) booking.end_date = end_date;
+
+          const nextEvent = { ...ev, extendedProps: { ...ev.extendedProps, booking } };
+          const parseDate = (value, fallback) => {
+            if (value == null) return fallback ?? null;
+            const asString = String(value);
+            const candidate = new Date(asString.includes('T') ? asString : asString.replace(' ', 'T'));
+            return Number.isNaN(candidate.getTime()) ? fallback ?? null : candidate;
+          };
+          if (start_date !== undefined) {
+            nextEvent.start = parseDate(start_date, ev.start);
+          }
+          if (end_date !== undefined) {
+            nextEvent.end = parseDate(end_date, ev.end);
+          }
+          return nextEvent;
         })
       );
     };
-    window.addEventListener('tc:bookingUpdated', handler);
-    return () => window.removeEventListener('tc:bookingUpdated', handler);
+    window.addEventListener("tc:bookingUpdated", handler);
+    return () => window.removeEventListener("tc:bookingUpdated", handler);
   }, []);
-
   const eventContent = useCallback(
     (arg) => {
       const b = arg?.event?.extendedProps?.booking || {};
@@ -439,6 +566,7 @@ export default function FullCalendarPanel() {
         selectMirror={true}
         select={onSelect}
         editable={true}
+        eventAllow={eventAllow}
         eventDrop={onEventDrop}
         eventResize={onEventResize}
         eventDisplay="block"
@@ -505,10 +633,6 @@ export default function FullCalendarPanel() {
     </Box>
   );
 }
-
-
-
-
 
 
 
