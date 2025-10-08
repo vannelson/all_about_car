@@ -10,6 +10,7 @@ import CarProfile from "../CarProfile";
 import { useSelector } from "react-redux";
 import { listBookingsApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
+import { BOOKING_COLOR_PALETTE } from "../../../utils/calendarColors";
 import DateFilterPopover from "./DateFilterPopover";
 import EventInfoTooltip from "./EventInfoTooltip";
 import FocusedCarBanner from "./FocusedCarBanner";
@@ -82,24 +83,23 @@ export default function FullCalendarPanel() {
       b?.car_name ||
       "Car";
 
-    const palette = [
-      { bg: "#2563EB", border: "#1D4ED8" }, // blue
-      { bg: "#059669", border: "#047857" }, // green
-      { bg: "#7C3AED", border: "#6D28D9" }, // purple
-      { bg: "#D97706", border: "#B45309" }, // amber
-      { bg: "#EF4444", border: "#DC2626" }, // red
-      { bg: "#0EA5E9", border: "#0284C7" }, // sky
-      { bg: "#10B981", border: "#059669" }, // emerald
-      { bg: "#475569", border: "#334155" }, // slate
-    ];
-    const key = String(b?.id || `${carLabel}-${fullName}`);
+    const palette = BOOKING_COLOR_PALETTE;
+    const colorSeed =
+      b?.car?.id ??
+      b?.car_id ??
+      (b?.car?.info_make || b?.car?.info_model
+        ? `${b?.car?.info_make || ""}-${b?.car?.info_model || ""}`
+        : carLabel);
+    const normalizedSeed = String(colorSeed || carLabel).toLowerCase();
     let acc = 0;
-    for (let i = 0; i < key.length; i++) acc = (acc + key.charCodeAt(i)) % 9973;
+    for (let i = 0; i < normalizedSeed.length; i++) acc = (acc + normalizedSeed.charCodeAt(i)) % 9973;
     const idx = acc % palette.length;
     const colors = palette[idx];
 
+    const eventId = String(b?.id ?? `${carLabel}-${fullName}`);
+
     return {
-      id: String(b.id ?? key),
+      id: eventId,
       title: `${carLabel} — ${fullName}`,
       start,
       end,
@@ -505,4 +505,10 @@ export default function FullCalendarPanel() {
     </Box>
   );
 }
+
+
+
+
+
+
 

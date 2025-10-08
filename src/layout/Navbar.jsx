@@ -68,7 +68,7 @@ export default function Navbar({
           <RouterLink to="/">
             <Logo height={44} />
           </RouterLink>
-        
+
           {/* Desktop Menu */}
           <Flex display={{ base: "none", md: "flex" }} ml={10}>
             <DesktopNav navItems={navItems} />
@@ -113,7 +113,11 @@ export default function Navbar({
                 icon={<Icon as={FaUser} />}
                 onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
               />
-              <Button variant="outline" onClick={onLogout} leftIcon={<FiLogOut />}>
+              <Button
+                variant="outline"
+                onClick={onLogout}
+                leftIcon={<FiLogOut />}
+              >
                 Logout
               </Button>
             </>
