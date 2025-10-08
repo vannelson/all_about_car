@@ -62,7 +62,7 @@ export default function FullCalendarPanel() {
     return `${yyyy}-${mm}`;
   };
 
-  const mapBookingToEvent = (b) => {
+  const mapBookingToEvent = useCallback((b) => {
     const start = b?.start_date ? new Date(b.start_date) : null;
     const end = b?.end_date ? new Date(b.end_date) : null;
 
@@ -109,7 +109,7 @@ export default function FullCalendarPanel() {
       textColor: "#FFFFFF",
       extendedProps: { booking: { ...b, car_id: b?.car_id ?? b?.car?.id }, carModel: carLabel },
     };
-  };
+  }, []);
 
   const fetchMonth = useCallback(async (monthStr) => {
     try {
@@ -125,7 +125,7 @@ export default function FullCalendarPanel() {
       setCurrentMonth(monthStr);
       setCurrentQueryMode("month");
     }
-  }, []);
+  }, [mapBookingToEvent]);
 
   // Listen for car focus events from car cards
   useEffect(() => {
@@ -187,7 +187,36 @@ export default function FullCalendarPanel() {
       setCurrentWeekKey(key);
       setCurrentQueryMode("week");
     }
-  }, []);
+  }, [mapBookingToEvent]);
+
+  const upsertBookingEvent = useCallback(
+    (booking) => {
+      if (!booking) return;
+      setEvents((prev) => {
+        const nextEvent = mapBookingToEvent(booking);
+        const list = Array.isArray(prev) ? [...prev] : [];
+        const idx = list.findIndex((ev) => String(ev.id) === String(nextEvent.id));
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...nextEvent };
+        } else {
+          list.push(nextEvent);
+        }
+        return list;
+      });
+    },
+    [mapBookingToEvent]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const handler = (e) => {
+      const booking = e?.detail;
+      if (!booking) return;
+      upsertBookingEvent(booking);
+    };
+    window.addEventListener("tc:bookingCreated", handler);
+    return () => window.removeEventListener("tc:bookingCreated", handler);
+  }, [upsertBookingEvent]);
 
   // Initial fetch for current month
   useEffect(() => {
@@ -461,6 +490,7 @@ export default function FullCalendarPanel() {
         onClose={() => setBookingOpen(false)}
         startAt={selectedStart}
         endAt={selectedEnd}
+        onBookingCreated={upsertBookingEvent}
       />
 
       <BaseModal
@@ -475,3 +505,4 @@ export default function FullCalendarPanel() {
     </Box>
   );
 }
+

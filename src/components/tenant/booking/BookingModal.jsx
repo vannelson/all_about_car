@@ -76,6 +76,7 @@ export default function BookingModal({
   car = {},
   startAt,
   endAt,
+  onBookingCreated,
 }) {
   const { activeStep, setActiveStep } = useSteps({
     index: 0,
@@ -100,7 +101,6 @@ export default function BookingModal({
   const [idNumber, setIdNumber] = useState("");
   const [idImages, setIdImages] = useState([]);
   const [extraPayment, setExtraPayment] = useState(0);
-  const [bookingStatus, setBookingStatus] = useState("Completed");
   const [submitting, setSubmitting] = useState(false);
 
   const auth = useSelector((s) => s.auth);
@@ -255,10 +255,38 @@ export default function BookingModal({
 
         // required statuses (per backend enum)
         payment_status: "Paid",
-        status: bookingStatus,
+        status: "Ongoing",
       };
 
-      await createBookingApi(body);
+      const response = await createBookingApi(body);
+      const created = response?.data || response || {};
+      const bookingForEvent = {
+        ...body,
+        ...created,
+        status: created?.status || "Ongoing",
+        start_date: created?.start_date || body.start_date,
+        end_date: created?.end_date || body.end_date,
+        expected_return_date: created?.expected_return_date || body.expected_return_date,
+        renter_first_name: created?.renter_first_name ?? body.renter_first_name,
+        renter_middle_name: created?.renter_middle_name ?? body.renter_middle_name,
+        renter_last_name: created?.renter_last_name ?? body.renter_last_name,
+        renter_phone_number: created?.renter_phone_number ?? body.renter_phone_number,
+        renter_email: created?.renter_email ?? body.renter_email,
+        renter_address: created?.renter_address ?? body.renter_address,
+        car_id: created?.car_id ?? carId,
+      };
+      if (!bookingForEvent.car && effectiveCar) {
+        bookingForEvent.car = effectiveCar.raw || effectiveCar;
+      }
+      if (!bookingForEvent.id && created?.id) {
+        bookingForEvent.id = created.id;
+      }
+      try {
+        window.dispatchEvent(new CustomEvent("tc:bookingCreated", { detail: bookingForEvent }));
+      } catch {}
+      if (typeof onBookingCreated === "function") {
+        onBookingCreated(bookingForEvent);
+      }
       toast({ title: "Booking created", status: "success" });
       onClose?.();
     } catch (err) {
@@ -320,8 +348,6 @@ export default function BookingModal({
                   dropoffLocation={dropoffLocation}
                   setDropoffLocation={setDropoffLocation}
                   primaryColor={primaryColor}
-                  bookingStatus={bookingStatus}
-                  setBookingStatus={setBookingStatus}
                 />
                     {quantities.qty > 0 && (
                       <Alert
