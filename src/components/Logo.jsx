@@ -26,9 +26,8 @@ export default function Logo({
         <Image
           src={src}
           alt={title}
-          height={`${Math.round(height * 0.8)}px`}
+          height={`47px`}
           objectFit="contain"
-          fallbackSrc=""
           onError={() => setImageFailed(true)}
         />
       ) : (

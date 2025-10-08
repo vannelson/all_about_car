@@ -85,6 +85,19 @@ export default function FullCalendarPanel() {
       try {
         calendarEvent.setProp("durationEditable", !pending);
       } catch {}
+      const el = calendarEvent.el;
+      if (el) {
+        el.dataset.tcPending = pending ? "true" : "false";
+        if (pending) {
+          el.style.opacity = "0.55";
+          el.style.pointerEvents = "none";
+          el.style.filter = "blur(1px)";
+        } else {
+          el.style.opacity = "";
+          el.style.pointerEvents = "";
+          el.style.filter = "";
+        }
+      }
     },
     []
   );
@@ -408,6 +421,29 @@ export default function FullCalendarPanel() {
     [pendingEventIds]
   );
 
+  const onEventDidMount = useCallback(
+    (info) => {
+      const el = info.el;
+      const booking = info.event.extendedProps?.booking;
+      setCalendarEventPending(info.event, Boolean(info.event.extendedProps?.tcPending));
+      if (el && !el.dataset.tcInfoBound) {
+        el.dataset.tcInfoBound = "true";
+        el.addEventListener("dblclick", (ev) => {
+          try {
+            const rect = containerRef.current?.getBoundingClientRect();
+            const x = Math.max(8, (ev?.clientX || 0) - (rect?.left || 0));
+            const y = Math.max(8, (ev?.clientY || 0) - (rect?.top || 0));
+            setInfoPos({ x, y });
+          } catch {
+            setInfoPos({ x: 12, y: 12 });
+          }
+          setInfoBooking(booking || null);
+          setInfoOpen(true);
+        });
+      }
+    },
+    [containerRef, setCalendarEventPending]
+  );
   // React to booking updates to patch local event data
   useEffect(() => {
     const handler = (e) => {
@@ -426,7 +462,7 @@ export default function FullCalendarPanel() {
           const parseDate = (value, fallback) => {
             if (value == null) return fallback ?? null;
             const asString = String(value);
-            const candidate = new Date(asString.includes('T') ? asString : asString.replace(' ', 'T'));
+            const candidate = new Date(asString.includes("T") ? asString : asString.replace(" ", "T"));
             return Number.isNaN(candidate.getTime()) ? fallback ?? null : candidate;
           };
           if (start_date !== undefined) {
@@ -438,10 +474,11 @@ export default function FullCalendarPanel() {
           return nextEvent;
         })
       );
+      markEventPending(id, false);
     };
     window.addEventListener("tc:bookingUpdated", handler);
     return () => window.removeEventListener("tc:bookingUpdated", handler);
-  }, []);
+  }, [markEventPending]);
   const eventContent = useCallback(
     (arg) => {
       const b = arg?.event?.extendedProps?.booking || {};
@@ -633,6 +670,5 @@ export default function FullCalendarPanel() {
     </Box>
   );
 }
-
 
 
