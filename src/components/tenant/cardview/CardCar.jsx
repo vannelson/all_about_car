@@ -8,7 +8,6 @@ import {
   HStack,
   VStack,
   Flex,
-  Badge,
   Divider,
   Image,
   Card,
@@ -39,6 +38,7 @@ import CarProfile from "../CarProfile";
 import CarCardSkeleton from "../skeletons/CarCardSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
+import NextAvailabilityTag from "../NextAvailabilityTag";
 import RateCreateModal from "../rates/RateCreateModal";
 import CarRegistrationSteps from "../CarRegistrationSteps";
 
@@ -105,12 +105,6 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiFilters]);
-
-  const statusColors = {
-    Available: "green.400",
-    Unavailable: "red.400",
-    Overdue: "orange.400",
-  };
 
   const {
     isOpen: isModalOpen,
@@ -212,6 +206,14 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
               <CarCardSkeleton key={`sk-${idx}`} />
             ))
           : filteredCars.map((car) => {
+              const nextAvailabilityLabel =
+                car?.next_available_window?.label ||
+                car?.raw?.next_available_window?.label ||
+                "";
+              const availabilityFallback =
+                String(car?.status || "").toLowerCase() === "available"
+                  ? "Available now"
+                  : "";
               return (
                 <Card
                   key={
@@ -237,19 +239,20 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
                       w="100%"
                       h="100%"
                     />
-                    <Badge
+                    <NextAvailabilityTag
+                      label={nextAvailabilityLabel}
+                      fallbackLabel={availabilityFallback}
+                      tooltipLabel={nextAvailabilityLabel ? `Next availability: ${nextAvailabilityLabel}` : availabilityFallback || undefined}
+                      showIcon
                       position="absolute"
                       top={2}
                       left={2}
                       px={2}
                       py={1}
                       borderRadius="md"
+                      bg="blue.600"
                       color="white"
-                      fontSize="xs"
-                      bg={statusColors[car.status]}
-                    >
-                      {car.status}
-                    </Badge>
+                    />
                     {car?.raw?.info_carType && (
                       <Box
                         position="absolute"
@@ -408,3 +411,4 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
 };
 
 export default CardCar;
+

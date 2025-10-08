@@ -8,13 +8,12 @@ import {
   Flex,
   Button,
   Icon,
-  Badge,
-  Tooltip,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
-import { FiUsers, FiSettings, FiArrowRight, FiCalendar } from "react-icons/fi";
+import { FiUsers, FiSettings, FiArrowRight } from "react-icons/fi";
 import { BsFuelPump } from "react-icons/bs";
 import CarBrandLogo from "../../tenant/CarBrandLogo";
+import NextAvailabilityTag from "../NextAvailabilityTag";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
@@ -207,30 +206,23 @@ export default function CarRentalCardBooking({ filters, onRent }) {
                     className="transition duration-200 group-hover:scale-[1.01]"
                     loading="lazy"
                   />
-                  {car.nextAvailableLabel ? (
-                    <Tooltip label={`Next available: ${car.nextAvailableLabel}`} hasArrow>
-                      <HStack
-                        pos="absolute"
-                        bottom="8px"
-                        left="8px"
-                        spacing={1}
-                        align="center"
-                        bg="whiteAlpha.900"
-                        color="gray.800"
-                        px={2}
-                        py={0.5}
-                        borderRadius="md"
-                        border="1px solid"
-                        borderColor="gray.200"
-                        className="backdrop-blur-sm"
-                      >
-                        <Icon as={FiCalendar} boxSize={3} color="blue.600" />
-                        <Text fontSize="10px" fontWeight="semibold" noOfLines={1} title={car.nextAvailableLabel}>
-                          {car.nextAvailableLabel}
-                        </Text>
-                      </HStack>
-                    </Tooltip>
-                  ) : null}
+                  <NextAvailabilityTag
+                    label={car.nextAvailableLabel}
+                    fallbackLabel={car.available ? "Available now" : ""}
+                    tooltipLabel={car.nextAvailableLabel ? `Next availability: ${car.nextAvailableLabel}` : car.available ? "Available now" : undefined}
+                    showIcon
+                    position="absolute"
+                    bottom="8px"
+                    left="8px"
+                    bg="whiteAlpha.900"
+                    color="gray.800"
+                    px={2}
+                    py={0.5}
+                    borderRadius="md"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    className="backdrop-blur-sm"
+                  />
                   {/* Removed Selected badge; elevation + border indicate selection */}
                   <HStack
                     pos="absolute"
@@ -336,3 +328,4 @@ export default function CarRentalCardBooking({ filters, onRent }) {
     </Box>
   );
 }
+
