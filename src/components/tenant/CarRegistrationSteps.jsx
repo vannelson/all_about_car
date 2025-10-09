@@ -187,7 +187,6 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
             user: auth.user,
             profileImage: profileImage,
             displayImages: displayImages,
-            rateData,
           })
         );
       }

@@ -4,7 +4,7 @@ import { createCarApi, listCarsApi, mapCarToViewModel, updateCarApi } from "../s
 export const createCar = createAsyncThunk(
   "cars/createCar",
   async (
-    { formData, features, user, profileImage, displayImages, rateData },
+    { formData, features, user, profileImage, displayImages },
     { rejectWithValue }
   ) => {
     try {
