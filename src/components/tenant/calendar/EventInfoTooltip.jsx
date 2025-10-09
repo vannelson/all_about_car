@@ -32,6 +32,9 @@ import {
 import { daysBetween, formatDateTimeLocalToApi } from "../../../utils/booking";
 import { updateBookingApi } from "../../../services/bookings";
 import { useEffect, useMemo, useState } from "react";
+import UnlockBookingModal from "./UnlockBookingModal";
+
+const UNLOCK_PASSWORD = "unlock123";
 
 function fmtMoney(n) {
   const num = Number(n ?? 0) || 0;
@@ -81,7 +84,7 @@ export default function EventInfoTooltip({
       : "gray";
 
   // Local edit state
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(Boolean(b?.is_lock));
   const [saving, setSaving] = useState(false);
   const [editStatus, setEditStatus] = useState(status || "");
   const initialReturnLocal = useMemo(() => {
@@ -103,6 +106,74 @@ export default function EventInfoTooltip({
     setEditReturn(initialReturnLocal);
   }, [status, initialReturnLocal]);
 
+  useEffect(() => {
+    setLocked(Boolean(b?.is_lock));
+  }, [b?.is_lock]);
+
+  const [lockLoading, setLockLoading] = useState(false);
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState("");
+
+  const closeUnlockModal = () => {
+    setUnlockModalOpen(false);
+    setUnlockPassword("");
+  };
+
+  const broadcastUpdate = (payload = {}) => {
+    if (!b?.id) return;
+    try {
+      const ev = new CustomEvent("tc:bookingUpdated", {
+        detail: { id: b.id, ...payload },
+      });
+      window.dispatchEvent(ev);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleLockBooking = async () => {
+    if (!b?.id) return;
+    try {
+      setLockLoading(true);
+      await updateBookingApi({ id: b.id, is_lock: true });
+      setLocked(true);
+      broadcastUpdate({ is_lock: true });
+      toast({ title: "Booking locked", status: "success" });
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to lock booking";
+      toast({ title: msg, status: "error" });
+    } finally {
+      setLockLoading(false);
+    }
+  };
+
+  const handleUnlockBooking = async () => {
+    if (!b?.id) return;
+    if (unlockPassword.trim() !== UNLOCK_PASSWORD) {
+      toast({ title: "Invalid unlock password", status: "error" });
+      return;
+    }
+    try {
+      setLockLoading(true);
+      await updateBookingApi({ id: b.id, is_lock: false });
+      setLocked(false);
+      broadcastUpdate({ is_lock: false });
+      toast({ title: "Booking unlocked", status: "success" });
+      closeUnlockModal();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to unlock booking";
+      toast({ title: msg, status: "error" });
+    } finally {
+      setLockLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!b?.id) return;
     try {
@@ -112,13 +183,7 @@ export default function EventInfoTooltip({
       if (editReturn)
         payload.actual_return_date = formatDateTimeLocalToApi(editReturn);
       await updateBookingApi({ id: b.id, ...payload });
-      // Broadcast to calendar to refresh local event data
-      try {
-        const ev = new CustomEvent("tc:bookingUpdated", {
-          detail: { id: b.id, ...payload },
-        });
-        window.dispatchEvent(ev);
-      } catch {}
+      broadcastUpdate(payload);
       toast({ title: "Booking updated", status: "success" });
     } catch (err) {
       const msg =
@@ -233,7 +298,12 @@ export default function EventInfoTooltip({
                   size="xs"
                   variant="ghost"
                   leftIcon={<Icon as={locked ? FiLock : FiUnlock} />}
-                  onClick={() => setLocked((v) => !v)}
+                  onClick={() =>
+                    locked ? setUnlockModalOpen(true) : handleLockBooking()
+                  }
+                  isLoading={lockLoading}
+                  loadingText={locked ? "Unlocking..." : "Locking..."}
+                  isDisabled={lockLoading}
                 >
                   {locked ? "Locked" : "Unlocked"}
                 </Button>
@@ -289,6 +359,14 @@ export default function EventInfoTooltip({
           </VStack>
         </PopoverBody>
       </PopoverContent>
+      <UnlockBookingModal
+        isOpen={unlockModalOpen}
+        onClose={closeUnlockModal}
+        password={unlockPassword}
+        onPasswordChange={setUnlockPassword}
+        onSubmit={handleUnlockBooking}
+        isLoading={lockLoading}
+      />
     </Popover>
   );
 }
