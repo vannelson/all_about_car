@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 import { listBookingsApi, updateBookingApi } from "../../../services/bookings";
 import { FaUser, FaCar } from "react-icons/fa";
 import { BOOKING_COLOR_PALETTE } from "../../../utils/calendarColors";
-import { formatDateTimeLocalToApi } from "../../../utils/booking";
+import { formatDateTimeLocalToApi, formatDateTimeToInput } from "../../../utils/booking";
 import DateFilterPopover from "./DateFilterPopover";
 import EventInfoTooltip from "./EventInfoTooltip";
 import FocusedCarBanner from "./FocusedCarBanner";
@@ -37,6 +37,9 @@ export default function FullCalendarPanel() {
   const [selectedCar, setSelectedCar] = useState(null);
   const [selectedStart, setSelectedStart] = useState("");
   const [selectedEnd, setSelectedEnd] = useState("");
+  const [bookingModalMode, setBookingModalMode] = useState("create");
+  const [editingBooking, setEditingBooking] = useState(null);
+  const [modalCar, setModalCar] = useState(null);
   const { items: cars } = useSelector((s) => s.cars);
   const calendarRef = useRef(null);
   const containerRef = useRef(null);
@@ -269,22 +272,46 @@ export default function FullCalendarPanel() {
     const now = new Date();
     fetchMonth(formatMonth(now));
   }, [fetchMonth]);
-  const toLocalInput = (date) => {
-    try {
-      const d = new Date(date);
-      const pad = (n) => String(n).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      const mm = pad(d.getMonth() + 1);
-      const dd = pad(d.getDate());
-      const hh = pad(d.getHours());
-      const mi = pad(d.getMinutes());
-      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-    } catch {
-      return "";
-    }
-  };
+  const toLocalInput = useCallback((value) => formatDateTimeToInput(value), []);
+
+  const openCreateBooking = useCallback(() => {
+    setBookingModalMode("create");
+    setEditingBooking(null);
+    setModalCar(null);
+    setBookingOpen(true);
+  }, []);
+
+  const closeBookingModal = useCallback(() => {
+    setBookingOpen(false);
+    setBookingModalMode("create");
+    setEditingBooking(null);
+    setModalCar(null);
+  }, []);
+
+  const handleEditBooking = useCallback(
+    (booking) => {
+      if (!booking?.id) return;
+      setBookingModalMode("edit");
+      setEditingBooking(booking);
+      const carCandidate =
+        booking?.car ||
+        (cars || []).find(
+          (item) => Number(item?.id) === Number(booking?.car_id)
+        ) ||
+        null;
+      setModalCar(carCandidate);
+      setSelectedStart(toLocalInput(booking?.start_date));
+      setSelectedEnd(toLocalInput(booking?.end_date));
+      setInfoOpen(false);
+      setBookingOpen(true);
+    },
+    [cars, toLocalInput]
+  );
   const onSelect = (info) => {
     // Set selection range and show small options popover at last pointer position
+    setBookingModalMode("create");
+    setEditingBooking(null);
+    setModalCar(null);
     const startStr = toLocalInput(info?.start);
     const endStr = toLocalInput(info?.end);
     setSelectedStart(startStr);
@@ -633,7 +660,7 @@ export default function FullCalendarPanel() {
         onChangeEnd={(v) => setRangeEnd(v)}
         status={availStatus}
         onChangeStatus={(v) => setAvailStatus(v)}
-        onCreate={() => setBookingOpen(true)}
+        onCreate={openCreateBooking}
         onApply={() => {
           try {
             const ev = new CustomEvent('tc:applyDateFilter', { detail: { start: rangeStart, end: rangeEnd, availability: availStatus } });
@@ -648,14 +675,19 @@ export default function FullCalendarPanel() {
         onClose={() => setInfoOpen(false)}
         anchor={infoPos}
         booking={infoBooking}
+        onEdit={handleEditBooking}
       />
 
       <BookingModal
         isOpen={isBookingOpen}
-        onClose={() => setBookingOpen(false)}
+        onClose={closeBookingModal}
+        car={modalCar}
         startAt={selectedStart}
         endAt={selectedEnd}
+        booking={editingBooking}
+        mode={bookingModalMode}
         onBookingCreated={upsertBookingEvent}
+        onBookingUpdated={upsertBookingEvent}
       />
 
       <BaseModal

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -49,7 +49,7 @@ import {
   FaMapMarkerAlt,
   FaDownload,
 } from "react-icons/fa";
-import { createBookingApi } from "../../../services/bookings";
+import { createBookingApi, updateBookingApi } from "../../../services/bookings";
 import { fetchCars } from "../../../store/carsSlice";
 import {
   computeActiveRates,
@@ -59,10 +59,8 @@ import {
   computeBaseAmount,
   computeTotal,
   formatDateTimeLocalToApi,
+  formatDateTimeToInput,
 } from "../../../utils/booking";
-
-const toNumber = (str = "0") =>
-  Number(String(str).replace(/,/g, "").trim()) || 0;
 
 const steps = [
   { title: "Trip", description: "Dates & Locations", icon: FaRoute },
@@ -76,12 +74,16 @@ export default function BookingModal({
   car = {},
   startAt,
   endAt,
+  booking,
+  mode = "create",
   onBookingCreated,
+  onBookingUpdated,
 }) {
   const { activeStep, setActiveStep } = useSteps({
     index: 0,
     count: steps.length,
   });
+  const isEditMode = mode === "edit" && Boolean(booking?.id);
   const dispatch = useDispatch();
   const [pickupAt, setPickupAt] = useState("");
   const [returnAt, setReturnAt] = useState("");
@@ -89,7 +91,7 @@ export default function BookingModal({
   const [dropoffLocation, setDropoffLocation] = useState("");
 
   // Borrower is nullable for this flow
-  const [borrowerId] = useState("");
+  const [borrowerId, setBorrowerId] = useState("");
   const [renterFirstName, setRenterFirstName] = useState("");
   const [renterMiddleName, setRenterMiddleName] = useState("");
   const [renterLastName, setRenterLastName] = useState("");
@@ -100,7 +102,7 @@ export default function BookingModal({
   const [idLabel, setIdLabel] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [idImages, setIdImages] = useState([]);
-  const [extraPayment, setExtraPayment] = useState(0);
+  const [extraPayment, setExtraPayment] = useState("0");
   const [submitting, setSubmitting] = useState(false);
 
   const auth = useSelector((s) => s.auth);
@@ -114,9 +116,14 @@ export default function BookingModal({
   const panelBg = useColorModeValue("gray.50", "gray.700");
   const sidebarBg = useColorModeValue("gray.50", "gray.800");
 
+  const resolvedCar = useMemo(() => {
+    if (isEditMode && booking && booking.car) return booking.car;
+    return car;
+  }, [isEditMode, booking, car]);
+
   // Resolve effective car VM from prop, localStorage (full raw), or Redux store by id
   const effectiveCar = useMemo(() => {
-    if (car && (car.raw || car.rates)) return car;
+    if (resolvedCar && (resolvedCar.raw || resolvedCar.rates)) return resolvedCar;
     // Try full raw from localStorage (selectedCarInfo)
     try {
       const ls = localStorage.getItem("selectedCarInfo");
@@ -140,36 +147,42 @@ export default function BookingModal({
       if (vm) return vm;
     }
     return null;
-  }, [car, carsInStore]);
+  }, [resolvedCar, carsInStore]);
 
   // No car gallery dependency for ID images anymore
 
   // Extract only ACTIVE rates from raw
-  const activeRates = useMemo(
-    () => computeActiveRates(effectiveCar),
-    [effectiveCar]
-  );
+  const activeRates = useMemo(() => computeActiveRates(effectiveCar), [effectiveCar]);
   const chosenRateType = useMemo(
-    () => chooseRateType(activeRates, car?.rateType),
-    [activeRates, car?.rateType]
+    () => chooseRateType(activeRates, resolvedCar?.rateType),
+    [activeRates, resolvedCar?.rateType]
   );
-  const baseRate = useMemo(
-    () => computeBaseRate(activeRates, chosenRateType),
-    [activeRates, chosenRateType]
-  );
+  const effectiveRateType = useMemo(() => {
+    if (isEditMode) {
+      const rt = String(booking?.rate_type || "").toLowerCase();
+      if (rt.includes("hour")) return "hourly";
+      if (rt.includes("day")) return "daily";
+    }
+    return chosenRateType;
+  }, [isEditMode, booking?.rate_type, chosenRateType]);
+  const baseRate = useMemo(() => {
+    if (isEditMode && booking?.rate != null) return Number(booking.rate) || 0;
+    return computeBaseRate(activeRates, effectiveRateType);
+  }, [isEditMode, booking?.rate, activeRates, effectiveRateType]);
 
   // Derived pricing and validation
   const quantities = useMemo(
-    () => computeQuantities(chosenRateType, pickupAt, returnAt),
-    [chosenRateType, pickupAt, returnAt]
+    () => computeQuantities(effectiveRateType, pickupAt, returnAt),
+    [effectiveRateType, pickupAt, returnAt]
   );
-  const baseAmount = useMemo(
-    () => computeBaseAmount(baseRate, quantities.qty),
-    [baseRate, quantities]
+  const baseAmount = useMemo(() => computeBaseAmount(baseRate, quantities.qty), [baseRate, quantities]);
+  const discountValue = useMemo(
+    () => (isEditMode ? Number(booking?.discount || 0) : 0),
+    [isEditMode, booking?.discount]
   );
   const total = useMemo(
-    () => computeTotal(baseAmount, Number(extraPayment) || 0, 0),
-    [baseAmount, extraPayment]
+    () => computeTotal(baseAmount, Number(extraPayment) || 0, discountValue),
+    [baseAmount, extraPayment, discountValue]
   );
 
   const isTripValid = useMemo(() => {
@@ -190,110 +203,214 @@ export default function BookingModal({
   }, [renterLastName, renterFirstName, renterPhone, idType, idNumber]);
 
   const canSubmit = isTripValid && isRenterValid && Number(baseRate) > 0;
+  const submitLabel = isEditMode ? "Save Changes" : "Confirm Booking";
 
-  // Prefill dates from props if provided
   useEffect(() => {
-    if (startAt) setPickupAt(startAt);
-    if (endAt) setReturnAt(endAt);
-  }, [startAt, endAt]);
+    if (!isOpen) return;
+    setActiveStep(0);
+    if (isEditMode) {
+      const src = booking || {};
+      setPickupAt(formatDateTimeToInput(src.start_date) || "");
+      setReturnAt(formatDateTimeToInput(src.end_date) || "");
+      setPickupLocation(src.pickup_location || "");
+      setDropoffLocation(src.dropoff_location || src.destination || "");
+      setBorrowerId(
+        src.borrower_id != null && src.borrower_id !== ""
+          ? String(src.borrower_id)
+          : ""
+      );
+      setRenterFirstName(src.renter_first_name || "");
+      setRenterMiddleName(src.renter_middle_name || "");
+      setRenterLastName(src.renter_last_name || "");
+      setRenterPhone(src.renter_phone_number || src.renter_phone || "");
+      setRenterEmail(src.renter_email || "");
+      setRenterAddress(src.renter_address || "");
+      setIdType(src.identification_type || "DriverLicense");
+      setIdLabel(src.identification || "");
+      setIdNumber(src.identification_number || "");
+      setIdImages(
+        Array.isArray(src.identification_images)
+          ? [...src.identification_images]
+          : []
+      );
+      setExtraPayment(
+        src.extra_payment != null && src.extra_payment !== ""
+          ? String(src.extra_payment)
+          : "0"
+      );
+    } else {
+      setPickupAt(startAt || "");
+      setReturnAt(endAt || "");
+      setPickupLocation("");
+      setDropoffLocation("");
+      setBorrowerId("");
+      setRenterFirstName("");
+      setRenterMiddleName("");
+      setRenterLastName("");
+      setRenterPhone("");
+      setRenterEmail("");
+      setRenterAddress("");
+      setIdType("DriverLicense");
+      setIdLabel("");
+      setIdNumber("");
+      setIdImages([]);
+      setExtraPayment("0");
+    }
+  }, [
+    isOpen,
+    isEditMode,
+    booking,
+    startAt,
+    endAt,
+    setActiveStep,
+  ]);
 
   // Submit booking
-  const handleConfirm = async () => {
+  const handleSubmit = async () => {
     if (!canSubmit || submitting) return;
+
+    const tenantId = booking?.tenant_id ?? auth?.user?.id ?? null;
+    const carId =
+      booking?.car_id ||
+      effectiveCar?.id ||
+      resolvedCar?.id ||
+      (() => {
+        try {
+          return JSON.parse(localStorage.getItem("selectedCarInfo") || "{}").id;
+        } catch {
+          return null;
+        }
+      })();
+
+    if (!carId) {
+      toast({
+        title: "Unable to determine car for booking",
+        status: "error",
+      });
+      return;
+    }
+
+    const borrowerValue =
+      booking?.borrower_id ??
+      (borrowerId !== "" ? Number(borrowerId) || borrowerId : null);
+    const baseRateValue = Number(baseRate) || 0;
+    const baseAmountValue = Number(baseAmount) || 0;
+    const extraPaymentValue = Number(extraPayment) || 0;
+    const quantityValue = Number(quantities.qty) || 0;
+    const discount = Number(discountValue) || 0;
+    const totalValue = computeTotal(baseAmountValue, extraPaymentValue, discount);
+    const destinationValue = dropoffLocation || booking?.destination || "";
+
+    const payload = {
+      tenant_id: tenantId,
+      car_id: carId,
+      borrower_id: borrowerValue,
+      start_date: formatDateTimeLocalToApi(pickupAt),
+      end_date: formatDateTimeLocalToApi(returnAt),
+      expected_return_date: formatDateTimeLocalToApi(returnAt),
+      pickup_location: pickupLocation,
+      dropoff_location: dropoffLocation,
+      destination: destinationValue,
+      rate_type: effectiveRateType,
+      rate: baseRateValue,
+      quantity: quantityValue,
+      base_amount: baseAmountValue,
+      extra_payment: extraPaymentValue,
+      discount,
+      total_amount: Number(totalValue) || 0,
+      payment_status: isEditMode
+        ? booking?.payment_status || "Paid"
+        : "Paid",
+      status: isEditMode ? booking?.status || "Reserved" : "Ongoing",
+      identification_type: idType,
+      identification: idLabel,
+      identification_number: idNumber,
+      identification_images: idImages,
+      renter_first_name: renterFirstName,
+      renter_middle_name: renterMiddleName,
+      renter_last_name: renterLastName,
+      renter_address: renterAddress,
+      renter_phone_number: renterPhone,
+      renter_email: renterEmail,
+    };
+
+    if (isEditMode) {
+      payload.actual_return_date = booking?.actual_return_date ?? null;
+      if (booking?.tenant_id) {
+        payload.tenant_id = booking.tenant_id;
+      }
+      if (
+        booking?.borrower_id &&
+        (payload.borrower_id === null || payload.borrower_id === "")
+      ) {
+        payload.borrower_id = booking.borrower_id;
+      }
+    }
+
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) delete payload[key];
+    });
+
     try {
       setSubmitting(true);
-      // Map to backend-required fields
-      const tenantId = auth?.user?.id || null;
-      const carId =
-        effectiveCar?.id ||
-        car?.id ||
-        (() => {
-          try {
-            return JSON.parse(localStorage.getItem("selectedCarInfo") || "{}")
-              .id;
-          } catch {
-            return null;
-          }
-        })();
-
-      const body = {
-        // required identifiers
-        tenant_id: tenantId,
-        car_id: carId,
-
-        // renter details (send as additional info if backend accepts extra fields)
-        renter_first_name: renterFirstName,
-        renter_middle_name: renterMiddleName,
-        renter_last_name: renterLastName,
-        renter_phone_number: renterPhone,
-        renter_email: renterEmail,
-        renter_address: renterAddress,
-
-        // identification (rename per validation messages)
-        identification_type: idType,
-        identification: idLabel,
-        identification_number: idNumber,
-        identification_images: idImages,
-
-        // trip dates (rename per backend)
-        start_date: formatDateTimeLocalToApi(pickupAt),
-        end_date: formatDateTimeLocalToApi(returnAt),
-        expected_return_date: formatDateTimeLocalToApi(returnAt),
-
-        // locations
-        pickup_location: pickupLocation,
-        dropoff_location: dropoffLocation,
-
-        // pricing
-        rate_type: chosenRateType,
-        rate: Number(baseRate) || 0,
-        quantity: Number(quantities.qty) || 0,
-        base_amount: Number(baseAmount) || 0,
-        extra_payment: Number(extraPayment) || 0,
-        discount: 0,
-        total_amount: Number(total) || 0,
-
-        // required statuses (per backend enum)
-        payment_status: "Paid",
-        status: "Ongoing",
-      };
-
-      const response = await createBookingApi(body);
-      const created = response?.data || response || {};
-      const bookingForEvent = {
-        ...body,
-        ...created,
-        status: created?.status || "Ongoing",
-        start_date: created?.start_date || body.start_date,
-        end_date: created?.end_date || body.end_date,
-        expected_return_date: created?.expected_return_date || body.expected_return_date,
-        renter_first_name: created?.renter_first_name ?? body.renter_first_name,
-        renter_middle_name: created?.renter_middle_name ?? body.renter_middle_name,
-        renter_last_name: created?.renter_last_name ?? body.renter_last_name,
-        renter_phone_number: created?.renter_phone_number ?? body.renter_phone_number,
-        renter_email: created?.renter_email ?? body.renter_email,
-        renter_address: created?.renter_address ?? body.renter_address,
-        car_id: created?.car_id ?? carId,
-      };
-      if (!bookingForEvent.car && effectiveCar) {
-        bookingForEvent.car = effectiveCar.raw || effectiveCar;
+      if (isEditMode) {
+        const response = await updateBookingApi({ id: booking.id, ...payload });
+        const updated = response?.data || response || {};
+        const merged = { ...booking, ...payload, ...updated, id: booking.id };
+        if (typeof onBookingUpdated === "function") {
+          onBookingUpdated(merged);
+        }
+        try {
+          window.dispatchEvent(
+            new CustomEvent("tc:bookingUpdated", { detail: merged })
+          );
+        } catch {}
+        toast({ title: "Booking updated", status: "success" });
+      } else {
+        const response = await createBookingApi(payload);
+        const created = response?.data || response || {};
+        const bookingForEvent = {
+          ...payload,
+          ...created,
+          status: created?.status || payload.status,
+          start_date: created?.start_date || payload.start_date,
+          end_date: created?.end_date || payload.end_date,
+          expected_return_date:
+            created?.expected_return_date || payload.expected_return_date,
+          renter_first_name:
+            created?.renter_first_name ?? payload.renter_first_name,
+          renter_middle_name:
+            created?.renter_middle_name ?? payload.renter_middle_name,
+          renter_last_name:
+            created?.renter_last_name ?? payload.renter_last_name,
+          renter_phone_number:
+            created?.renter_phone_number ?? payload.renter_phone_number,
+          renter_email: created?.renter_email ?? payload.renter_email,
+          renter_address: created?.renter_address ?? payload.renter_address,
+          car_id: created?.car_id ?? payload.car_id,
+        };
+        if (!bookingForEvent.car && effectiveCar) {
+          bookingForEvent.car = effectiveCar.raw || effectiveCar;
+        }
+        if (!bookingForEvent.id && created?.id) {
+          bookingForEvent.id = created.id;
+        }
+        try {
+          window.dispatchEvent(
+            new CustomEvent("tc:bookingCreated", { detail: bookingForEvent })
+          );
+        } catch {}
+        if (typeof onBookingCreated === "function") {
+          onBookingCreated(bookingForEvent);
+        }
+        toast({ title: "Booking created", status: "success" });
       }
-      if (!bookingForEvent.id && created?.id) {
-        bookingForEvent.id = created.id;
-      }
-      try {
-        window.dispatchEvent(new CustomEvent("tc:bookingCreated", { detail: bookingForEvent }));
-      } catch {}
-      if (typeof onBookingCreated === "function") {
-        onBookingCreated(bookingForEvent);
-      }
-      toast({ title: "Booking created", status: "success" });
       onClose?.();
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err?.message ||
-        "Failed to create booking";
+        (isEditMode ? "Failed to update booking" : "Failed to create booking");
       toast({ title: msg, status: "error" });
     } finally {
       setSubmitting(false);
@@ -302,7 +419,11 @@ export default function BookingModal({
 
   return (
     <BaseModal
-      title={`Book ${car?.name || "Vehicle"}`}
+      title={
+        isEditMode
+          ? `Edit Booking${booking?.id ? ` #${booking.id}` : ""}`
+          : `Book ${resolvedCar?.name || "Vehicle"}`
+      }
       size="6xl"
       isOpen={isOpen}
       onClose={onClose}
@@ -339,6 +460,7 @@ export default function BookingModal({
                 {activeStep === 0 && (
                   <Stack spacing={4}>
                 <BookingTripForm
+                  key={isEditMode ? `trip-${booking?.id ?? "edit"}` : "trip-create"}
                   pickupAt={pickupAt}
                   setPickupAt={setPickupAt}
                   returnAt={returnAt}
@@ -370,6 +492,7 @@ export default function BookingModal({
                 {activeStep === 1 && (
                   <Stack spacing={4}>
                 <BookingRenterForm
+                  key={isEditMode ? `renter-${booking?.id ?? "edit"}` : "renter-create"}
                   primaryColor={primaryColor}
                   renterLastName={renterLastName}
                   setRenterLastName={setRenterLastName}
@@ -496,12 +619,12 @@ export default function BookingModal({
                     <HStack>
                       <Button
                         colorScheme="green"
-                        onClick={handleConfirm}
+                        onClick={handleSubmit}
                         isLoading={submitting}
                         isDisabled={!canSubmit || submitting}
                         size="md"
                       >
-                        Confirm Booking
+                        {submitLabel}
                       </Button>
                     </HStack>
                   )}
@@ -515,14 +638,10 @@ export default function BookingModal({
                 <PaymentDetailsCard
                   panelBg={panelBg}
                   baseRate={baseRate}
-                  chosenRateType={chosenRateType}
+                  chosenRateType={effectiveRateType}
                   quantities={quantities}
                   extraPayment={extraPayment}
-                  total={computeTotal(
-                    computeBaseAmount(baseRate, quantities.qty),
-                    Number(extraPayment) || 0,
-                    0
-                  )}
+                  total={total}
                 />
                 <RenterInfoCard
                   panelBg={panelBg}

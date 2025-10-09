@@ -77,3 +77,28 @@ export function formatDateTimeLocalToApi(val) {
   }
 }
 
+export function formatDateTimeToInput(value) {
+  if (!value) return "";
+  try {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) {
+      const pad = (n) => String(n).padStart(2, "0");
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const mi = pad(d.getMinutes());
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    }
+  } catch {
+    // ignore and fall back to string parsing
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(" ", "T");
+    const [datePart, timePart] = normalized.split("T");
+    if (datePart && timePart) {
+      return `${datePart}T${timePart.slice(0, 5)}`;
+    }
+  }
+  return "";
+}

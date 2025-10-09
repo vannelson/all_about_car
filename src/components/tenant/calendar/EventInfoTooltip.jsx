@@ -53,6 +53,7 @@ export default function EventInfoTooltip({
   onClose,
   anchor = { x: 0, y: 0 },
   booking,
+  onEdit,
 }) {
   const b = booking || {};
   const toast = useToast();
@@ -343,6 +344,15 @@ export default function EventInfoTooltip({
                   </InputGroup>
                 </HStack>
                 <HStack justify="flex-end" pt={1}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<FiEdit2 />}
+                    onClick={() => onEdit?.(b)}
+                    isDisabled={locked || !b?.id}
+                  >
+                    Edit Booking
+                  </Button>
                   <Button
                     size="sm"
                     colorScheme="blue"
