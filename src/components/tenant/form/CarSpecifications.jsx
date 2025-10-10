@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   VStack,
   FormControl,
@@ -12,13 +12,7 @@ import {
   Heading,
   SimpleGrid,
 } from "@chakra-ui/react";
-const steps = [
-  { title: "Basic", description: "Vehicle Info" },
-  { title: "Specs", description: "Specifications" },
-  { title: "Features", description: "Add Features" },
-  { title: "Pictures", description: "Upload Images" },
-  { title: "Review", description: "Preview & Submit" },
-];
+import { TRANSMISSION_OPTIONS, FUEL_TYPE_OPTIONS } from "../../../utils/options";
 
 const CarSpecifications = ({
   formData,
@@ -105,9 +99,11 @@ const CarSpecifications = ({
             value={formData.spcs_transmission}
             onChange={handleInputChange}
           >
-            <option value="Automatic">Automatic</option>
-            <option value="Manual">Manual</option>
-            <option value="CVT">CVT</option>
+            {TRANSMISSION_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </FormControl>
 
@@ -118,10 +114,11 @@ const CarSpecifications = ({
             value={formData.spcs_fuelType}
             onChange={handleInputChange}
           >
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Electric">Electric</option>
-            <option value="Hybrid">Hybrid</option>
+            {FUEL_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </FormControl>
 

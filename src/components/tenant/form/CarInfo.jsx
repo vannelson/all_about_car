@@ -12,13 +12,14 @@ import {
   Heading,
   SimpleGrid,
 } from "@chakra-ui/react";
+import {
+  CAR_BRAND_OPTIONS,
+  VEHICLE_AGE_OPTIONS,
+  CAR_TYPE_OPTIONS,
+  AVAILABILITY_STATUS_OPTIONS,
+} from "../../../utils/options";
 
-const CarInfo = ({
-  formData,
-  handleInputChange,
-  handleNumberChange,
-  carBrands,
-}) => {
+const CarInfo = ({ formData, handleInputChange, handleNumberChange }) => {
   return (
     <VStack spacing={6} align="stretch">
       <Heading as="h2" size="md" color="blue.700">
@@ -34,9 +35,9 @@ const CarInfo = ({
             onChange={handleInputChange}
             placeholder="Select brand"
           >
-            {carBrands.map((brand) => (
-              <option key={brand} value={brand}>
-                {brand}
+            {CAR_BRAND_OPTIONS.map((brand) => (
+              <option key={brand.value} value={brand.value}>
+                {brand.label}
               </option>
             ))}
           </Select>
@@ -74,10 +75,11 @@ const CarInfo = ({
             value={formData.info_age}
             onChange={handleInputChange}
           >
-            <option value="0-3">0-3 years</option>
-            <option value="4-6">4-6 years</option>
-            <option value="7-10">7-10 years</option>
-            <option value="10+">10+ years</option>
+            {VEHICLE_AGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </FormControl>
       </SimpleGrid>
@@ -90,13 +92,11 @@ const CarInfo = ({
             value={formData.info_carType}
             onChange={handleInputChange}
           >
-            <option value="SUV">SUV</option>
-            <option value="VAN">VAN</option>
-            <option value="SEDAN">Sedan</option>
-            <option value="HATCHBACK">Hatchback</option>
-            <option value="COUPE">Coupe</option>
-            <option value="CONVERTIBLE">Convertible</option>
-            <option value="TRUCK">Truck</option>
+            {CAR_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </FormControl>
 
@@ -107,11 +107,11 @@ const CarInfo = ({
             value={formData.info_availabilityStatus}
             onChange={handleInputChange}
           >
-            <option value="Available">Available</option>
-            <option value="Rented">Rented</option>
-            <option value="Maintenance">Maintenance</option>
-            <option value="Reserved">Reserved</option>
-            <option value="Unavailable">Unavailable</option>
+            {AVAILABILITY_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </Select>
         </FormControl>
 

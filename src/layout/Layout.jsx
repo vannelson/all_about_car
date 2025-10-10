@@ -5,25 +5,43 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectAuth } from "../store";
 import { logout } from "../store/authSlice";
 import BaseDrawer from "../components/base/BaseDrawer";
+import AccountSettingsDrawerContent from "../components/settings/AccountSettingsDrawerContent";
 
 export default function Layout({ role = null, children }) {
   const auth = useSelector(selectAuth);
   const dispatch = useDispatch();
   const [drawerConfig, setDrawerConfig] = useState({
     title: "",
-    size: "lg",
+    size: "md",
     placement: "right",
+    view: null,
   });
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  const onOpenDrawer = (title, size, placement) => {
-    setDrawerConfig({ title, size, placement });
+  const onOpenDrawer = (
+    title,
+    size = "md",
+    placement = "right",
+    view = null
+  ) => {
+    setDrawerConfig({ title, size, placement, view: view || title });
     setDrawerOpen(true);
   };
 
   const navItems = role ? NAV_ITEMS_BY_ROLE[role] : [];
 
   const handleLogout = () => dispatch(logout());
+
+  const renderDrawerContent = () => {
+    switch (drawerConfig.view) {
+      case "Account Settings":
+      case "account-settings":
+      case "account":
+        return <AccountSettingsDrawerContent />;
+      default:
+        return <h1>{drawerConfig.title} Content</h1>;
+    }
+  };
 
   return (
     <>
@@ -44,7 +62,7 @@ export default function Layout({ role = null, children }) {
         size={drawerConfig.size}
         placement={drawerConfig.placement}
       >
-        <h1>{drawerConfig.title} Content</h1>
+        {renderDrawerContent()}
       </BaseDrawer>
     </>
   );

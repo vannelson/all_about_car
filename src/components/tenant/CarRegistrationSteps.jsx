@@ -58,7 +58,13 @@ const steps = [
   { title: "Review", description: "Preview & Submit" },
 ];
 
-const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = null, onSaved = () => {}, onClose }) => {
+const CarRegistrationSteps = ({
+  mode = "create",
+  initialData = null,
+  carId = null,
+  onSaved = () => {},
+  onClose,
+}) => {
   const { activeStep, setActiveStep } = useSteps({
     index: 0,
     count: steps.length,
@@ -98,37 +104,46 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
     spcs_fuelEfficiency: 7.6,
   });
 
-  const mapApiToForm = useMemo(() => (api = {}) => ({
-    info_make: api.info_make ?? "",
-    info_model: api.info_model ?? "",
-    info_year: api.info_year ?? new Date().getFullYear(),
-    info_age: api.info_age ?? "0-3",
-    info_carType: api.info_carType ?? "SUV",
-    info_plateNumber: api.info_plateNumber ?? "",
-    info_vin: api.info_vin ?? "",
-    info_availabilityStatus:
-      (api.info_availabilityStatus && String(api.info_availabilityStatus).charAt(0).toUpperCase() + String(api.info_availabilityStatus).slice(1)) ||
-      "Available",
-    info_location: api.info_location ?? "",
-    info_mileage: api.info_mileage ?? 0,
-    spcs_seats: api.spcs_seats ?? 5,
-    spcs_largeBags: api.spcs_largeBags ?? 1,
-    spcs_smallBags: api.spcs_smallBags ?? 2,
-    spcs_engineSize: api.spcs_engineSize ?? 1998,
-    spcs_transmission: api.spcs_transmission ?? "Automatic",
-    spcs_fuelType: api.spcs_fuelType ?? "Petrol",
-    spcs_fuelEfficiency: api.spcs_fuelEfficiency ?? 7.6,
-  }), []);
+  const mapApiToForm = useMemo(
+    () =>
+      (api = {}) => ({
+        info_make: api.info_make ?? "",
+        info_model: api.info_model ?? "",
+        info_year: api.info_year ?? new Date().getFullYear(),
+        info_age: api.info_age ?? "0-3",
+        info_carType: api.info_carType ?? "SUV",
+        info_plateNumber: api.info_plateNumber ?? "",
+        info_vin: api.info_vin ?? "",
+        info_availabilityStatus:
+          (api.info_availabilityStatus &&
+            String(api.info_availabilityStatus).charAt(0).toUpperCase() +
+              String(api.info_availabilityStatus).slice(1)) ||
+          "Available",
+        info_location: api.info_location ?? "",
+        info_mileage: api.info_mileage ?? 0,
+        spcs_seats: api.spcs_seats ?? 5,
+        spcs_largeBags: api.spcs_largeBags ?? 1,
+        spcs_smallBags: api.spcs_smallBags ?? 2,
+        spcs_engineSize: api.spcs_engineSize ?? 1998,
+        spcs_transmission: api.spcs_transmission ?? "Automatic",
+        spcs_fuelType: api.spcs_fuelType ?? "Petrol",
+        spcs_fuelEfficiency: api.spcs_fuelEfficiency ?? 7.6,
+      }),
+    []
+  );
 
   // Prefill when editing
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setFormData(mapApiToForm(initialData));
       const feat = Array.isArray(initialData.features)
-        ? initialData.features.map((f) => (typeof f === "string" ? f : f?.name || "")).filter(Boolean)
+        ? initialData.features
+            .map((f) => (typeof f === "string" ? f : f?.name || ""))
+            .filter(Boolean)
         : [];
       setFeatures(feat);
-      const profile = initialData.profileImage || initialData.profile_image || null;
+      const profile =
+        initialData.profileImage || initialData.profile_image || null;
       const gallery = Array.isArray(initialData.displayImages)
         ? initialData.displayImages
         : Array.isArray(initialData.display_images)
@@ -191,12 +206,17 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
         );
       }
 
-      const ok = (mode === "edit" ? updateCar.fulfilled : createCar.fulfilled).match(action);
+      const ok = (
+        mode === "edit" ? updateCar.fulfilled : createCar.fulfilled
+      ).match(action);
       if (ok) {
         toast({
           title: mode === "edit" ? "Car updated" : "Car saved",
           description:
-            action.payload?.message || (mode === "edit" ? "Car updated successfully" : "Car registered successfully"),
+            action.payload?.message ||
+            (mode === "edit"
+              ? "Car updated successfully"
+              : "Car registered successfully"),
           status: "success",
         });
         // Refresh list and notify parent
@@ -208,7 +228,9 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
         const errorsObj = err.errors || {};
         const flatErrors = Object.values(errorsObj).flat().join("\n");
         const msg =
-          flatErrors || err.message || action.error?.message ||
+          flatErrors ||
+          err.message ||
+          action.error?.message ||
           (mode === "edit" ? "Failed to update car" : "Failed to save car");
         toast({
           title: "Error",
@@ -235,25 +257,6 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
     }
   };
 
-  // Popular car brands
-  const carBrands = [
-    "Toyota",
-    "Honda",
-    "Ford",
-    "Chevrolet",
-    "Nissan",
-    "Hyundai",
-    "Kia",
-    "Volkswagen",
-    "BMW",
-    "Mercedes-Benz",
-    "Audi",
-    "Subaru",
-    "Mazda",
-    "Lexus",
-    "Jeep",
-  ];
-
   // Render the appropriate step content
   const renderStepContent = () => {
     switch (activeStep) {
@@ -263,7 +266,6 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
             formData={formData}
             handleInputChange={handleInputChange}
             handleNumberChange={handleNumberChange}
-            carBrands={carBrands}
           />
         );
       case 1:
@@ -371,9 +373,13 @@ const CarRegistrationSteps = ({ mode = "create", initialData = null, carId = nul
       <Box as="form" onSubmit={handleSubmit}>
         <VStack spacing={8} align="stretch">
           {mode === "edit" ? (
-            <Heading as="h2" size="md" color="blue.700">Edit Car</Heading>
+            <Heading as="h2" size="md" color="blue.700">
+              Edit Car
+            </Heading>
           ) : (
-            <Heading as="h2" size="md" color="blue.700">Car Registration</Heading>
+            <Heading as="h2" size="md" color="blue.700">
+              Car Registration
+            </Heading>
           )}
           {/* Stepper */}
           <Stepper index={activeStep} colorScheme="blue">

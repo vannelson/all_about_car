@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
 import carsReducer from "./carsSlice";
+import companiesReducer from "./companiesSlice";
 
 const PERSIST_KEY = "user";
 
@@ -26,6 +27,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     cars: carsReducer,
+    companies: companiesReducer,
   },
   preloadedState: loadState(),
 });
@@ -35,3 +37,4 @@ store.subscribe(() => {
 });
 
 export const selectAuth = (state) => state.auth;
+export const selectCompanies = (state) => state.companies;

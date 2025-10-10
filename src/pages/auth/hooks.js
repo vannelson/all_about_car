@@ -1,9 +1,32 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 import { loginApi, registerApi } from "../../services/auth";
 import { loginSuccess, registerSuccess } from "../../store/authSlice";
+
+const normalizeUserPayload = (apiUser = {}, { email: fallbackEmail = null, name: fallbackName = null } = {}) => {
+  const activeCompany = apiUser?.active_company || apiUser?.activeCompany || null;
+  const nameFromParts = [apiUser?.first_name, apiUser?.middle_name, apiUser?.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const derivedEmail = apiUser?.email || fallbackEmail || null;
+  const derivedName =
+    nameFromParts ||
+    apiUser?.name ||
+    fallbackName ||
+    (derivedEmail ? derivedEmail.split("@")[0] : "User");
+
+  return {
+    ...apiUser,
+    email: derivedEmail,
+    name: derivedName,
+    display_name: derivedName,
+    active_company: activeCompany,
+    company_id: apiUser?.company_id ?? apiUser?.companyId ?? activeCompany?.id ?? null,
+  };
+};
 
 export function useLoginHandler({ email, password }) {
   const [loading, setLoading] = useState(false);
@@ -18,17 +41,15 @@ export function useLoginHandler({ email, password }) {
       const res = await loginApi({ email, password });
       const apiUser = res?.data?.user || res?.user || {};
       const token = res?.data?.token || res?.token;
-      const derivedRole = apiUser?.type || apiUser?.role || "borrower";
+      const normalizedUser = normalizeUserPayload(apiUser, { email });
+      const derivedRole = normalizedUser?.type || normalizedUser?.role || "borrower";
 
       dispatch(
         loginSuccess({
-          user: {
-            id: apiUser?.id || apiUser?.user_id || apiUser?.uid || null,
-            name: apiUser?.name || (email ? email.split("@")[0] : "User"),
-            email: apiUser?.email || email,
-          },
+          user: normalizedUser,
           role: derivedRole,
           token,
+          profile: res?.data || null,
         })
       );
 
@@ -77,18 +98,16 @@ export function useRegisterHandler({ firstName, middleName, lastName, email, pas
       const loginRes = await loginApi({ email, password });
       const apiUser = loginRes?.data?.user || loginRes?.user || {};
       const token = loginRes?.data?.token || loginRes?.token;
-      const derivedRole = apiUser?.type || apiUser?.role || type;
-      const displayName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+      const fallbackName = [firstName, middleName, lastName].filter(Boolean).join(" ") || null;
+      const normalizedUser = normalizeUserPayload(apiUser, { email, name: fallbackName });
+      const derivedRole = normalizedUser?.type || normalizedUser?.role || type;
 
       dispatch(
         registerSuccess({
-          user: {
-            id: apiUser?.id || apiUser?.user_id || apiUser?.uid || null,
-            name: apiUser?.name || displayName,
-            email: apiUser?.email || email,
-          },
+          user: normalizedUser,
           role: derivedRole,
           token,
+          profile: loginRes?.data || null,
         })
       );
 

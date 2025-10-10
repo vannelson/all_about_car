@@ -20,7 +20,7 @@ export default function MobileNav({ navItems, onOpenDrawer }) {
         bg="blue.400"
         color="white"
         fontWeight="bold"
-        onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
+        onClick={() => onOpenDrawer("Account Settings", "md", "right", "account-settings")}
       >
         Open Drawer
       </Flex>
@@ -42,3 +42,4 @@ function MobileNavItem({ label, href }) {
     </Flex>
   );
 }
+

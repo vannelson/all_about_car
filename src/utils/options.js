@@ -15,6 +15,7 @@ export const FUEL_TYPES = [
   { label: "Petrol", value: "Petrol" },
   { label: "Diesel", value: "Diesel" },
   { label: "Electric", value: "Electric" },
+  { label: "Hybrid", value: "Hybrid" },
 ];
 
 export const CAR_BRANDS = [
@@ -50,6 +51,7 @@ export const CAR_BRANDS = [
   { label: "Genesis", value: "Genesis" },
   { label: "Jaguar", value: "Jaguar" },
   { label: "Land Rover", value: "Land Rover" },
+  { label: "Tesla", value: "Tesla" },
   { label: "Mini", value: "Mini" },
   { label: "Fiat", value: "Fiat" },
   { label: "Alfa Romeo", value: "Alfa Romeo" },
@@ -76,4 +78,66 @@ export const CAR_BRANDS = [
   { label: "Li Auto", value: "Li Auto" },
   { label: "Wuling", value: "Wuling" },
   { label: "VinFast", value: "VinFast" },
+];
+
+export const CAR_BRAND_OPTIONS = [
+  "Toyota",
+  "Honda",
+  "Ford",
+  "Chevrolet",
+  "Nissan",
+  "Hyundai",
+  "Kia",
+  "Volkswagen",
+  "BMW",
+  "Mercedes-Benz",
+  "Audi",
+  "Subaru",
+  "Mazda",
+  "Lexus",
+  "Jeep",
+  "Tesla",
+  "Mitsubishi",
+  "Suzuki",
+  "Isuzu",
+  "Chery",
+].map((brand) => ({ label: brand, value: brand }));
+
+export const VEHICLE_AGE_OPTIONS = [
+  { label: "0-3 years", value: "0-3" },
+  { label: "4-6 years", value: "4-6" },
+  { label: "7-10 years", value: "7-10" },
+  { label: "10+ years", value: "10+" },
+];
+
+export const CAR_TYPE_OPTIONS = [
+  { label: "SUV", value: "SUV" },
+  { label: "Van", value: "VAN" },
+  { label: "Sedan", value: "SEDAN" },
+  { label: "Hatchback", value: "HATCHBACK" },
+  { label: "Coupe", value: "COUPE" },
+  { label: "Convertible", value: "CONVERTIBLE" },
+  { label: "Truck", value: "TRUCK" },
+  { label: "Wagon", value: "WAGON" },
+];
+
+export const AVAILABILITY_STATUS_OPTIONS = [
+  { label: "Available", value: "Available" },
+  { label: "Rented", value: "Rented" },
+  { label: "Maintenance", value: "Maintenance" },
+  { label: "Reserved", value: "Reserved" },
+  { label: "Unavailable", value: "Unavailable" },
+];
+
+export const TRANSMISSION_OPTIONS = [
+  { label: "Automatic", value: "Automatic" },
+  { label: "Manual", value: "Manual" },
+  { label: "CVT", value: "CVT" },
+];
+
+export const FUEL_TYPE_OPTIONS = [
+  { label: "Petrol", value: "Petrol" },
+  { label: "Diesel", value: "Diesel" },
+  { label: "Electric", value: "Electric" },
+  { label: "Hybrid", value: "Hybrid" },
 ];

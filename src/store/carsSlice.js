@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+﻿import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { createCarApi, listCarsApi, mapCarToViewModel, updateCarApi } from "../services/cars";
 
 export const createCar = createAsyncThunk(
@@ -11,9 +11,14 @@ export const createCar = createAsyncThunk(
       const envCompanyId = import.meta?.env?.VITE_COMPANY_ID
         ? Number(import.meta.env.VITE_COMPANY_ID)
         : undefined;
-      const companyId = user?.id || user?.company_id || envCompanyId;
+      const companyId =
+        user?.active_company?.id ??
+        user?.company_id ??
+        user?.companyId ??
+        envCompanyId ??
+        null;
       const fields = {
-        company_id: 5,
+        company_id: companyId ?? null,
         info_make: formData.info_make,
         info_model: formData.info_model,
         info_year: formData.info_year,
@@ -146,9 +151,14 @@ export const updateCar = createAsyncThunk(
       const envCompanyId = import.meta?.env?.VITE_COMPANY_ID
         ? Number(import.meta.env.VITE_COMPANY_ID)
         : undefined;
-      const companyId = user?.id || user?.company_id || envCompanyId;
+      const companyId =
+        user?.active_company?.id ??
+        user?.company_id ??
+        user?.companyId ??
+        envCompanyId ??
+        null;
       const fields = {
-        company_id: 5,
+        company_id: companyId ?? null,
         info_make: formData.info_make,
         info_model: formData.info_model,
         info_year: formData.info_year,

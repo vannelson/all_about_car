@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   Flex,
   IconButton,
@@ -25,13 +25,13 @@ import DesktopNav from "./DesktopNav";
 import MobileNav from "./MobileNav";
 import Logo from "../components/Logo";
 
-export default function Navbar({
+const Navbar = ({
   navItems = [],
   onOpenDrawer,
   isAuthenticated,
   user,
   onLogout,
-}) {
+}) => {
   const { isOpen, onToggle } = useDisclosure();
 
   return (
@@ -111,7 +111,7 @@ export default function Navbar({
                 display={{ base: "none", md: "inline-flex" }}
                 colorScheme="blue"
                 icon={<Icon as={FaUser} />}
-                onClick={() => onOpenDrawer("Account Settings", "lg", "right")}
+                onClick={() => onOpenDrawer("Account Settings", "md", "right", "account-settings")}
               />
               <Button
                 variant="outline"
@@ -140,4 +140,6 @@ export default function Navbar({
       </Collapse>
     </Box>
   );
-}
+};
+
+export default Navbar;

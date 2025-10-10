@@ -2,9 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   isAuthenticated: false,
-  user: null, // { name, email }
+  user: null, // full user payload from API (includes active_company, etc.)
   role: null, // 'tenant' | 'borrower' (derived from user.type)
   token: null,
+  profile: null, // raw API response payload (optional)
 };
 
 const authSlice = createSlice({
@@ -12,18 +13,20 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     loginSuccess: (state, action) => {
-      const { user, role, token } = action.payload;
+      const { user, role, token, profile } = action.payload;
       state.isAuthenticated = true;
       state.user = user;
       state.role = role;
       state.token = token || null;
+      state.profile = profile || null;
     },
     registerSuccess: (state, action) => {
-      const { user, role, token } = action.payload;
+      const { user, role, token, profile } = action.payload;
       state.isAuthenticated = true;
       state.user = user;
       state.role = role;
       state.token = token || null;
+      state.profile = profile || null;
     },
     setRole: (state, action) => {
       state.role = action.payload;
@@ -33,6 +36,7 @@ const authSlice = createSlice({
       state.user = null;
       state.role = null;
       state.token = null;
+      state.profile = null;
     },
   },
 });
