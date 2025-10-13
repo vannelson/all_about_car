@@ -8,9 +8,12 @@ import {
   HStack,
   Button,
   Icon,
+  Heading,
+  Text,
 } from "@chakra-ui/react";
-import { FaMagic } from "react-icons/fa";
+import { FaMagic, FaUser } from "react-icons/fa";
 import ImageUpload from "../../tenant/ImageUpload";
+import { sampleRenters } from "../../../data/sampleRenters";
 
 export default function BookingRenterForm({
   primaryColor,
@@ -38,33 +41,43 @@ export default function BookingRenterForm({
   setExtraPayment,
 }) {
   const fillSample = () => {
-    const lastNames = ["Santos", "Reyes", "Garcia", "Cruz", "Delacruz", "Flores"];
-    const firstNames = ["Miguel", "Ana", "Jose", "Maria", "Carlos", "Luna"];
-    const middleNames = ["R.", "M.", "S.", "A.", "P.", "D."];
-    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const fn = pick(firstNames);
-    const ln = pick(lastNames);
-    const mn = Math.random() < 0.5 ? pick(middleNames) : "";
-    const phone = `+63 9${Math.floor(100000000 + Math.random() * 899999999)}`;
-    const email = `${fn}.${ln}`.toLowerCase() + "@example.com";
-    const addr = `${Math.floor(1 + Math.random() * 99)} Main St., Cebu City`;
-    const types = ["DriverLicense", "Passport", "NationalID"];
-    const t = pick(types);
-    const idNum = (t === "DriverLicense" ? "DL-" : t === "Passport" ? "P-" : "N-") +
-      Math.floor(100000 + Math.random() * 899999);
-    setRenterFirstName(fn);
-    setRenterMiddleName(mn);
-    setRenterLastName(ln);
-    setRenterPhone(phone);
-    setRenterEmail(email);
-    setRenterAddress(addr);
-    setIdType(t);
-    setIdNumber(idNum);
-    setIdLabel(t === "DriverLicense" ? "Driver License" : t === "Passport" ? "Passport" : "National ID");
+    const pick = sampleRenters[Math.floor(Math.random() * sampleRenters.length)];
+    if (!pick) return;
+    setRenterFirstName(pick.firstName);
+    setRenterMiddleName(pick.middleName || "");
+    setRenterLastName(pick.lastName);
+    setRenterPhone(pick.phone);
+    setRenterEmail(pick.email);
+    setRenterAddress(pick.address);
+    setIdType(pick.idType);
+    setIdNumber(pick.idNumber);
+    setIdLabel(pick.idLabel);
+    setExtraPayment(pick.extraPayment ?? "0");
   };
   return (
     <>
-      <HStack justify="flex-end" mb={2}>
+      <HStack justify="space-between" align="flex-start" mb={3}>
+        <HStack spacing={3} align="center">
+          <Box
+            bg="blue.50"
+            color="blue.600"
+            borderRadius="full"
+            p={2}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Icon as={FaUser} boxSize={4} />
+          </Box>
+            <Box>
+              <Heading size="md" color="gray.700">
+                Renter Information
+              </Heading>
+              <Text fontSize="sm" color="gray.500">
+                Capture the renter’s contact and identification details.
+              </Text>
+            </Box>
+        </HStack>
         <Button size="xs" leftIcon={<Icon as={FaMagic} />} variant="outline" onClick={fillSample}>
           Fill Sample
         </Button>
