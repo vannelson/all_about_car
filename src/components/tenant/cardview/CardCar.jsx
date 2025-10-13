@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -31,8 +31,6 @@ import CarRates from "./CarRates";
 import BaseModal from "../../base/BaseModal";
 // Booking removed for Units page
 import BaseSlider from "../../base/BaseSlider";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCars } from "../../../store/carsSlice";
 // no stepper modal; using BaseSlider + CarProfile for info
 import CarProfile from "../CarProfile";
 import CarCardSkeleton from "../skeletons/CarCardSkeleton";
@@ -55,57 +53,19 @@ function buildSliderImages(selectedCar) {
   );
   return imgs;
 }
-const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
-  // No demo cars — always API
-
-  const dispatch = useDispatch();
-  const {
-    items: cars,
-    page,
-    limit,
-    hasNext,
-    listLoading,
-    meta,
-  } = useSelector((s) => s.cars);
-
-  useEffect(() => {
-    if (!cars || cars.length === 0) {
-      dispatch(fetchCars({ page: 1, limit: 10 }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Map UI filters -> API filters
-  const apiFilters = useMemo(() => {
-    const f = {};
-    const availabilityFilter = String(filters?.availability ?? "").toLowerCase();
-    if (filters?.brand) f["info_make"] = filters.brand;
-    if (filters?.model) f["info_model"] = filters.model;
-    if (filters?.fuel) f["spcs_fuelType"] = filters.fuel;
-    if (filters?.carType) f["info_carType"] = filters.carType;
-    if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
-    if (["yes", "available"].includes(availabilityFilter))
-      f["info_availabilityStatus"] = "available";
-    if (["no", "unavailable"].includes(availabilityFilter))
-      f["info_availabilityStatus"] = "unavailable";
-    if (filters?.seats && /^\d+$/.test(String(filters.seats)))
-      f["spcs_seats"] = String(filters.seats);
-    if (filters?.plateNumber) f["info_plateNumber"] = filters.plateNumber;
-    if (filters?.vin) f["info_vin"] = filters.vin;
-    return f;
-  }, [filters]);
-
-  // Refetch from API when server-side filters change
-  useEffect(() => {
-    const hasFilters = Object.keys(apiFilters).length > 0;
-    if (hasFilters) {
-      dispatch(fetchCars({ page: 1, limit: limit || 10, filters: apiFilters }));
-    } else {
-      // If filters cleared, reload unfiltered list
-      dispatch(fetchCars({ page: 1, limit: limit || 10 }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiFilters]);
+const CardCar = ({
+  cars = [],
+  listLoading = false,
+  page = 1,
+  limit = 10,
+  hasNext = false,
+  meta = null,
+  query = "",
+  filters = {},
+  mode = "view",
+  onPaginate,
+}) => {
+  // No demo cars -- always API
 
   const {
     isOpen: isModalOpen,
@@ -369,7 +329,7 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
         limit={limit}
         hasNext={hasNext}
         meta={meta}
-        onChange={(p, l) => dispatch(fetchCars({ page: p, limit: l }))}
+        onChange={(p, l) => onPaginate && onPaginate(p, l)}
       />
 
       <BaseModal

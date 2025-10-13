@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -30,6 +30,7 @@ import TableCar from "../../components/tenant/tableview/TableCar";
 import CardCar from "../../components/tenant/cardview/CardCar";
 import BaseModal from "../../components/base/BaseModal";
 import CarRegistrationSteps from "../../components/tenant/CarRegistrationSteps";
+import { useCarsData } from "../../hooks/useCarsData";
 
 function Rentals() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -70,6 +71,14 @@ function Rentals() {
 
 function CarListTableOrCard() {
   const [isCardView, setIsCardView] = useState(true);
+  const [query, setQuery] = useState("");
+  const { cars, listLoading, page, limit, hasNext, meta, fetchPage } = useCarsData();
+  const handlePaginate = useCallback(
+    (nextPage, nextLimit) => {
+      fetchPage({ page: nextPage, limit: nextLimit });
+    },
+    [fetchPage]
+  );
 
   const handleToggleView = () => {
     setIsCardView((prev) => !prev);
@@ -100,7 +109,12 @@ function CarListTableOrCard() {
               <InputLeftElement pointerEvents="none">
                 <SearchIcon color="gray.400" />
               </InputLeftElement>
-              <Input maxW="350px" placeholder="Search cars..." />
+              <Input
+                maxW="350px"
+                placeholder="Search cars..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
             </InputGroup>
           </HStack>
 
@@ -121,9 +135,27 @@ function CarListTableOrCard() {
 
       {/* Table Or Grid */}
       {isCardView ? (
-        <CardCar />
+        <CardCar
+          cars={cars}
+          listLoading={listLoading}
+          page={page}
+          limit={limit}
+          hasNext={hasNext}
+          meta={meta}
+          query={query}
+          onPaginate={handlePaginate}
+        />
       ) : (
-        <TableCar />
+        <TableCar
+          cars={cars}
+          listLoading={listLoading}
+          page={page}
+          limit={limit}
+          hasNext={hasNext}
+          meta={meta}
+          query={query}
+          onPaginate={handlePaginate}
+        />
       )}
 
       {/* Modal */}

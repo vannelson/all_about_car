@@ -31,6 +31,7 @@ import CardCar from "../../components/tenant/cardview/CardCar";
 import BaseModal from "../../components/base/BaseModal";
 import CarRegistrationSteps from "../../components/tenant/CarRegistrationSteps";
 import { loadTopbarFilters, saveTopbarFilters } from "../../utils/helpers/filterPersistence";
+import { useCarsData } from "../../hooks/useCarsData";
 
 function Units() {
   const {
@@ -90,7 +91,7 @@ function Units() {
       />
 
       <Box p={4}>
-        <CarListTableOrCard query={topbar.search} onQueryChange={(q)=> setTopbar((p)=> ({...p, search:q}))} filters={filters} />
+        <CarListTableOrCard query={topbar.search} filters={filters} />
       </Box>
 
       {/* Car Registration Modal */}
@@ -107,11 +108,29 @@ function Units() {
   );
 }
 
-function CarListTableOrCard({ query, onQueryChange, filters }) {
+function CarListTableOrCard({ query, filters }) {
+  const { cars, listLoading, page, limit, hasNext, meta, fetchPage } = useCarsData({
+    filters,
+    limit: 10,
+  });
+
   return (
     <Box pt="3">
       {/* Card view */}
-      <CardCar query={query} filters={filters} mode="manage" />
+      <CardCar
+        cars={cars}
+        listLoading={listLoading}
+        page={page}
+        limit={limit}
+        hasNext={hasNext}
+        meta={meta}
+        query={query}
+        filters={filters}
+        mode="manage"
+        onPaginate={(nextPage, nextLimit) =>
+          fetchPage({ page: nextPage, limit: nextLimit })
+        }
+      />
     </Box>
   );
 }

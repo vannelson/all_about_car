@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { extractBookingDetails } from "../../../utils/helpers/bookingHelpers";
 
 import {
@@ -46,8 +46,6 @@ import PaymentPanel from "../payment/PaymentPanel";
 import BaseModal from "../../base/BaseModal";
 import BaseSlider from "../../base/BaseSlider";
 import CarProfile from "../CarProfile";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCars } from "../../../store/carsSlice";
 import TableCarRowSkeleton from "../skeletons/TableCarRowSkeleton";
 import Pagination from "../Pagination";
 import CarIdentity from "../CarIdentity";
@@ -69,7 +67,18 @@ function buildSliderImages(selectedCar) {
   return imgs;
 }
 
-const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
+const TableCar = ({
+  cars = [],
+  listLoading = false,
+  page = 1,
+  limit = 10,
+  hasNext = false,
+  meta = null,
+  query = "",
+  filters = {},
+  mode = "view",
+  onPaginate,
+}) => {
   //   {
   //     name: "Tesla Model 3",
   //     image: "/cars/6_tesla/1.avif",
@@ -98,49 +107,7 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   //   },
   // ];
 
-  // No demo cars — always API
-  const dispatch = useDispatch();
-  const {
-    items: cars,
-    page,
-    limit,
-    hasNext,
-    listLoading,
-    meta,
-  } = useSelector((s) => s.cars);
-
-  useEffect(() => {
-    if (!cars || cars.length === 0) {
-      dispatch(fetchCars({ page: 1, limit: 6 }));
-    }
-  }, []);
-
-  // Map UI filters -> API filters
-  const apiFilters = useMemo(() => {
-    const f = {};
-    if (filters?.brand) f["info_make"] = filters.brand;
-    if (filters?.carType) f["info_carType"] = filters.carType;
-    if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
-    if (filters?.availability === "yes")
-      f["info_availabilityStatus"] = "available";
-    if (filters?.availability === "no")
-      f["info_availabilityStatus"] = "unavailable";
-    if (filters?.seats && /^\d+$/.test(String(filters.seats)))
-      f["spcs_seats"] = String(filters.seats);
-    if (filters?.plateNumber) f["info_plateNumber"] = filters.plateNumber;
-    if (filters?.vin) f["info_vin"] = filters.vin;
-    return f;
-  }, [filters]);
-
-  useEffect(() => {
-    const hasFilters = Object.keys(apiFilters).length > 0;
-    if (hasFilters) {
-      dispatch(fetchCars({ page: 1, limit: limit || 6, filters: apiFilters }));
-    } else {
-      dispatch(fetchCars({ page: 1, limit: limit || 6 }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiFilters]);
+  // No demo cars -- always API
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedCar, setSelectedCar] = useState(null);
   const {
@@ -204,19 +171,30 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
   const filteredCars = useMemo(() => {
     const list = cars || [];
     const q = String(query || "").toLowerCase();
-    const availability = filters?.availability || "all";
+    const availabilityFilter = String(filters?.availability ?? "").toLowerCase();
     const priceCap = Number(filters?.price || 0);
     return list.filter((car) => {
       const nameOk =
         !q ||
-        String(car.name || "")
+        [
+          String(car.name || ""),
+          String(car.raw?.info_make || ""),
+          String(car.raw?.info_model || ""),
+          String(car.raw?.info_plateNumber || ""),
+        ]
+          .join(" ")
           .toLowerCase()
           .includes(q);
       const status = String(car.status || "");
+      const statusNormalized = status.toLowerCase();
+      const availability =
+        availabilityFilter === "" ? "all" : availabilityFilter;
       const availOk =
         availability === "all" ||
-        (availability === "yes" && status === "Available") ||
-        (availability === "no" && status !== "Available");
+        (["yes", "available"].includes(availability) &&
+          statusNormalized === "available") ||
+        (["no", "unavailable"].includes(availability) &&
+          statusNormalized !== "available");
       const rate = Number(
         car.rates?.daily || car.rates?.hourly || car.rateAmount || 0
       );
@@ -441,7 +419,7 @@ const TableCar = ({ query = "", filters = {}, mode = "view" }) => {
         limit={limit}
         hasNext={hasNext}
         meta={meta}
-        onChange={(p, l) => dispatch(fetchCars({ page: p, limit: l }))}
+        onChange={(p, l) => onPaginate && onPaginate(p, l)}
       />
     </Box>
   );
