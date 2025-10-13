@@ -78,14 +78,15 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
   // Map UI filters -> API filters
   const apiFilters = useMemo(() => {
     const f = {};
+    const availabilityFilter = String(filters?.availability ?? "").toLowerCase();
     if (filters?.brand) f["info_make"] = filters.brand;
     if (filters?.model) f["info_model"] = filters.model;
     if (filters?.fuel) f["spcs_fuelType"] = filters.fuel;
     if (filters?.carType) f["info_carType"] = filters.carType;
     if (filters?.transmission) f["spcs_transmission"] = filters.transmission;
-    if (filters?.availability === "yes")
+    if (["yes", "available"].includes(availabilityFilter))
       f["info_availabilityStatus"] = "available";
-    if (filters?.availability === "no")
+    if (["no", "unavailable"].includes(availabilityFilter))
       f["info_availabilityStatus"] = "unavailable";
     if (filters?.seats && /^\d+$/.test(String(filters.seats)))
       f["spcs_seats"] = String(filters.seats);
@@ -132,8 +133,8 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
 
   const filteredCars = useMemo(() => {
     const list = cars || [];
+    const availabilityFilter = String(filters?.availability ?? "").toLowerCase();
     const q = String(query || "").toLowerCase();
-    const availability = filters?.availability || "all";
     const priceCap = Number(filters?.price || 0);
     return list.filter((car) => {
       const nameOk =
@@ -148,10 +149,15 @@ const CardCar = ({ query = "", filters = {}, mode = "view" }) => {
           .toLowerCase()
           .includes(q);
       const status = String(car.status || "");
+      const statusNormalized = status.toLowerCase();
+      const availability =
+        availabilityFilter === "" ? "all" : availabilityFilter;
       const availOk =
         availability === "all" ||
-        (availability === "yes" && status === "Available") ||
-        (availability === "no" && status !== "Available");
+        (["yes", "available"].includes(availability) &&
+          statusNormalized === "available") ||
+        (["no", "unavailable"].includes(availability) &&
+          statusNormalized !== "available");
       const rate = Number(
         car.rates?.daily || car.rates?.hourly || car.rateAmount || 0
       );
