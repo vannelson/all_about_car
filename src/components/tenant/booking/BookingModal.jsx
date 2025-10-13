@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -320,7 +320,7 @@ export default function BookingModal({
       total_amount: Number(totalValue) || 0,
       payment_status: isEditMode
         ? booking?.payment_status || "Paid"
-        : "Paid",
+        : "Pending",
       status: isEditMode ? booking?.status || "Reserved" : "Ongoing",
       identification_type: idType,
       identification: idLabel,
@@ -404,6 +404,9 @@ export default function BookingModal({
           onBookingCreated(bookingForEvent);
         }
         toast({ title: "Booking created", status: "success" });
+        try {
+          localStorage.removeItem("selectedCarInfo");
+        } catch {}
       }
       onClose?.();
     } catch (err) {
@@ -641,6 +644,7 @@ export default function BookingModal({
                   chosenRateType={effectiveRateType}
                   quantities={quantities}
                   extraPayment={extraPayment}
+                  discount={discountValue}
                   total={total}
                 />
                 <RenterInfoCard
@@ -662,3 +666,4 @@ export default function BookingModal({
     </BaseModal>
   );
 }
+

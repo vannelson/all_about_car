@@ -19,7 +19,13 @@ import { useToast } from "@chakra-ui/react";
 import BaseModal from "../../base/BaseModal";
 import { createBookingPaymentApi } from "../../../services/bookings";
 
-const PAYMENT_METHODS = ["Credit Card", "Cash", "Bank Transfer", "Online", "Cheque"];
+const PAYMENT_METHODS = [
+  "Credit Card",
+  "Cash",
+  "Bank Transfer",
+  "Online",
+  "Cheque",
+];
 const PAYMENT_STATUSES = ["Pending", "Paid", "Failed", "Refunded", "Cancelled"];
 
 export default function RecordPaymentModal({
@@ -56,9 +62,9 @@ export default function RecordPaymentModal({
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
     setPaidAt(
-      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(
-        now.getHours()
-      )}:${pad(now.getMinutes())}`
+      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+        now.getDate()
+      )}T${pad(now.getHours())}:${pad(now.getMinutes())}`
     );
   }, [isOpen, suggestedAmount]);
 
@@ -103,7 +109,9 @@ export default function RecordPaymentModal({
       onClose?.();
     } catch (err) {
       const message =
-        err?.response?.data?.message || err?.message || "Failed to record payment";
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to record payment";
       toast({ title: message, status: "error" });
     } finally {
       setSubmitting(false);
@@ -114,7 +122,7 @@ export default function RecordPaymentModal({
     <BaseModal
       isOpen={isOpen}
       onClose={resetAndClose}
-      size="md"
+      size="7xl"
       title="Record Payment"
       hassFooter={false}
     >
@@ -179,7 +187,11 @@ export default function RecordPaymentModal({
 
         <FormControl>
           <FormLabel>Paid at</FormLabel>
-          <Input type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+          <Input
+            type="datetime-local"
+            value={paidAt}
+            onChange={(e) => setPaidAt(e.target.value)}
+          />
         </FormControl>
 
         <Divider />
@@ -195,7 +207,11 @@ export default function RecordPaymentModal({
         </FormControl>
 
         <HStack justify="flex-end" pt={2} spacing={3}>
-          <Button variant="ghost" onClick={resetAndClose} isDisabled={submitting}>
+          <Button
+            variant="ghost"
+            onClick={resetAndClose}
+            isDisabled={submitting}
+          >
             Cancel
           </Button>
           <Button

@@ -58,6 +58,7 @@ export default function FullCalendarPanel() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoPos, setInfoPos] = useState({ x: 0, y: 0 });
   const [infoBooking, setInfoBooking] = useState(null);
+  const infoBookingRef = useRef(null);
   const [focusedCarId, setFocusedCarId] = useState(null);
 
   const [pendingEventIds, setPendingEventIds] = useState(() => new Set());
@@ -275,11 +276,35 @@ export default function FullCalendarPanel() {
   const toLocalInput = useCallback((value) => formatDateTimeToInput(value), []);
 
   const openCreateBooking = useCallback(() => {
+    let storedCar = null;
+    try {
+      const raw = localStorage.getItem("selectedCarInfo");
+      if (raw) storedCar = JSON.parse(raw);
+    } catch {
+      storedCar = null;
+    }
+
+    let resolvedCar = null;
+    if (storedCar?.id) {
+      resolvedCar =
+        (cars || []).find((vm) => Number(vm?.id) === Number(storedCar.id)) ||
+        { id: storedCar.id, raw: storedCar };
+    }
+
+    if (!resolvedCar) {
+      toast({
+        title: "Select a car first",
+        description: "Pick a vehicle from the left panel before creating a booking.",
+        status: "warning",
+      });
+      return;
+    }
+
     setBookingModalMode("create");
     setEditingBooking(null);
-    setModalCar(null);
+    setModalCar(resolvedCar);
     setBookingOpen(true);
-  }, []);
+  }, [cars, toast]);
 
   const closeBookingModal = useCallback(() => {
     setBookingOpen(false);
@@ -421,6 +446,10 @@ export default function FullCalendarPanel() {
     [mapBookingToEvent, markEventPending, pendingEventIds, setCalendarEventPending, toast]
   );
 
+  useEffect(() => {
+    infoBookingRef.current = infoBooking;
+  }, [infoBooking]);
+
   const onEventDrop = useCallback(
     (info) => {
       syncEventDates(info);
@@ -501,6 +530,10 @@ export default function FullCalendarPanel() {
           return nextEvent;
         })
       );
+      const current = infoBookingRef.current;
+      if (current && String(current.id) === String(id)) {
+        setInfoBooking((prev) => (prev ? { ...prev, ...e.detail } : prev));
+      }
       markEventPending(id, false);
     };
     window.addEventListener("tc:bookingUpdated", handler);
@@ -702,5 +735,4 @@ export default function FullCalendarPanel() {
     </Box>
   );
 }
-
 

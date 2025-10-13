@@ -17,6 +17,7 @@ import {
   InputLeftElement,
   Button,
   useToast,
+  useDisclosure,
 } from "@chakra-ui/react";
 import {
   FiUser,
@@ -28,11 +29,13 @@ import {
   FiUnlock,
   FiSave,
   FiEdit2,
+  FiDollarSign,
 } from "react-icons/fi";
 import { daysBetween, formatDateTimeLocalToApi } from "../../../utils/booking";
 import { updateBookingApi } from "../../../services/bookings";
 import { useEffect, useMemo, useState } from "react";
 import UnlockBookingModal from "./UnlockBookingModal";
+import BookingPaymentsModal from "../payments/BookingPaymentsModal";
 
 const UNLOCK_PASSWORD = "unlock123";
 
@@ -57,12 +60,17 @@ export default function EventInfoTooltip({
 }) {
   const b = booking || {};
   const toast = useToast();
+  const paymentsDisclosure = useDisclosure();
   const name = fullName(b);
   const phone = b?.renter_phone_number || b?.renter_phone || "-";
   const email = b?.renter_email || "-";
   const payStatus = b?.payment_status || "";
   const status = b?.status || "";
   const total = fmtMoney(b?.total_amount);
+  const totalPaidRaw = Number(b?.total_paid || 0);
+  const totalPaid = fmtMoney(totalPaidRaw);
+  const outstandingRaw = Math.max(Number(b?.total_amount || 0) - totalPaidRaw, 0);
+  const outstanding = fmtMoney(outstandingRaw);
   const base = fmtMoney(b?.base_amount);
   const extra = fmtMoney(b?.extra_payment);
   const discount = fmtMoney(b?.discount);
@@ -83,6 +91,13 @@ export default function EventInfoTooltip({
       : String(status).toLowerCase() === "cancelled"
       ? "red"
       : "gray";
+  const paymentColor = (() => {
+    const value = String(payStatus).toLowerCase();
+    if (value === "paid") return "green";
+    if (value === "pending") return "orange";
+    if (value === "failed" || value === "cancelled") return "red";
+    return "gray";
+  })();
 
   // Local edit state
   const [locked, setLocked] = useState(Boolean(b?.is_lock));
@@ -119,6 +134,18 @@ export default function EventInfoTooltip({
     setUnlockModalOpen(false);
     setUnlockPassword("");
   };
+
+  useEffect(() => {
+    try {
+      if (isOpen && b?.id) {
+        localStorage.setItem("selectedBookingInfo", JSON.stringify(b));
+      } else if (!isOpen) {
+        localStorage.removeItem("selectedBookingInfo");
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [isOpen, b]);
 
   const broadcastUpdate = (payload = {}) => {
     if (!b?.id) return;
@@ -244,17 +271,28 @@ export default function EventInfoTooltip({
               <Icon as={FiCreditCard} />
               <Text fontWeight="semibold">Payment</Text>
               {payStatus ? (
-                <Badge
-                  ml="auto"
-                  colorScheme={
-                    String(payStatus).toLowerCase() === "paid"
-                      ? "green"
-                      : "gray"
-                  }
-                >
+                <Badge ml="auto" colorScheme={paymentColor}>
                   {payStatus}
                 </Badge>
               ) : null}
+            </HStack>
+            <HStack justify="space-between">
+              <HStack spacing={2} color="gray.600">
+                <Icon as={FiDollarSign} />
+                <Text fontSize="sm">Paid</Text>
+              </HStack>
+              <Text fontSize="sm" color="green.600">
+                {totalPaid}
+              </Text>
+            </HStack>
+            <HStack justify="space-between">
+              <HStack spacing={2} color="gray.600">
+                <Icon as={FiDollarSign} />
+                <Text fontSize="sm">Outstanding</Text>
+              </HStack>
+              <Text fontSize="sm" color={outstandingRaw === 0 ? "green.600" : "orange.600"}>
+                {outstanding}
+              </Text>
             </HStack>
             <HStack justify="space-between">
               <Text fontSize="sm" color="gray.600">
@@ -280,6 +318,24 @@ export default function EventInfoTooltip({
                 {total}
               </Text>
             </HStack>
+            <Button
+              mt={2}
+              size="sm"
+              variant="outline"
+              leftIcon={<Icon as={FiCreditCard} />}
+              onClick={() => {
+                if (!b?.id) {
+                  toast({
+                    title: "Save the booking before recording payments.",
+                    status: "warning",
+                  });
+                  return;
+                }
+                paymentsDisclosure.onOpen();
+              }}
+            >
+              Payments
+            </Button>
 
             <Divider />
             <Box
@@ -377,6 +433,14 @@ export default function EventInfoTooltip({
         onSubmit={handleUnlockBooking}
         isLoading={lockLoading}
       />
+      {b?.id ? (
+        <BookingPaymentsModal
+          bookingId={b.id}
+          booking={b}
+          isOpen={paymentsDisclosure.isOpen}
+          onClose={paymentsDisclosure.onClose}
+        />
+      ) : null}
     </Popover>
   );
 }

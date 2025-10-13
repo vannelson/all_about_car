@@ -109,6 +109,9 @@ export default function CarRentalCardBooking({ filters, onRent }) {
         specs,
         available,
         nextAvailableLabel: nextLabel,
+        raw,
+        rates: vm?.rates,
+        vm,
       };
     });
   }, [storeItems]);
@@ -120,8 +123,8 @@ export default function CarRentalCardBooking({ filters, onRent }) {
       if (selected) {
         const id = getCarIdFromCard(selected) || selected.id;
         // find the full VM from Redux items to fetch the raw payload
-        const fullVm = (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
-        const payload = fullVm?.raw || { id, brand: selected.brand, model: selected.model };
+        const fullVm = selected.vm || (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
+        const payload = fullVm?.raw || selected.raw || { id, brand: selected.brand, model: selected.model };
         localStorage.setItem("selectedCarInfo", JSON.stringify(payload));
       }
     } catch {}
@@ -309,11 +312,15 @@ export default function CarRentalCardBooking({ filters, onRent }) {
                         setSelectedId(car.id);
                         try {
                           const id = getCarIdFromCard(car) || car.id;
-                          const fullVm = (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
-                          const payload = fullVm?.raw || { id, brand: car.brand, model: car.model };
+                          const fullVm = car.vm || (storeItems || []).find((vm) => Number(vm?.id) === Number(id));
+                          const payload = fullVm?.raw || car.raw || { id, brand: car.brand, model: car.model };
                           localStorage.setItem("selectedCarInfo", JSON.stringify(payload));
-                        } catch {}
-                        onRent && onRent(car);
+                          if (onRent) {
+                            onRent(fullVm || car);
+                          }
+                        } catch {
+                          if (onRent) onRent(car);
+                        }
                       }}
                     >
                       Rent Now

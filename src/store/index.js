@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
 import carsReducer from "./carsSlice";
 import companiesReducer from "./companiesSlice";
+import paymentsReducer from "./paymentsSlice";
 
 const PERSIST_KEY = "user";
 
@@ -28,6 +29,7 @@ export const store = configureStore({
     auth: authReducer,
     cars: carsReducer,
     companies: companiesReducer,
+    payments: paymentsReducer,
   },
   preloadedState: loadState(),
 });

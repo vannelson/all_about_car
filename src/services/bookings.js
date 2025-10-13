@@ -34,3 +34,12 @@ export async function listBookingsApi({ month, week, year, page = 1, limit, incl
   const res = await axiosInstance.get("/bookings", { params });
   return res.data; // { status, message, data, links, meta }
 }
+
+export async function createBookingPaymentApi({ bookingId, ...fields }) {
+  if (!bookingId) {
+    throw new Error("bookingId is required to record a payment");
+  }
+  const payload = { ...fields };
+  const res = await axiosInstance.post(`/bookings/${bookingId}/payments`, payload);
+  return res.data;
+}
