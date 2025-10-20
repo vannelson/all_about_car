@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   Badge,
   Box,
   Button,
   ButtonGroup,
+  Alert,
+  AlertIcon,
   Divider,
   FormControl,
   FormLabel,
@@ -70,6 +72,7 @@ import {
   YAxis,
 } from "recharts";
 import { format, parseISO } from "date-fns";
+import { fetchDashboardSummary } from "../../services/dashboard";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -86,8 +89,26 @@ const compactCurrencyFormatter = new Intl.NumberFormat("en-US", {
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
-const CURRENT_YEAR = 2025;
-const PREVIOUS_YEAR = 2024;
+const DEFAULT_CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_YEAR = DEFAULT_CURRENT_YEAR;
+const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+
+function safeNumber(value) {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatPeriodRange(period) {
+  if (!period?.start || !period?.end) return null;
+  try {
+    const startLabel = format(parseISO(period.start), "MMM d");
+    const endLabel = format(parseISO(period.end), "MMM d, yyyy");
+    return `${startLabel} - ${endLabel}`;
+  } catch {
+    return null;
+  }
+}
 
 const monthlySalesData = [
   { month: "Jan", total: 18200, bookings: 62 },
@@ -1056,6 +1077,9 @@ const Dashboard = () => {
     start: "",
     end: "",
   });
+  const [summaryData, setSummaryData] = useState(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
   const {
     isOpen: isComparisonOpen,
     onOpen: onComparisonOpen,
@@ -1138,13 +1162,177 @@ const Dashboard = () => {
     Boolean(customRangeDraft.end) &&
     customRangeDraft.start > customRangeDraft.end;
 
-  const totalRevenue = useMemo(
-    () => monthlySalesData.reduce((sum, month) => sum + month.total, 0),
-    []
+  const shouldFetchSummary = useMemo(() => {
+    if (datePreset !== "custom") return true;
+    return Boolean(customRange.start) && Boolean(customRange.end);
+  }, [customRange.end, customRange.start, datePreset]);
+
+  useEffect(() => {
+    if (!shouldFetchSummary) {
+      setIsSummaryLoading(false);
+      return;
+    }
+    let active = true;
+    async function loadSummary() {
+      setIsSummaryLoading(true);
+      try {
+        const payload = {
+          preset: datePreset,
+          includeTrend: true,
+        };
+        if (datePreset === "custom") {
+          payload.startDate = customRange.start;
+          payload.endDate = customRange.end;
+        }
+        const response = await fetchDashboardSummary(payload);
+        if (!active) return;
+        setSummaryData(response);
+        setSummaryError(null);
+      } catch (error) {
+        if (!active) return;
+        setSummaryError(
+          error?.message || "Failed to load dashboard summary data."
+        );
+      } finally {
+        if (active) {
+          setIsSummaryLoading(false);
+        }
+      }
+    }
+    loadSummary();
+    return () => {
+      active = false;
+    };
+  }, [customRange.end, customRange.start, datePreset, shouldFetchSummary]);
+
+  const resolvedCurrency = summaryData?.period?.currency || "PHP";
+
+  const summaryCurrencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: resolvedCurrency,
+        maximumFractionDigits: 2,
+      }),
+    [resolvedCurrency]
   );
-  const totalBookings = useMemo(
-    () => monthlySalesData.reduce((sum, month) => sum + month.bookings, 0),
-    []
+
+  const summaryCompactCurrencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: resolvedCurrency,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }),
+    [resolvedCurrency]
+  );
+
+  const summaryTotals = summaryData?.totals ?? {};
+  const summaryTrend = summaryData?.trend ?? null;
+  const percentChange = summaryTrend?.percentChange ?? {};
+  const previousTotals = summaryTrend?.previous ?? null;
+
+  const annualRevenue = safeNumber(summaryTotals?.annualRevenue);
+  const bookingsYtd = safeNumber(summaryTotals?.bookingsYtd);
+  const averageBookingValue = safeNumber(summaryTotals?.averageBookingValue);
+
+  const revenueChange = safeNumber(percentChange?.annualRevenue);
+  const bookingsChange = safeNumber(percentChange?.bookingsYtd);
+  const averageValueChange = safeNumber(percentChange?.averageBookingValue);
+
+  const previousRevenue = safeNumber(previousTotals?.annualRevenue);
+  const previousBookings = safeNumber(previousTotals?.bookingsYtd);
+  const previousAverageBookingValue = safeNumber(
+    previousTotals?.averageBookingValue
+  );
+  const previousPeriodLabel = previousTotals?.period
+    ? formatPeriodRange(previousTotals.period)
+    : null;
+  const resolvedRangeLabel = summaryData?.resolvedRange
+    ? formatPeriodRange(summaryData.resolvedRange)
+    : null;
+
+  const buildSubtitle = (valueLabel) => {
+    if (valueLabel && previousPeriodLabel) {
+      return `${valueLabel} | ${previousPeriodLabel}`;
+    }
+    return valueLabel || previousPeriodLabel || undefined;
+  };
+
+  const revenueValueDisplay =
+    annualRevenue != null
+      ? summaryCompactCurrencyFormatter.format(annualRevenue)
+      : isSummaryLoading && !summaryData
+      ? "Loading..."
+      : "--";
+  const bookingsValueDisplay =
+    bookingsYtd != null
+      ? numberFormatter.format(bookingsYtd)
+      : isSummaryLoading && !summaryData
+      ? "Loading..."
+      : "--";
+  const averageBookingValueDisplay =
+    averageBookingValue != null
+      ? summaryCurrencyFormatter.format(averageBookingValue)
+      : isSummaryLoading && !summaryData
+      ? "Loading..."
+      : "--";
+
+  const revenueDeltaType =
+    revenueChange == null
+      ? "neutral"
+      : revenueChange > 0
+      ? "increase"
+      : revenueChange < 0
+      ? "decrease"
+      : "neutral";
+  const bookingsDeltaType =
+    bookingsChange == null
+      ? "neutral"
+      : bookingsChange > 0
+      ? "increase"
+      : bookingsChange < 0
+      ? "decrease"
+      : "neutral";
+  const averageValueDeltaType =
+    averageValueChange == null
+      ? "neutral"
+      : averageValueChange > 0
+      ? "increase"
+      : averageValueChange < 0
+      ? "decrease"
+      : "neutral";
+
+  const revenueDeltaLabel =
+    revenueChange == null
+      ? null
+      : `${revenueChange >= 0 ? "+" : ""}${revenueChange.toFixed(2)}%`;
+  const bookingsDeltaLabel =
+    bookingsChange == null
+      ? null
+      : `${bookingsChange >= 0 ? "+" : ""}${bookingsChange.toFixed(2)}%`;
+  const averageBookingValueDeltaLabel =
+    averageValueChange == null
+      ? null
+      : `${averageValueChange >= 0 ? "+" : ""}${averageValueChange.toFixed(
+          2
+        )}%`;
+
+  const revenueSubtitle = buildSubtitle(
+    previousRevenue != null
+      ? `Prev ${summaryCompactCurrencyFormatter.format(previousRevenue)}`
+      : null
+  );
+  const bookingsSubtitle = buildSubtitle(
+    previousBookings != null
+      ? `Prev ${numberFormatter.format(previousBookings)}`
+      : null
+  );
+  const averageBookingValueSubtitle = buildSubtitle(
+    previousAverageBookingValue != null
+      ? `Prev ${summaryCurrencyFormatter.format(previousAverageBookingValue)}`
+      : null
   );
 
   const comparisonData = useMemo(
@@ -1198,25 +1386,6 @@ const Dashboard = () => {
     };
   }, []);
 
-  const averageBookingValueActual =
-    totalRevenue / Math.max(totalBookings, 1);
-  const previousAverageBookingValue =
-    comparisonSummary.previousRevenue /
-    Math.max(comparisonSummary.previousBookings, 1);
-  const averageBookingValueDelta =
-    previousAverageBookingValue === 0
-      ? 0
-      : ((averageBookingValueActual - previousAverageBookingValue) /
-          previousAverageBookingValue) *
-        100;
-  const averageBookingValue = Math.round(averageBookingValueActual);
-  const previousAverageBookingValueDisplay = Math.round(
-    previousAverageBookingValue || 0
-  );
-
-  const revenueGrowth = comparisonSummary.revenueDelta;
-  const bookingGrowth = comparisonSummary.bookingDelta;
-
   const fleetUtilization = 0.82;
   const utilizationTrend = -2.4;
   const utilizationDegrees = Math.round(fleetUtilization * 360);
@@ -1225,11 +1394,11 @@ const Dashboard = () => {
   const metricCards = [
     {
       label: "Annual Revenue",
-      value: compactCurrencyFormatter.format(totalRevenue),
-      delta: `${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth.toFixed(1)}%`,
-      deltaType: revenueGrowth >= 0 ? "increase" : "decrease",
+      value: revenueValueDisplay,
+      delta: revenueDeltaLabel,
+      deltaType: revenueDeltaType,
       icon: FiTrendingUp,
-      subtitle: `YoY vs ${PREVIOUS_YEAR}`,
+      subtitle: revenueSubtitle,
       accent: {
         gradient: "linear(to-br, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.05))",
         spot: "rgba(59, 130, 246, 0.45)",
@@ -1241,11 +1410,11 @@ const Dashboard = () => {
     },
     {
       label: "Bookings YTD",
-      value: numberFormatter.format(totalBookings),
-      delta: `${bookingGrowth >= 0 ? "+" : ""}${bookingGrowth.toFixed(1)}%`,
-      deltaType: bookingGrowth >= 0 ? "increase" : "decrease",
+      value: bookingsValueDisplay,
+      delta: bookingsDeltaLabel,
+      deltaType: bookingsDeltaType,
       icon: FiCalendar,
-      subtitle: `YoY vs ${PREVIOUS_YEAR}`,
+      subtitle: bookingsSubtitle,
       accent: {
         gradient: "linear(to-br, rgba(109, 40, 217, 0.18), rgba(124, 58, 237, 0.05))",
         spot: "rgba(124, 58, 237, 0.42)",
@@ -1257,15 +1426,11 @@ const Dashboard = () => {
     },
     {
       label: "Avg Booking Value",
-      value: currencyFormatter.format(averageBookingValue),
-      delta: `${averageBookingValueDelta >= 0 ? "+" : ""}${averageBookingValueDelta.toFixed(
-        1
-      )}%`,
-      deltaType: averageBookingValueDelta >= 0 ? "increase" : "decrease",
+      value: averageBookingValueDisplay,
+      delta: averageBookingValueDeltaLabel,
+      deltaType: averageValueDeltaType,
       icon: FiCreditCard,
-      subtitle: `${PREVIOUS_YEAR} avg ${currencyFormatter.format(
-        previousAverageBookingValueDisplay
-      )}`,
+      subtitle: averageBookingValueSubtitle,
       accent: {
         gradient: "linear(to-br, rgba(13, 148, 136, 0.18), rgba(16, 185, 129, 0.06))",
         spot: "rgba(45, 212, 191, 0.4)",
@@ -1318,9 +1483,14 @@ const Dashboard = () => {
                 <TagLabel>Live overview</TagLabel>
               </Tag>
               <Text fontSize="sm" color="gray.500">
-                Track how your fleet is earning and performing this month.
+                Track how your fleet is earning for {selectedRangeLabel}.
               </Text>
             </HStack>
+            {resolvedRangeLabel ? (
+              <Text fontSize="xs" color="gray.400">
+                Data window: {resolvedRangeLabel}
+              </Text>
+            ) : null}
           </Stack>
 
           <HStack spacing={3}>
@@ -1360,6 +1530,13 @@ const Dashboard = () => {
             </Button>
           </HStack>
         </Flex>
+
+        {summaryError ? (
+          <Alert status="error" variant="subtle" borderRadius="lg">
+            <AlertIcon />
+            {summaryError}
+          </Alert>
+        ) : null}
 
         <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} spacing={5}>
           {metricCards.map((card) => (
