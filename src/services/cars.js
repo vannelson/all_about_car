@@ -1,4 +1,5 @@
 import { axiosInstance } from "./api";
+import { getActiveCompanyId } from "../utils/company";
 
 function dataUrlToFile(dataUrl, filename) {
   try {
@@ -126,8 +127,25 @@ export async function listCarsApi({ limit = 6, page = 1, includes = ["rates", "c
     params[`include[${idx}]`] = inc;
   });
   // Laravel-style filters[<column>]=value
-  if (filters && typeof filters === "object") {
-    Object.entries(filters).forEach(([key, val]) => {
+  const normalizedFilters = { ...(filters || {}) };
+  const explicitCompany =
+    normalizedFilters.company_id ??
+    normalizedFilters.companyId ??
+    normalizedFilters["company.id"] ??
+    null;
+  if (normalizedFilters.companyId !== undefined) {
+    normalizedFilters.company_id =
+      normalizedFilters.company_id ?? normalizedFilters.companyId;
+    delete normalizedFilters.companyId;
+  }
+  if (explicitCompany == null) {
+    const activeCompanyId = getActiveCompanyId();
+    if (activeCompanyId !== undefined && activeCompanyId !== null) {
+      normalizedFilters.company_id = activeCompanyId;
+    }
+  }
+  if (normalizedFilters && typeof normalizedFilters === "object") {
+    Object.entries(normalizedFilters).forEach(([key, val]) => {
       if (val !== undefined && val !== null && String(val).length > 0) {
         params[`filters[${key}]`] = val;
       }

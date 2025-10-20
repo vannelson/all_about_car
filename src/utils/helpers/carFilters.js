@@ -1,3 +1,5 @@
+import { getActiveCompanyId } from "../company";
+
 export const mapCarsFiltersToApi = (filters = {}) => {
   const mapped = {};
   const normalizedAvailability = String(filters?.availability ?? "")
@@ -18,6 +20,16 @@ export const mapCarsFiltersToApi = (filters = {}) => {
   if (filters?.plateNumber) mapped.info_plateNumber = filters.plateNumber;
   if (filters?.vin) mapped.info_vin = filters.vin;
 
+  const explicitCompany =
+    filters?.company_id ?? filters?.companyId ?? filters?.["company.id"] ?? null;
+  if (explicitCompany != null && String(explicitCompany).length > 0) {
+    mapped.company_id = explicitCompany;
+  } else {
+    const activeCompanyId = getActiveCompanyId();
+    if (activeCompanyId !== undefined && activeCompanyId !== null) {
+      mapped.company_id = activeCompanyId;
+    }
+  }
+
   return mapped;
 };
-

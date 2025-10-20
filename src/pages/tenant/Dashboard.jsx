@@ -6,6 +6,8 @@ import {
   Button,
   ButtonGroup,
   Divider,
+  FormControl,
+  FormLabel,
   Flex,
   Grid,
   GridItem,
@@ -30,6 +32,7 @@ import {
   Tag,
   TagLabel,
   Text,
+  Input,
   Tooltip,
   useDisclosure,
 } from "@chakra-ui/react";
@@ -66,6 +69,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { format, parseISO } from "date-fns";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -215,6 +219,14 @@ const activityTimelineData = [
     type: "warning",
   },
 ];
+
+const DATE_RANGE_PRESETS = [
+  { value: "last_30_days", label: "Last 30 days" },
+  { value: "quarter_to_date", label: "Quarter to date" },
+  { value: "year_to_date", label: "Year to date" },
+];
+
+const DEFAULT_DATE_PRESET = "year_to_date";
 
 const chartGradientId = "tenant-dashboard-revenue-gradient";
 
@@ -1038,11 +1050,93 @@ function ActivityTimeline({ items }) {
 
 const Dashboard = () => {
   const [chartType, setChartType] = useState("area");
+  const [datePreset, setDatePreset] = useState(DEFAULT_DATE_PRESET);
+  const [customRange, setCustomRange] = useState({ start: "", end: "" });
+  const [customRangeDraft, setCustomRangeDraft] = useState({
+    start: "",
+    end: "",
+  });
   const {
     isOpen: isComparisonOpen,
     onOpen: onComparisonOpen,
     onClose: onComparisonClose,
   } = useDisclosure();
+  const {
+    isOpen: isCustomRangeOpen,
+    onOpen: onCustomRangeOpen,
+    onClose: onCustomRangeClose,
+  } = useDisclosure();
+
+  const selectedRangeLabel = useMemo(() => {
+    if (datePreset === "custom") {
+      if (customRange.start && customRange.end) {
+        const startLabel = format(parseISO(customRange.start), "MMM d, yyyy");
+        const endLabel = format(parseISO(customRange.end), "MMM d, yyyy");
+        return `${startLabel} - ${endLabel}`;
+      }
+      return "Custom range";
+    }
+
+    return (
+      DATE_RANGE_PRESETS.find((preset) => preset.value === datePreset)?.label ??
+      DATE_RANGE_PRESETS.find((preset) => preset.value === DEFAULT_DATE_PRESET)
+        ?.label ??
+      "Year to date"
+    );
+  }, [datePreset, customRange.end, customRange.start]);
+
+  const handlePresetSelect = (value) => {
+    setDatePreset(value);
+  };
+
+  const handleCustomRangeMenuClick = () => {
+    const today = new Date();
+    const defaultEnd = format(today, "yyyy-MM-dd");
+    const defaultStart = format(
+      new Date(today.getFullYear(), today.getMonth(), 1),
+      "yyyy-MM-dd"
+    );
+
+    setCustomRangeDraft({
+      start: customRange.start || defaultStart,
+      end: customRange.end || defaultEnd,
+    });
+    onCustomRangeOpen();
+  };
+
+  const handleCustomRangeDraftChange = (field) => (event) => {
+    const { value } = event.target;
+    setCustomRangeDraft((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleApplyCustomRange = () => {
+    if (!customRangeDraft.start || !customRangeDraft.end) {
+      return;
+    }
+
+    setCustomRange({
+      start: customRangeDraft.start,
+      end: customRangeDraft.end,
+    });
+    setDatePreset("custom");
+    onCustomRangeClose();
+  };
+
+  const handleCancelCustomRange = () => {
+    onCustomRangeClose();
+  };
+
+  const isCustomRangeReady =
+    Boolean(customRangeDraft.start) &&
+    Boolean(customRangeDraft.end) &&
+    customRangeDraft.start <= customRangeDraft.end;
+  const showCustomRangeError =
+    Boolean(customRangeDraft.start) &&
+    Boolean(customRangeDraft.end) &&
+    customRangeDraft.start > customRangeDraft.end;
 
   const totalRevenue = useMemo(
     () => monthlySalesData.reduce((sum, month) => sum + month.total, 0),
@@ -1237,13 +1331,24 @@ const Dashboard = () => {
                 rightIcon={<FiChevronDown />}
                 size="sm"
               >
-                Last 12 months
+                {selectedRangeLabel}
               </MenuButton>
               <MenuList>
-                <MenuItem>Last 30 days</MenuItem>
-                <MenuItem>Quarter to date</MenuItem>
-                <MenuItem>Year to date</MenuItem>
-                <MenuItem>Custom range…</MenuItem>
+                {DATE_RANGE_PRESETS.map((preset) => (
+                  <MenuItem
+                    key={preset.value}
+                    onClick={() => handlePresetSelect(preset.value)}
+                    fontWeight={datePreset === preset.value ? "semibold" : "normal"}
+                  >
+                    {preset.label}
+                  </MenuItem>
+                ))}
+                <MenuItem
+                  onClick={handleCustomRangeMenuClick}
+                  fontWeight={datePreset === "custom" ? "semibold" : "normal"}
+                >
+                  Custom range...
+                </MenuItem>
               </MenuList>
             </Menu>
             <Button
@@ -1531,6 +1636,57 @@ const Dashboard = () => {
             </Stack>
           </GridItem>
         </Grid>
+
+        <Modal
+          isOpen={isCustomRangeOpen}
+          onClose={handleCancelCustomRange}
+          size="sm"
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Select custom range</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Stack spacing={4}>
+                <FormControl>
+                  <FormLabel>Start date</FormLabel>
+                  <Input
+                    type="date"
+                    value={customRangeDraft.start}
+                    onChange={handleCustomRangeDraftChange("start")}
+                    max={customRangeDraft.end || undefined}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel>End date</FormLabel>
+                  <Input
+                    type="date"
+                    value={customRangeDraft.end}
+                    onChange={handleCustomRangeDraftChange("end")}
+                    min={customRangeDraft.start || undefined}
+                  />
+                </FormControl>
+                {showCustomRangeError ? (
+                  <Text fontSize="sm" color="red.500">
+                    Start date must be on or before end date.
+                  </Text>
+                ) : null}
+              </Stack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={handleCancelCustomRange}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue"
+                onClick={handleApplyCustomRange}
+                isDisabled={!isCustomRangeReady}
+              >
+                Apply
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
         <YearComparisonModal
           isOpen={isComparisonOpen}

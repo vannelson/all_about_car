@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCars } from "../../../store/carsSlice";
 import CarRentalCardSkeleton from "../loading/CarRentalCardSkeleton";
 import { getCarIdFromCard } from "../../../utils/cars";
+import { getActiveCompanyId } from "../../../utils/company";
 
 function toApiFilters(ui) {
   const f = {};
@@ -31,6 +32,10 @@ function toApiFilters(ui) {
   // Date range filters (backend should interpret for availability)
   if (ui.start_date) f["start_date"] = ui.start_date;
   if (ui.end_date) f["end_date"] = ui.end_date;
+  const companyId = getActiveCompanyId();
+  if (companyId !== undefined && companyId !== null) {
+    f["company_id"] = companyId;
+  }
   return f;
 }
 
