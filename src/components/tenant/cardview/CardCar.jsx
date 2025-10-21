@@ -93,7 +93,9 @@ const CardCar = ({
 
   const filteredCars = useMemo(() => {
     const list = cars || [];
-    const availabilityFilter = String(filters?.availability ?? "").toLowerCase();
+    const availabilityFilter = String(
+      filters?.availability ?? ""
+    ).toLowerCase();
     const q = String(query || "").toLowerCase();
     const priceCap = Number(filters?.price || 0);
     return list.filter((car) => {
@@ -208,7 +210,11 @@ const CardCar = ({
                     <NextAvailabilityTag
                       label={nextAvailabilityLabel}
                       fallbackLabel={availabilityFallback}
-                      tooltipLabel={nextAvailabilityLabel ? `Next availability: ${nextAvailabilityLabel}` : availabilityFallback || undefined}
+                      tooltipLabel={
+                        nextAvailabilityLabel
+                          ? `Next availability: ${nextAvailabilityLabel}`
+                          : availabilityFallback || undefined
+                      }
                       showIcon
                       position="absolute"
                       top={2}
@@ -246,23 +252,7 @@ const CardCar = ({
 
                     <CarRates rates={car?.raw?.rates || car.rates} />
                     <Divider my={3} />
-                    {car.status == "Available" ? (
-                      <>
-                        <BaseListAndIcons specs={car.specification} />
-                      </>
-                    ) : (
-                      <>
-                        {/* Booking details are shown in the details modal if available */}
-                        <Divider my={3} />
-                        {/* Payment Details */}
-                        <PaymentPanel
-                          title="Payment Details"
-                          bgColor="gray.50"
-                          rateAmount={car.rateAmount}
-                          extraCharge={car.extraCharge}
-                        />
-                      </>
-                    )}
+                    <BaseListAndIcons specs={car.specification} />
                   </CardBody>
                   <CardFooter>
                     <Flex gap={2} w="full">
@@ -273,7 +263,12 @@ const CardCar = ({
                         bgGradient="linear(to-r, blue.700, blue.600, blue.700)"
                         color="white"
                         borderRadius="md"
-                        _hover={{ bgGradient: "linear(to-r, blue.800, blue.700, blue.800)", transform: "translateY(-1px)", boxShadow: "md" }}
+                        _hover={{
+                          bgGradient:
+                            "linear(to-r, blue.800, blue.700, blue.800)",
+                          transform: "translateY(-1px)",
+                          boxShadow: "md",
+                        }}
                         _active={{ transform: "translateY(0)" }}
                         onClick={() => onOpenInfo(car)}
                       >
@@ -377,4 +372,3 @@ const CardCar = ({
 };
 
 export default CardCar;
-

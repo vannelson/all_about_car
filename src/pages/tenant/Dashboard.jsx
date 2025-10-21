@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   Badge,
@@ -37,6 +37,8 @@ import {
   Input,
   Tooltip,
   useDisclosure,
+  CircularProgress,
+  CircularProgressLabel,
 } from "@chakra-ui/react";
 import {
   FiActivity,
@@ -73,6 +75,8 @@ import {
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { fetchDashboardSummary } from "../../services/dashboard";
+import { fetchFleetUtilization } from "../../services/fleetUtilization";
+import { fetchMonthlySales } from "../../services/monthlySales";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -110,35 +114,45 @@ function formatPeriodRange(period) {
   }
 }
 
-const monthlySalesData = [
-  { month: "Jan", total: 18200, bookings: 62 },
-  { month: "Feb", total: 21500, bookings: 70 },
-  { month: "Mar", total: 19800, bookings: 64 },
-  { month: "Apr", total: 22500, bookings: 72 },
-  { month: "May", total: 24100, bookings: 79 },
-  { month: "Jun", total: 26000, bookings: 85 },
-  { month: "Jul", total: 27600, bookings: 91 },
-  { month: "Aug", total: 26800, bookings: 88 },
-  { month: "Sep", total: 25200, bookings: 84 },
-  { month: "Oct", total: 23800, bookings: 77 },
-  { month: "Nov", total: 24500, bookings: 81 },
-  { month: "Dec", total: 28900, bookings: 95 },
-];
+function resolveMonthLabel(item) {
+  if (!item) return "";
+  if (item.label) return item.label;
+  if (item.month) {
+    try {
+      return format(parseISO(item.month), "MMM");
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
 
-const lastYearSalesData = [
-  { month: "Jan", total: 16500, bookings: 58 },
-  { month: "Feb", total: 18900, bookings: 63 },
-  { month: "Mar", total: 18400, bookings: 60 },
-  { month: "Apr", total: 20100, bookings: 66 },
-  { month: "May", total: 21200, bookings: 70 },
-  { month: "Jun", total: 22500, bookings: 73 },
-  { month: "Jul", total: 23800, bookings: 78 },
-  { month: "Aug", total: 23100, bookings: 76 },
-  { month: "Sep", total: 21800, bookings: 71 },
-  { month: "Oct", total: 20500, bookings: 68 },
-  { month: "Nov", total: 21400, bookings: 72 },
-  { month: "Dec", total: 25500, bookings: 85 },
-];
+function resolveSeriesYearLabel(series) {
+  if (!Array.isArray(series) || series.length === 0) return null;
+  const first = series[0];
+  const last = series[series.length - 1];
+
+  const extractYear = (entry) => {
+    if (!entry) return null;
+    if (typeof entry.year === "number") return entry.year;
+    if (entry.month) {
+      try {
+        return parseISO(entry.month).getFullYear();
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const startYear = extractYear(first);
+  const endYear = extractYear(last);
+
+  if (startYear && endYear) {
+    return startYear === endYear ? `${endYear}` : `${startYear}-${endYear}`;
+  }
+  return startYear || endYear ? String(startYear || endYear) : null;
+}
 
 const revenueByClassData = [
   { label: "Premium SUV", revenue: 38250, share: 36 },
@@ -284,10 +298,11 @@ const activityAccentMap = {
   },
 };
 
-function RevenueTooltip({ active, payload, label }) {
+function RevenueTooltip({ active, payload, label, currencyFormatter: fmt }) {
   if (!active || !payload?.length) return null;
 
   const dataPoint = payload[0]?.payload;
+  const formatter = fmt || currencyFormatter;
 
   return (
     <Stack
@@ -304,7 +319,7 @@ function RevenueTooltip({ active, payload, label }) {
         {label}
       </Text>
       <Text fontSize="sm" color="blue.600" fontWeight="semibold">
-        {currencyFormatter.format(dataPoint?.total || 0)}
+        {formatter.format(dataPoint?.total || 0)}
       </Text>
       <HStack spacing={2} fontSize="xs" color="gray.500">
         <Icon as={FiCalendar} boxSize="12px" />
@@ -314,7 +329,23 @@ function RevenueTooltip({ active, payload, label }) {
   );
 }
 
-function RevenueChart({ data, chartType }) {
+function RevenueChart({
+  data,
+  chartType,
+  currencyFormatter: fmt,
+  compactCurrencyFormatter,
+}) {
+  const formatter = fmt || currencyFormatter;
+  const axisFormatter = compactCurrencyFormatter || formatter;
+  const renderTooltip = useCallback(
+    (props) => <RevenueTooltip {...props} currencyFormatter={formatter} />,
+    [formatter]
+  );
+  const formatTick = useCallback(
+    (value) => (axisFormatter ? axisFormatter.format(value) : value),
+    [axisFormatter]
+  );
+
   if (!data?.length) {
     return (
       <Flex
@@ -357,13 +388,13 @@ function RevenueChart({ data, chartType }) {
               tickLine={false}
               width={56}
               tick={{ fill: "#94a3b8", fontSize: 11 }}
-              tickFormatter={(value) => `$${Math.round(value / 1000)}k`}
+              tickFormatter={formatTick}
             />
             <RechartsTooltip
               cursor={{
                 fill: "rgba(37, 99, 235, 0.08)",
               }}
-              content={<RevenueTooltip />}
+              content={renderTooltip}
             />
             <Bar
               dataKey="total"
@@ -402,7 +433,7 @@ function RevenueChart({ data, chartType }) {
               tickLine={false}
               width={56}
               tick={{ fill: "#94a3b8", fontSize: 11 }}
-              tickFormatter={(value) => `$${Math.round(value / 1000)}k`}
+              tickFormatter={formatTick}
             />
             <RechartsTooltip
               cursor={{
@@ -410,7 +441,7 @@ function RevenueChart({ data, chartType }) {
                 strokeWidth: 1,
                 strokeDasharray: "6 6",
               }}
-              content={<RevenueTooltip />}
+              content={renderTooltip}
             />
             <Area
               type="monotone"
@@ -429,10 +460,20 @@ function RevenueChart({ data, chartType }) {
   );
 }
 
-function YearComparisonTooltip({ active, payload, label }) {
+function YearComparisonTooltip({
+  active,
+  payload,
+  label,
+  currencyFormatter: fmt,
+  currentLabel,
+  previousLabel,
+}) {
   if (!active || !payload?.length) return null;
   const current = payload.find((p) => p.dataKey === "currentYear");
   const previous = payload.find((p) => p.dataKey === "previousYear");
+  const formatter = fmt || currencyFormatter;
+  const currentText = currentLabel || `${CURRENT_YEAR}`;
+  const previousText = previousLabel || `${PREVIOUS_YEAR}`;
 
   return (
     <Stack
@@ -450,24 +491,37 @@ function YearComparisonTooltip({ active, payload, label }) {
         {label}
       </Text>
       <HStack justify="space-between" fontSize="sm">
-        <Text color="gray.500">{CURRENT_YEAR}</Text>
+        <Text color="gray.500">{currentText}</Text>
         <Text fontWeight="semibold" color="blue.600">
-          {currencyFormatter.format(current?.value ?? 0)}
+          {formatter.format(current?.value ?? 0)}
         </Text>
       </HStack>
       <HStack justify="space-between" fontSize="sm">
-        <Text color="gray.500">{PREVIOUS_YEAR}</Text>
+        <Text color="gray.500">{previousText}</Text>
         <Text fontWeight="semibold" color="gray.600">
-          {currencyFormatter.format(previous?.value ?? 0)}
+          {formatter.format(previous?.value ?? 0)}
         </Text>
       </HStack>
     </Stack>
   );
 }
 
-function YearComparisonModal({ isOpen, onClose, data, summary }) {
+function YearComparisonModal({
+  isOpen,
+  onClose,
+  data,
+  summary,
+  currencyFormatter: fmt,
+  compactCurrencyFormatter: compactFmt,
+  currentLabel,
+  previousLabel,
+}) {
   const revenueDeltaColor = summary.revenueDelta >= 0 ? "green.500" : "red.500";
   const bookingDeltaColor = summary.bookingDelta >= 0 ? "green.500" : "red.500";
+  const formatter = fmt || currencyFormatter;
+  const axisFormatter = compactFmt || formatter;
+  const currentText = currentLabel || `${CURRENT_YEAR}`;
+  const previousText = previousLabel || `${PREVIOUS_YEAR}`;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered>
@@ -479,7 +533,7 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
               Year-over-year insights
             </Text>
             <Heading size="md" color="white">
-              {CURRENT_YEAR} vs {PREVIOUS_YEAR}
+              {currentText} vs {previousText}
             </Heading>
           </Stack>
         </ModalHeader>
@@ -488,8 +542,8 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
           <Stack spacing={6}>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
               <ComparisonStatCard
-                label={`${CURRENT_YEAR} revenue`}
-                value={currencyFormatter.format(summary.currentRevenue)}
+                label={`${currentText} revenue`}
+                value={formatter.format(summary.currentRevenue)}
                 sublabel="Bookings"
                 subvalue={numberFormatter.format(summary.currentBookings)}
                 accent="blue"
@@ -499,8 +553,8 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
                 value={`${summary.revenueDelta >= 0 ? "+" : ""}${summary.revenueDelta.toFixed(
                   1
                 )}%`}
-                sublabel={`${PREVIOUS_YEAR} revenue`}
-                subvalue={currencyFormatter.format(summary.previousRevenue)}
+                sublabel={`${previousText} revenue`}
+                subvalue={formatter.format(summary.previousRevenue)}
                 accent={summary.revenueDelta >= 0 ? "green" : "red"}
                 valueColor={revenueDeltaColor}
               />
@@ -509,7 +563,7 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
                 value={`${summary.bookingDelta >= 0 ? "+" : ""}${summary.bookingDelta.toFixed(
                   1
                 )}%`}
-                sublabel={`${PREVIOUS_YEAR} bookings`}
+                sublabel={`${previousText} bookings`}
                 subvalue={numberFormatter.format(summary.previousBookings)}
                 accent={summary.bookingDelta >= 0 ? "green" : "red"}
                 valueColor={bookingDeltaColor}
@@ -544,9 +598,19 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
                       tickLine={false}
                       width={64}
                       tick={{ fill: "#94a3b8", fontSize: 11 }}
-                      tickFormatter={(value) => `$${Math.round(value / 1000)}k`}
+                      tickFormatter={(value) =>
+                        axisFormatter ? axisFormatter.format(value) : value
+                      }
                     />
-                    <RechartsTooltip content={<YearComparisonTooltip />} />
+                    <RechartsTooltip
+                      content={
+                        <YearComparisonTooltip
+                          currencyFormatter={formatter}
+                          currentLabel={currentText}
+                          previousLabel={previousText}
+                        />
+                      }
+                    />
                     <Legend
                       iconType="circle"
                       wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
@@ -564,7 +628,7 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
                     <Area
                       type="monotone"
                       dataKey="currentYear"
-                      name={CURRENT_YEAR}
+                      name={currentText}
                       stroke="#2563eb"
                       strokeWidth={3}
                       fill="url(#currentYearGradient)"
@@ -573,7 +637,7 @@ function YearComparisonModal({ isOpen, onClose, data, summary }) {
                     <Area
                       type="monotone"
                       dataKey="previousYear"
-                      name={PREVIOUS_YEAR}
+                      name={previousText}
                       stroke="#64748b"
                       strokeWidth={2}
                       fill="url(#previousYearGradient)"
@@ -657,7 +721,19 @@ function ComparisonStatCard({
   );
 }
 
-function StatCard({ label, value, delta, deltaType, icon, subtitle, accent }) {
+function StatCard({
+  label,
+  value,
+  delta,
+  deltaType,
+  icon,
+  subtitle,
+  accent,
+  tooltip,
+  customContent,
+  footer,
+  onDoubleClick,
+}) {
   const DeltaIcon =
     deltaType === "increase"
       ? FiTrendingUp
@@ -677,17 +753,36 @@ function StatCard({ label, value, delta, deltaType, icon, subtitle, accent }) {
       accent?.bar || "linear(to-r, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0))",
   };
 
+  const labelNode = (
+    <HStack spacing={1.5}>
+      <Text fontSize="sm" color="gray.500" fontWeight="medium">
+        {label}
+      </Text>
+      {tooltip ? <Icon as={FiInfo} boxSize="14px" color="gray.400" /> : null}
+    </HStack>
+  );
+
+  const labelContent = tooltip ? (
+    <Tooltip label={tooltip} hasArrow placement="top-start" openDelay={200}>
+      <Box cursor="help">{labelNode}</Box>
+    </Tooltip>
+  ) : (
+    labelNode
+  );
+
   return (
     <Box
       position="relative"
       bg="white"
       borderRadius="2xl"
       p={{ base: 5, md: 6 }}
+      minH="220px"
       borderWidth="1px"
       borderColor={accentStyles.border}
       boxShadow="md"
       transition="all 0.2s ease"
       overflow="hidden"
+      cursor={onDoubleClick ? "zoom-in" : "default"}
       _hover={{ boxShadow: "xl", transform: "translateY(-4px)" }}
       _before={{
         content: '""',
@@ -707,45 +802,52 @@ function StatCard({ label, value, delta, deltaType, icon, subtitle, accent }) {
         filter: "blur(90px)",
         opacity: 0.9,
       }}
+      onDoubleClick={onDoubleClick}
     >
       <Stack spacing={6} position="relative" zIndex={1}>
         <Flex align="center" justify="space-between" gap={4}>
           <Stack spacing={1}>
-            <Text fontSize="sm" color="gray.500" fontWeight="medium">
-              {label}
-            </Text>
-            <Heading size="lg" color="gray.900">
-              {value}
-            </Heading>
+            {labelContent}
+            {customContent ? (
+              <Box>{customContent}</Box>
+            ) : (
+              <Heading size="lg" color="gray.900">
+                {value}
+              </Heading>
+            )}
           </Stack>
-          <Flex
-            align="center"
-            justify="center"
-            bg={accentStyles.iconBg}
-            color={accentStyles.iconColor}
-            borderRadius="full"
-            boxSize="50px"
-            backdropFilter="blur(6px)"
-            borderWidth="1px"
-            borderColor="rgba(255, 255, 255, 0.4)"
-          >
-            <Icon as={icon} boxSize="22px" />
-          </Flex>
+          {icon ? (
+            <Flex
+              align="center"
+              justify="center"
+              bg={accentStyles.iconBg}
+              color={accentStyles.iconColor}
+              borderRadius="full"
+              boxSize="50px"
+              backdropFilter="blur(6px)"
+              borderWidth="1px"
+              borderColor="rgba(255, 255, 255, 0.4)"
+            >
+              <Icon as={icon} boxSize="22px" />
+            </Flex>
+          ) : null}
         </Flex>
 
         <Flex align="center" justify="space-between" gap={4}>
-          {delta && (
+          {(delta || subtitle) && (
             <HStack spacing={2}>
-              <Flex
-                align="center"
-                gap={1}
-                fontWeight="semibold"
-                color={deltaColorMap[deltaType]}
-                fontSize="sm"
-              >
-                <Icon as={DeltaIcon} boxSize="16px" />
-                <Text>{delta}</Text>
-              </Flex>
+              {delta ? (
+                <Flex
+                  align="center"
+                  gap={1}
+                  fontWeight="semibold"
+                  color={deltaColorMap[deltaType || "neutral"]}
+                  fontSize="sm"
+                >
+                  <Icon as={DeltaIcon} boxSize="16px" />
+                  <Text>{delta}</Text>
+                </Flex>
+              ) : null}
               {subtitle && (
                 <Tag
                   size="sm"
@@ -761,12 +863,16 @@ function StatCard({ label, value, delta, deltaType, icon, subtitle, accent }) {
           )}
         </Flex>
 
-        <Box
-          h="3px"
-          borderRadius="full"
-          bgGradient={accentStyles.bar}
-          opacity={0.85}
-        />
+        {footer ? (
+          <Box pt={1}>{footer}</Box>
+        ) : (
+          <Box
+            h="3px"
+            borderRadius="full"
+            bgGradient={accentStyles.bar}
+            opacity={0.85}
+          />
+        )}
       </Stack>
     </Box>
   );
@@ -1080,6 +1186,16 @@ const Dashboard = () => {
   const [summaryData, setSummaryData] = useState(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
+  const [monthlySalesSeries, setMonthlySalesSeries] = useState([]);
+  const [monthlySalesPrevious, setMonthlySalesPrevious] = useState([]);
+  const [monthlySalesTotals, setMonthlySalesTotals] = useState(null);
+  const [monthlySalesRange, setMonthlySalesRange] = useState(null);
+  const [monthlySalesCurrency, setMonthlySalesCurrency] = useState(null);
+  const [isMonthlySalesLoading, setIsMonthlySalesLoading] = useState(false);
+  const [monthlySalesError, setMonthlySalesError] = useState(null);
+  const [utilizationData, setUtilizationData] = useState(null);
+  const [isUtilizationLoading, setIsUtilizationLoading] = useState(false);
+  const [utilizationError, setUtilizationError] = useState(null);
   const {
     isOpen: isComparisonOpen,
     onOpen: onComparisonOpen,
@@ -1089,6 +1205,11 @@ const Dashboard = () => {
     isOpen: isCustomRangeOpen,
     onOpen: onCustomRangeOpen,
     onClose: onCustomRangeClose,
+  } = useDisclosure();
+  const {
+    isOpen: isUtilizationModalOpen,
+    onOpen: onUtilizationModalOpen,
+    onClose: onUtilizationModalClose,
   } = useDisclosure();
 
   const selectedRangeLabel = useMemo(() => {
@@ -1205,6 +1326,127 @@ const Dashboard = () => {
     };
   }, [customRange.end, customRange.start, datePreset, shouldFetchSummary]);
 
+  useEffect(() => {
+    if (!shouldFetchSummary) {
+      setIsMonthlySalesLoading(false);
+      return;
+    }
+    let active = true;
+    async function loadMonthlySales() {
+      setIsMonthlySalesLoading(true);
+      try {
+        const payload = {
+          includePrevious: true,
+        };
+        const todayIso = format(new Date(), "yyyy-MM-dd");
+        const effectiveEnd =
+          (datePreset === "custom" && customRange.end) ||
+          summaryData?.resolvedRange?.end ||
+          todayIso;
+
+        if (effectiveEnd) {
+          payload.asOf = effectiveEnd;
+        }
+
+        if (datePreset === "year_to_date") {
+          const refDate = effectiveEnd ? parseISO(effectiveEnd) : new Date();
+          if (refDate instanceof Date && !Number.isNaN(refDate.valueOf())) {
+            payload.year = refDate.getFullYear();
+            payload.asOf = format(refDate, "yyyy-MM-dd");
+          }
+        } else if (
+          datePreset === "custom" &&
+          customRange.start &&
+          customRange.end
+        ) {
+          const startDate = parseISO(customRange.start);
+          const endDate = parseISO(customRange.end);
+          if (
+            startDate instanceof Date &&
+            !Number.isNaN(startDate.valueOf()) &&
+            endDate instanceof Date &&
+            !Number.isNaN(endDate.valueOf())
+          ) {
+            payload.startYear = startDate.getFullYear();
+            payload.endYear = endDate.getFullYear();
+            payload.asOf = format(endDate, "yyyy-MM-dd");
+          }
+        }
+
+        const response = await fetchMonthlySales(payload);
+        if (!active) return;
+        setMonthlySalesSeries(response?.series ?? []);
+        setMonthlySalesPrevious(response?.previous ?? []);
+        setMonthlySalesTotals(response?.totals ?? null);
+        setMonthlySalesRange(response?.range ?? null);
+        setMonthlySalesCurrency(response?.currency ?? null);
+        setMonthlySalesError(null);
+      } catch (error) {
+        if (!active) return;
+        setMonthlySalesSeries([]);
+        setMonthlySalesPrevious([]);
+        setMonthlySalesTotals(null);
+        setMonthlySalesRange(null);
+        setMonthlySalesCurrency(null);
+        setMonthlySalesError(
+          error?.message || "Failed to load monthly sales data."
+        );
+      } finally {
+        if (active) {
+          setIsMonthlySalesLoading(false);
+        }
+      }
+    }
+    loadMonthlySales();
+    return () => {
+      active = false;
+    };
+  }, [
+    shouldFetchSummary,
+    datePreset,
+    customRange.start,
+    customRange.end,
+    summaryData?.resolvedRange?.end,
+  ]);
+
+  useEffect(() => {
+    if (!shouldFetchSummary) {
+      setIsUtilizationLoading(false);
+      return;
+    }
+    let active = true;
+    async function loadUtilization() {
+      setIsUtilizationLoading(true);
+      try {
+        const payload = {
+          preset: datePreset,
+          includeTrend: true,
+        };
+        if (datePreset === "custom") {
+          payload.startDate = customRange.start;
+          payload.endDate = customRange.end;
+        }
+        const response = await fetchFleetUtilization(payload);
+        if (!active) return;
+        setUtilizationData(response);
+        setUtilizationError(null);
+      } catch (error) {
+        if (!active) return;
+        setUtilizationError(
+          error?.message || "Failed to load fleet utilisation data."
+        );
+      } finally {
+        if (active) {
+          setIsUtilizationLoading(false);
+        }
+      }
+    }
+    loadUtilization();
+    return () => {
+      active = false;
+    };
+  }, [customRange.end, customRange.start, datePreset, shouldFetchSummary]);
+
   const resolvedCurrency = summaryData?.period?.currency || "PHP";
 
   const summaryCurrencyFormatter = useMemo(
@@ -1227,6 +1469,117 @@ const Dashboard = () => {
       }),
     [resolvedCurrency]
   );
+
+  const salesCurrencyCode = monthlySalesCurrency || resolvedCurrency;
+  const monthlyCurrencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: salesCurrencyCode,
+        maximumFractionDigits: 2,
+      }),
+    [salesCurrencyCode]
+  );
+  const monthlyCompactCurrencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: salesCurrencyCode,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }),
+    [salesCurrencyCode]
+  );
+  const salesChartData = useMemo(
+    () =>
+      (monthlySalesSeries || []).map((item) => {
+        const total = safeNumber(item?.actual_return) ?? 0;
+        const bookings = safeNumber(item?.completed_bookings) ?? 0;
+        return {
+          month: resolveMonthLabel(item),
+          total,
+          bookings,
+          monthIso: item?.month ?? null,
+          averageBookingValue: safeNumber(item?.average_booking_value),
+        };
+      }),
+    [monthlySalesSeries]
+  );
+
+  const salesComparisonData = useMemo(() => {
+    const previous = monthlySalesPrevious || [];
+    return (monthlySalesSeries || []).map((item, index) => {
+      const previousItem = previous[index] ?? null;
+      return {
+        month: resolveMonthLabel(item),
+        currentYear: safeNumber(item?.actual_return) ?? 0,
+        previousYear: safeNumber(previousItem?.actual_return) ?? 0,
+        currentBookings: safeNumber(item?.completed_bookings) ?? 0,
+        previousBookings: safeNumber(previousItem?.completed_bookings) ?? 0,
+      };
+    });
+  }, [monthlySalesSeries, monthlySalesPrevious]);
+
+  const currentComparisonLabel = useMemo(
+    () => resolveSeriesYearLabel(monthlySalesSeries),
+    [monthlySalesSeries]
+  );
+  const previousComparisonLabel = useMemo(
+    () => resolveSeriesYearLabel(monthlySalesPrevious),
+    [monthlySalesPrevious]
+  );
+
+  const utilizationRateRaw = safeNumber(utilizationData?.utilization?.rate);
+  const fleetUtilizationRate =
+    utilizationRateRaw != null
+      ? Math.min(Math.max(utilizationRateRaw, 0), 1)
+      : null;
+  const fleetPercent = fleetUtilizationRate != null
+    ? Math.round(fleetUtilizationRate * 100)
+    : null;
+  const utilizationTrendRaw = safeNumber(
+    utilizationData?.utilization?.trend?.percent_change
+  );
+  const utilizationDeltaLabel =
+    utilizationTrendRaw != null
+      ? `${utilizationTrendRaw >= 0 ? "+" : ""}${utilizationTrendRaw.toFixed(
+          1
+        )}%`
+      : null;
+  const utilizationDeltaType =
+    utilizationTrendRaw == null
+      ? "neutral"
+      : utilizationTrendRaw >= 0
+      ? "increase"
+      : "decrease";
+  const activeRentals = safeNumber(utilizationData?.totals?.active_rentals);
+  const totalFleet = safeNumber(utilizationData?.totals?.fleet);
+  const availableUnits = safeNumber(utilizationData?.totals?.available);
+  const unavailableUnits = safeNumber(utilizationData?.totals?.unavailable);
+  const utilizationSubtitle =
+    activeRentals != null && totalFleet != null
+      ? `${activeRentals} of ${totalFleet} vehicles on rent`
+      : "Active rentals today";
+  const fleetPercentDisplay =
+    fleetPercent != null
+      ? `${fleetPercent}%`
+      : isUtilizationLoading && !utilizationData
+      ? "Loading..."
+      : "--";
+  const utilizationAsOfRaw = utilizationData?.as_of ?? null;
+  const utilizationAsOfLabel = useMemo(() => {
+    if (!utilizationAsOfRaw) return null;
+    try {
+      return format(parseISO(utilizationAsOfRaw), "MMM d, yyyy h:mm a");
+    } catch {
+      return null;
+    }
+  }, [utilizationAsOfRaw]);
+  const utilizationPreviousPeriod = utilizationData?.utilization?.trend?.previous?.period;
+  const utilizationPreviousPeriodLabel =
+    utilizationPreviousPeriod?.start && utilizationPreviousPeriod?.end
+      ? formatPeriodRange(utilizationPreviousPeriod)
+      : null;
 
   const summaryTotals = summaryData?.totals ?? {};
   const summaryTrend = summaryData?.trend ?? null;
@@ -1335,45 +1688,49 @@ const Dashboard = () => {
       : null
   );
 
-  const comparisonData = useMemo(
-    () =>
-      monthlySalesData.map((item, index) => ({
-        month: item.month,
-        currentYear: item.total,
-        previousYear: lastYearSalesData[index]?.total ?? 0,
-        currentBookings: item.bookings,
-        previousBookings: lastYearSalesData[index]?.bookings ?? 0,
-      })),
-    []
-  );
+  const comparisonData = salesComparisonData;
 
   const comparisonSummary = useMemo(() => {
-    const currentRevenue = monthlySalesData.reduce(
-      (sum, item) => sum + item.total,
-      0
-    );
-    const previousRevenue = lastYearSalesData.reduce(
-      (sum, item) => sum + item.total,
-      0
-    );
-    const currentBookingsCount = monthlySalesData.reduce(
-      (sum, item) => sum + item.bookings,
-      0
-    );
-    const previousBookingsCount = lastYearSalesData.reduce(
-      (sum, item) => sum + item.bookings,
-      0
-    );
+    const totals = monthlySalesTotals ?? {};
+    const currentTotals = totals.current ?? null;
+    const previousTotals = totals.previous ?? null;
+    const percent = totals.percent_change ?? {};
+
+    const currentRevenue =
+      safeNumber(currentTotals?.actual_return) ??
+      salesChartData.reduce((sum, item) => sum + (item.total || 0), 0);
+    const previousRevenue =
+      safeNumber(previousTotals?.actual_return) ??
+      (monthlySalesPrevious || []).reduce(
+        (sum, item) => sum + (safeNumber(item?.actual_return) ?? 0),
+        0
+      );
+    const currentBookingsCount =
+      safeNumber(currentTotals?.completed_bookings) ??
+      salesChartData.reduce((sum, item) => sum + (item.bookings || 0), 0);
+    const previousBookingsCount =
+      safeNumber(previousTotals?.completed_bookings) ??
+      (monthlySalesPrevious || []).reduce(
+        (sum, item) => sum + (safeNumber(item?.completed_bookings) ?? 0),
+        0
+      );
+
+    const revenueDeltaRaw = safeNumber(percent?.actual_return);
+    const bookingDeltaRaw = safeNumber(percent?.completed_bookings);
 
     const revenueDelta =
-      previousRevenue === 0
+      revenueDeltaRaw != null && !Number.isNaN(revenueDeltaRaw)
+        ? revenueDeltaRaw
+        : previousRevenue === 0
         ? 0
         : ((currentRevenue - previousRevenue) / previousRevenue) * 100;
     const bookingDelta =
-      previousBookingsCount === 0
+      bookingDeltaRaw != null && !Number.isNaN(bookingDeltaRaw)
+        ? bookingDeltaRaw
+        : previousBookingsCount === 0
         ? 0
         : ((currentBookingsCount - previousBookingsCount) /
-            previousBookingsCount) *
+            (previousBookingsCount || 1)) *
           100;
 
     return {
@@ -1384,12 +1741,26 @@ const Dashboard = () => {
       revenueDelta,
       bookingDelta,
     };
-  }, []);
+  }, [monthlySalesTotals, salesChartData, monthlySalesPrevious]);
 
-  const fleetUtilization = 0.82;
-  const utilizationTrend = -2.4;
-  const utilizationDegrees = Math.round(fleetUtilization * 360);
+  const safeUtilizationForGradient = fleetUtilizationRate ?? 0;
+  const utilizationDegrees = Math.round(safeUtilizationForGradient * 360);
   const occupancyGradient = `conic-gradient(from 90deg, #1d4ed8 0deg, #2563eb ${utilizationDegrees}deg, #e5e7eb ${utilizationDegrees}deg, #e5e7eb 360deg)`;
+  const fleetPercentValue = fleetPercent ?? 0;
+  const fleetCardHeading =
+    fleetPercent != null
+      ? `${fleetPercent}% utilized`
+      : isUtilizationLoading
+      ? "Loading utilisation..."
+      : "Utilisation unavailable";
+  const utilizationNarrative =
+    utilizationDeltaLabel && utilizationPreviousPeriodLabel
+      ? `Utilisation is ${Math.abs(utilizationTrendRaw).toFixed(1)}% ${utilizationTrendRaw >= 0 ? "higher" : "lower"} than ${utilizationPreviousPeriodLabel}.`
+      : utilizationDeltaLabel
+      ? `Utilisation changed by ${utilizationDeltaLabel.replace("+", "")} from the previous period.`
+      : "Trend comparison is not available.";
+
+  const primaryPeriodLabel = resolvedRangeLabel || selectedRangeLabel;
 
   const metricCards = [
     {
@@ -1399,6 +1770,26 @@ const Dashboard = () => {
       deltaType: revenueDeltaType,
       icon: FiTrendingUp,
       subtitle: revenueSubtitle,
+      tooltip: `Total confirmed rental revenue in ${resolvedCurrency} for the selected window.`,
+      customContent: (
+        <Stack spacing={2}>
+          <Heading size="lg" color="gray.900">
+            {revenueValueDisplay}
+          </Heading>
+          <Text fontSize="sm" color="gray.600">
+            Revenue recognised {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "during this period"}.
+          </Text>
+        </Stack>
+      ),
+      footer: (
+        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+          <HStack spacing={1.5}>
+            <Icon as={FiDollarSign} boxSize="12px" />
+            <Text fontWeight="medium">{resolvedCurrency}</Text>
+          </HStack>
+          <Text>Using confirmed payments</Text>
+        </Flex>
+      ),
       accent: {
         gradient: "linear(to-br, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.05))",
         spot: "rgba(59, 130, 246, 0.45)",
@@ -1415,6 +1806,30 @@ const Dashboard = () => {
       deltaType: bookingsDeltaType,
       icon: FiCalendar,
       subtitle: bookingsSubtitle,
+      tooltip: "Count of confirmed bookings captured year-to-date for your active company.",
+      customContent: (
+        <Stack spacing={2}>
+          <Heading size="lg" color="gray.900">
+            {bookingsValueDisplay}
+          </Heading>
+          <Text fontSize="sm" color="gray.600">
+            Confirmed trips {primaryPeriodLabel ? `logged through ${primaryPeriodLabel}` : "for the selected range"}.
+          </Text>
+        </Stack>
+      ),
+      footer: (
+        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+          <HStack spacing={1.5}>
+            <Icon as={FiCalendar} boxSize="12px" />
+            <Text fontWeight="medium">Live & completed</Text>
+          </HStack>
+          {previousPeriodLabel ? (
+            <Text>{previousPeriodLabel}</Text>
+          ) : (
+            <Text>Rolling total</Text>
+          )}
+        </Flex>
+      ),
       accent: {
         gradient: "linear(to-br, rgba(109, 40, 217, 0.18), rgba(124, 58, 237, 0.05))",
         spot: "rgba(124, 58, 237, 0.42)",
@@ -1431,6 +1846,26 @@ const Dashboard = () => {
       deltaType: averageValueDeltaType,
       icon: FiCreditCard,
       subtitle: averageBookingValueSubtitle,
+      tooltip: `Average amount collected per completed booking in ${resolvedCurrency}.`,
+      customContent: (
+        <Stack spacing={2}>
+          <Heading size="lg" color="gray.900">
+            {averageBookingValueDisplay}
+          </Heading>
+          <Text fontSize="sm" color="gray.600">
+            Typical net revenue per booking {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "this period"}.
+          </Text>
+        </Stack>
+      ),
+      footer: (
+        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+          <HStack spacing={1.5}>
+            <Icon as={FiCreditCard} boxSize="12px" />
+            <Text fontWeight="medium">Net of discounts</Text>
+          </HStack>
+          <Text>{resolvedCurrency}</Text>
+        </Flex>
+      ),
       accent: {
         gradient: "linear(to-br, rgba(13, 148, 136, 0.18), rgba(16, 185, 129, 0.06))",
         spot: "rgba(45, 212, 191, 0.4)",
@@ -1442,13 +1877,77 @@ const Dashboard = () => {
     },
     {
       label: "Fleet Utilization",
-      value: `${Math.round(fleetUtilization * 100)}%`,
-      delta: `${utilizationTrend > 0 ? "+" : ""}${utilizationTrend.toFixed(
-        1
-      )}%`,
-      deltaType: utilizationTrend >= 0 ? "increase" : "decrease",
-      icon: TbSteeringWheel,
-      subtitle: "Active rentals today",
+      value: fleetPercentDisplay,
+      delta: utilizationDeltaLabel,
+      deltaType: utilizationDeltaType,
+      icon: null,
+      subtitle: utilizationSubtitle,
+      tooltip: utilizationAsOfLabel
+        ? `Share of units on rent as of ${utilizationAsOfLabel}.`
+        : "Share of units currently on rent compared with your total fleet size.",
+      customContent: (
+        <Flex align="center" gap={4}>
+          <CircularProgress
+            value={fleetPercentValue}
+            size="76px"
+            thickness="10px"
+            color="orange.400"
+            trackColor="orange.100"
+            isIndeterminate={fleetPercent == null && isUtilizationLoading}
+          >
+            {fleetPercent != null ? (
+              <CircularProgressLabel>
+                <Text fontWeight="bold" color="gray.800">
+                  {fleetPercent}%
+                </Text>
+              </CircularProgressLabel>
+            ) : null}
+          </CircularProgress>
+          <Stack spacing={1}>
+            <Heading size="md" color="gray.900">
+              {fleetCardHeading}
+            </Heading>
+            <Text fontSize="sm" color="gray.600">
+              {activeRentals != null && totalFleet != null
+                ? `${activeRentals} active of ${totalFleet} vehicles right now.`
+                : "Active rentals vs. total inventory right now."}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              {utilizationNarrative}
+            </Text>
+            {utilizationError && !isUtilizationLoading ? (
+              <Text fontSize="xs" color="red.500">
+                {utilizationError}
+              </Text>
+            ) : null}
+            {!utilizationError && (
+              <Text fontSize="xs" color="gray.500">
+                Includes live bookings and excludes units marked unavailable.
+              </Text>
+            )}
+          </Stack>
+        </Flex>
+      ),
+      footer: (
+        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+          <HStack spacing={1.5}>
+            <Icon as={FiClock} boxSize="12px" />
+            <Text fontWeight="medium">
+              {utilizationAsOfLabel ? `As of ${utilizationAsOfLabel}` : "Live snapshot"}
+            </Text>
+          </HStack>
+          {availableUnits != null || unavailableUnits != null ? (
+            <Text>
+              {availableUnits != null ? `${availableUnits} available` : "-- available"}
+              {" | "}
+              {unavailableUnits != null ? `${unavailableUnits} unavailable` : "-- unavailable"}
+            </Text>
+          ) : (
+            <Text>Inventory insight</Text>
+          )}
+        </Flex>
+      ),
+      onDoubleClick: utilizationData ? onUtilizationModalOpen : undefined,
       accent: {
         gradient: "linear(to-br, rgba(249, 115, 22, 0.18), rgba(245, 158, 11, 0.05))",
         spot: "rgba(251, 191, 36, 0.48)",
@@ -1580,8 +2079,16 @@ const Dashboard = () => {
                   </Stack>
 
                   <HStack spacing={3} flexWrap="wrap">
-                    <Tag size="sm" variant="subtle" colorScheme="blue">
-                      Updated 5 minutes ago
+                    <Tag size="sm" variant="subtle" colorScheme={isMonthlySalesLoading ? "gray" : "blue"}>
+                      {isMonthlySalesLoading
+                        ? "Refreshing..."
+                        : monthlySalesRange?.mode === "single_year"
+                        ? `Year ${currentComparisonLabel || new Date().getFullYear()}`
+                        : monthlySalesRange?.mode === "range"
+                        ? formatPeriodRange(monthlySalesRange)
+                        : currentComparisonLabel
+                        ? `Window: ${currentComparisonLabel}`
+                        : "Last 12 months"}
                     </Tag>
                     <ButtonGroup size="sm" isAttached variant="ghost">
                       <Tooltip label="Line chart view" hasArrow>
@@ -1608,13 +2115,26 @@ const Dashboard = () => {
                       variant="outline"
                       leftIcon={<FiRefreshCw />}
                       onClick={onComparisonOpen}
+                      isDisabled={!comparisonData.length}
                     >
                       Compare years
                     </Button>
                   </HStack>
                 </Flex>
 
-                <RevenueChart data={monthlySalesData} chartType={chartType} />
+                {monthlySalesError ? (
+                  <Alert status="error" variant="left-accent" borderRadius="md">
+                    <AlertIcon />
+                    {monthlySalesError}
+                  </Alert>
+                ) : null}
+
+                <RevenueChart
+                  data={salesChartData}
+                  chartType={chartType}
+                  currencyFormatter={monthlyCurrencyFormatter}
+                  compactCurrencyFormatter={monthlyCompactCurrencyFormatter}
+                />
               </Stack>
             </Box>
           </GridItem>
@@ -1676,10 +2196,18 @@ const Dashboard = () => {
                         Vehicles out
                       </Text>
                       <Heading size="lg" color="gray.800">
-                        34 / 42
+                        {activeRentals != null && totalFleet != null
+                          ? `${activeRentals} / ${totalFleet}`
+                          : isUtilizationLoading
+                          ? "Loading..."
+                          : "--"}
                       </Heading>
                       <Text fontSize="xs" color="gray.500">
-                        4 returns scheduled before noon
+                        {availableUnits != null || unavailableUnits != null
+                          ? `${availableUnits ?? "--"} available | ${unavailableUnits ?? "--"} unavailable`
+                          : utilizationAsOfLabel
+                          ? `As of ${utilizationAsOfLabel}`
+                          : "Live snapshot of fleet utilisation"}
                       </Text>
                     </Stack>
                     <Flex
@@ -1700,7 +2228,11 @@ const Dashboard = () => {
                         fontWeight="bold"
                         fontSize="lg"
                       >
-                        {Math.round(fleetUtilization * 100)}%
+                        {fleetPercent != null
+                          ? `${fleetPercent}%`
+                          : isUtilizationLoading
+                          ? "..." 
+                          : fleetPercentDisplay}
                       </Flex>
                     </Flex>
                   </Flex>
@@ -1711,12 +2243,13 @@ const Dashboard = () => {
                       <Box boxSize="10px" borderRadius="full" bg="gray.200" />
                       <Text>Available inventory</Text>
                     </HStack>
-                    <Text fontSize="xs" color="gray.500">
-                      Utilization is{" "}
-                      <Text as="span" color="red.500" fontWeight="semibold">
-                        {utilizationTrend.toFixed(1)}%
-                      </Text>{" "}
-                      vs last week. Consider upselling returns scheduled today.
+                    <Text
+                      fontSize="xs"
+                      color={utilizationError && !isUtilizationLoading ? "red.500" : "gray.500"}
+                    >
+                      {utilizationError && !isUtilizationLoading
+                        ? utilizationError
+                        : utilizationNarrative}
                     </Text>
                   </Stack>
                 </Stack>
@@ -1865,11 +2398,145 @@ const Dashboard = () => {
           </ModalContent>
         </Modal>
 
+        <Modal
+          isOpen={isUtilizationModalOpen}
+          onClose={onUtilizationModalClose}
+          size="lg"
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Fleet utilisation details</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Stack spacing={4}>
+                <Stack spacing={1}>
+                  <Heading size="sm" color="gray.800">
+                    Snapshot
+                  </Heading>
+                  <Text fontSize="sm" color="gray.500">
+                    {utilizationAsOfLabel
+                      ? `As of ${utilizationAsOfLabel}`
+                      : "Latest captured snapshot."}
+                  </Text>
+                </Stack>
+
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                  <Box
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={3}
+                    bg="gray.50"
+                  >
+                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                      Active rentals
+                    </Text>
+                    <Heading size="md" color="gray.800">
+                      {activeRentals != null ? activeRentals : "--"}
+                    </Heading>
+                  </Box>
+                  <Box
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={3}
+                    bg="gray.50"
+                  >
+                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                      Total fleet
+                    </Text>
+                    <Heading size="md" color="gray.800">
+                      {totalFleet != null ? totalFleet : "--"}
+                    </Heading>
+                  </Box>
+                  <Box
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={3}
+                    bg="gray.50"
+                  >
+                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                      Available now
+                    </Text>
+                    <Heading size="md" color="gray.800">
+                      {availableUnits != null ? availableUnits : "--"}
+                    </Heading>
+                  </Box>
+                  <Box
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={3}
+                    bg="gray.50"
+                  >
+                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                      Unavailable
+                    </Text>
+                    <Heading size="md" color="gray.800">
+                      {unavailableUnits != null ? unavailableUnits : "--"}
+                    </Heading>
+                  </Box>
+                </SimpleGrid>
+
+                {Array.isArray(utilizationData?.breakdown) &&
+                utilizationData.breakdown.length > 0 ? (
+                  <Stack spacing={2}>
+                    <Heading size="xs" color="gray.700" textTransform="uppercase">
+                      By vehicle type
+                    </Heading>
+                    <Stack spacing={2}>
+                      {utilizationData.breakdown.map((item, index) => {
+                        const key = `${item?.label || "unspecified"}-${index}`;
+                        const rate = safeNumber(item?.utilization);
+                        const percent =
+                          rate != null
+                            ? `${Math.round(Math.min(Math.max(rate, 0), 1) * 100)}%`
+                            : "--";
+                        return (
+                          <Flex
+                            key={item?.label || Math.random()}
+                            align="center"
+                            justify="space-between"
+                            borderWidth="1px"
+                            borderRadius="md"
+                            p={3}
+                            key={key}
+                          >
+                            <Stack spacing={0}>
+                              <Text fontWeight="semibold" color="gray.800">
+                                {item?.label || "Unspecified"}
+                              </Text>
+                              <Text fontSize="xs" color="gray.500">
+                                {item?.active ?? "--"} active / {item?.fleet ?? "--"} total
+                              </Text>
+                            </Stack>
+                            <Tag variant="subtle" colorScheme="orange" borderRadius="full">
+                              {percent}
+                            </Tag>
+                          </Flex>
+                        );
+                      })}
+                    </Stack>
+                  </Stack>
+                ) : (
+                  <Text fontSize="sm" color="gray.500">
+                    No utilisation breakdown is available for this snapshot.
+                  </Text>
+                )}
+              </Stack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={onUtilizationModalClose}>Close</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
         <YearComparisonModal
           isOpen={isComparisonOpen}
           onClose={onComparisonClose}
           data={comparisonData}
           summary={comparisonSummary}
+          currencyFormatter={monthlyCurrencyFormatter}
+          compactCurrencyFormatter={monthlyCompactCurrencyFormatter}
+          currentLabel={currentComparisonLabel}
+          previousLabel={previousComparisonLabel}
         />
       </Stack>
     </Box>
@@ -1877,3 +2544,7 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
