@@ -73,7 +73,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import {
+  differenceInCalendarDays,
+  endOfMonth,
+  format,
+  parseISO,
+  startOfMonth,
+} from "date-fns";
 import { fetchDashboardSummary } from "../../services/dashboard";
 import { fetchFleetUtilization } from "../../services/fleetUtilization";
 import { fetchMonthlySales } from "../../services/monthlySales";
@@ -550,9 +556,9 @@ function YearComparisonModal({
               />
               <ComparisonStatCard
                 label="Revenue change"
-                value={`${summary.revenueDelta >= 0 ? "+" : ""}${summary.revenueDelta.toFixed(
-                  1
-                )}%`}
+                value={`${
+                  summary.revenueDelta >= 0 ? "+" : ""
+                }${summary.revenueDelta.toFixed(1)}%`}
                 sublabel={`${previousText} revenue`}
                 subvalue={formatter.format(summary.previousRevenue)}
                 accent={summary.revenueDelta >= 0 ? "green" : "red"}
@@ -560,9 +566,9 @@ function YearComparisonModal({
               />
               <ComparisonStatCard
                 label="Bookings change"
-                value={`${summary.bookingDelta >= 0 ? "+" : ""}${summary.bookingDelta.toFixed(
-                  1
-                )}%`}
+                value={`${
+                  summary.bookingDelta >= 0 ? "+" : ""
+                }${summary.bookingDelta.toFixed(1)}%`}
                 sublabel={`${previousText} bookings`}
                 subvalue={numberFormatter.format(summary.previousBookings)}
                 accent={summary.bookingDelta >= 0 ? "green" : "red"}
@@ -570,7 +576,13 @@ function YearComparisonModal({
               />
             </SimpleGrid>
 
-            <Box bg="white" borderRadius="xl" borderWidth="1px" p={4} boxShadow="sm">
+            <Box
+              bg="white"
+              borderRadius="xl"
+              borderWidth="1px"
+              p={4}
+              boxShadow="sm"
+            >
               <Heading size="sm" color="gray.700" mb={4}>
                 Month-by-month trend
               </Heading>
@@ -616,13 +628,41 @@ function YearComparisonModal({
                       wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
                     />
                     <defs>
-                      <linearGradient id="currentYearGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.4} />
-                        <stop offset="100%" stopColor="#2563eb" stopOpacity={0.05} />
+                      <linearGradient
+                        id="currentYearGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#2563eb"
+                          stopOpacity={0.4}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#2563eb"
+                          stopOpacity={0.05}
+                        />
                       </linearGradient>
-                      <linearGradient id="previousYearGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#64748b" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#64748b" stopOpacity={0.04} />
+                      <linearGradient
+                        id="previousYearGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#64748b"
+                          stopOpacity={0.35}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#64748b"
+                          stopOpacity={0.04}
+                        />
                       </linearGradient>
                     </defs>
                     <Area
@@ -702,7 +742,12 @@ function ComparisonStatCard({
       py={5}
     >
       <Stack spacing={3}>
-        <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+        <Text
+          fontSize="xs"
+          textTransform="uppercase"
+          color="gray.500"
+          fontWeight="semibold"
+        >
           {label}
         </Text>
         <HStack spacing={2} align="baseline">
@@ -750,7 +795,8 @@ function StatCard({
     iconColor: accent?.iconColor || "#2563eb",
     border: accent?.border || "rgba(59, 130, 246, 0.18)",
     bar:
-      accent?.bar || "linear(to-r, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0))",
+      accent?.bar ||
+      "linear(to-r, rgba(59, 130, 246, 0.6), rgba(59, 130, 246, 0))",
   };
 
   const labelNode = (
@@ -878,6 +924,96 @@ function StatCard({
   );
 }
 
+const highlightAccentMap = {
+  blue: {
+    gradient:
+      "linear(to-br, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05))",
+    border: "rgba(59, 130, 246, 0.25)",
+    iconBg: "rgba(59, 130, 246, 0.15)",
+    iconColor: "#1d4ed8",
+  },
+  purple: {
+    gradient:
+      "linear(to-br, rgba(124, 58, 237, 0.16), rgba(168, 85, 247, 0.05))",
+    border: "rgba(124, 58, 237, 0.22)",
+    iconBg: "rgba(124, 58, 237, 0.16)",
+    iconColor: "#6d28d9",
+  },
+  amber: {
+    gradient:
+      "linear(to-br, rgba(251, 191, 36, 0.18), rgba(253, 224, 71, 0.08))",
+    border: "rgba(251, 191, 36, 0.28)",
+    iconBg: "rgba(251, 191, 36, 0.2)",
+    iconColor: "#b45309",
+  },
+};
+
+function HighlightStatCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  accent = "blue",
+  meta,
+  footer,
+}) {
+  const accentStyles = highlightAccentMap[accent] ?? highlightAccentMap.blue;
+  return (
+    <Box
+      position="relative"
+      p={5}
+      borderRadius="xl"
+      bg="white"
+      borderWidth="1px"
+      borderColor={accentStyles.border}
+      boxShadow="sm"
+      overflow="hidden"
+      _before={{
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        bgGradient: accentStyles.gradient,
+      }}
+    >
+      <Stack spacing={4} position="relative" zIndex={1}>
+        <HStack justify="space-between" align="flex-start">
+          <Stack spacing={1}>
+            <Text fontSize="sm" color="gray.500" fontWeight="medium">
+              {title}
+            </Text>
+            <Heading size="lg" color="gray.900">
+              {value}
+            </Heading>
+            {subtitle ? (
+              <Text fontSize="xs" color="gray.500">
+                {subtitle}
+              </Text>
+            ) : null}
+          </Stack>
+          {icon ? (
+            <Flex
+              align="center"
+              justify="center"
+              boxSize="48px"
+              borderRadius="full"
+              bg={accentStyles.iconBg}
+              color={accentStyles.iconColor}
+            >
+              <Icon as={icon} boxSize="22px" />
+            </Flex>
+          ) : null}
+        </HStack>
+        {meta ? <Box>{meta}</Box> : null}
+        {footer ? (
+          <Text fontSize="xs" color="gray.500">
+            {footer}
+          </Text>
+        ) : null}
+      </Stack>
+    </Box>
+  );
+}
+
 function RevenueByClass({ data }) {
   const maxRevenue = Math.max(...data.map((item) => item.revenue));
   return (
@@ -918,22 +1054,26 @@ const statusVariantMap = {
 
 const bookingAccentMap = {
   Confirmed: {
-    gradient: "linear(to-br, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.05))",
+    gradient:
+      "linear(to-br, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.05))",
     border: "rgba(37, 99, 235, 0.28)",
     highlight: "blue.500",
   },
   Pending: {
-    gradient: "linear(to-br, rgba(234, 179, 8, 0.14), rgba(250, 204, 21, 0.05))",
+    gradient:
+      "linear(to-br, rgba(234, 179, 8, 0.14), rgba(250, 204, 21, 0.05))",
     border: "rgba(234, 179, 8, 0.32)",
     highlight: "yellow.500",
   },
   Maintenance: {
-    gradient: "linear(to-br, rgba(147, 51, 234, 0.16), rgba(168, 85, 247, 0.05))",
+    gradient:
+      "linear(to-br, rgba(147, 51, 234, 0.16), rgba(168, 85, 247, 0.05))",
     border: "rgba(147, 51, 234, 0.3)",
     highlight: "purple.500",
   },
   default: {
-    gradient: "linear(to-br, rgba(15, 23, 42, 0.08), rgba(148, 163, 184, 0.05))",
+    gradient:
+      "linear(to-br, rgba(15, 23, 42, 0.08), rgba(148, 163, 184, 0.05))",
     border: "rgba(148, 163, 184, 0.28)",
     highlight: "gray.500",
   },
@@ -943,7 +1083,8 @@ function UpcomingBookings({ items }) {
   return (
     <Stack spacing={4}>
       {items.map((item) => {
-        const accent = bookingAccentMap[item.status] || bookingAccentMap.default;
+        const accent =
+          bookingAccentMap[item.status] || bookingAccentMap.default;
         return (
           <Box
             key={item.id}
@@ -968,7 +1109,12 @@ function UpcomingBookings({ items }) {
               >
                 <Stack spacing={2}>
                   <HStack spacing={2}>
-                    <Tag size="sm" variant="subtle" colorScheme="gray" borderRadius="full">
+                    <Tag
+                      size="sm"
+                      variant="subtle"
+                      colorScheme="gray"
+                      borderRadius="full"
+                    >
                       {item.id}
                     </Tag>
                     <Badge
@@ -986,7 +1132,10 @@ function UpcomingBookings({ items }) {
                     {item.unit}
                   </Text>
                 </Stack>
-                <Stack spacing={2} align={{ base: "flex-start", sm: "flex-end" }}>
+                <Stack
+                  spacing={2}
+                  align={{ base: "flex-start", sm: "flex-end" }}
+                >
                   <Text fontSize="xs" color="gray.500">
                     Est. value
                   </Text>
@@ -1017,7 +1166,9 @@ function UpcomingBookings({ items }) {
                 <HStack spacing={2}>
                   <Icon as={FiDollarSign} />
                   <Text>
-                    {item.value ? currencyFormatter.format(item.value) : "Awaiting quote"}
+                    {item.value
+                      ? currencyFormatter.format(item.value)
+                      : "Awaiting quote"}
                   </Text>
                 </HStack>
                 <HStack
@@ -1534,9 +1685,10 @@ const Dashboard = () => {
     utilizationRateRaw != null
       ? Math.min(Math.max(utilizationRateRaw, 0), 1)
       : null;
-  const fleetPercent = fleetUtilizationRate != null
-    ? Math.round(fleetUtilizationRate * 100)
-    : null;
+  const fleetPercent =
+    fleetUtilizationRate != null
+      ? Math.round(fleetUtilizationRate * 100)
+      : null;
   const utilizationTrendRaw = safeNumber(
     utilizationData?.utilization?.trend?.percent_change
   );
@@ -1567,19 +1719,113 @@ const Dashboard = () => {
       ? "Loading..."
       : "--";
   const utilizationAsOfRaw = utilizationData?.as_of ?? null;
-  const utilizationAsOfLabel = useMemo(() => {
+  const utilizationAsOfDate = useMemo(() => {
     if (!utilizationAsOfRaw) return null;
     try {
-      return format(parseISO(utilizationAsOfRaw), "MMM d, yyyy h:mm a");
+      return parseISO(utilizationAsOfRaw);
     } catch {
       return null;
     }
   }, [utilizationAsOfRaw]);
-  const utilizationPreviousPeriod = utilizationData?.utilization?.trend?.previous?.period;
+  const utilizationAsOfLabel = useMemo(() => {
+    if (!utilizationAsOfDate) return null;
+    try {
+      return format(utilizationAsOfDate, "MMM d, yyyy h:mm a");
+    } catch {
+      return null;
+    }
+  }, [utilizationAsOfDate]);
+  const utilizationPreviousPeriod =
+    utilizationData?.utilization?.trend?.previous?.period;
   const utilizationPreviousPeriodLabel =
     utilizationPreviousPeriod?.start && utilizationPreviousPeriod?.end
       ? formatPeriodRange(utilizationPreviousPeriod)
       : null;
+
+  const latestSalesEntry =
+    salesChartData.length > 0
+      ? salesChartData[salesChartData.length - 1]
+      : null;
+  const latestSalesValueLabel =
+    latestSalesEntry != null
+      ? monthlyCurrencyFormatter.format(latestSalesEntry.total || 0)
+      : isMonthlySalesLoading
+      ? "Loading..."
+      : "--";
+  const latestSalesSubtitle = (() => {
+    if (latestSalesEntry?.monthIso) {
+      try {
+        return format(parseISO(latestSalesEntry.monthIso), "MMM yyyy");
+      } catch {
+        return latestSalesEntry?.month || "Current period";
+      }
+    }
+    if (monthlySalesRange?.start && monthlySalesRange?.end) {
+      const formatted = formatPeriodRange(monthlySalesRange);
+      if (formatted) return formatted;
+    }
+    return currentComparisonLabel || "Current window";
+  })();
+  const latestSalesBookingsLabel =
+    latestSalesEntry != null
+      ? `${numberFormatter.format(latestSalesEntry.bookings || 0)} bookings`
+      : isMonthlySalesLoading
+      ? "Fetching bookings..."
+      : "Bookings data unavailable";
+
+  const availableFleetValueLabel =
+    availableUnits != null
+      ? numberFormatter.format(availableUnits)
+      : isUtilizationLoading
+      ? "Loading..."
+      : "--";
+  const availableFleetSubtitle =
+    totalFleet != null
+      ? `of ${numberFormatter.format(totalFleet)} vehicles`
+      : "Available right now";
+  const availableFleetMeta =
+    activeRentals != null ? (
+      <HStack spacing={2}>
+        <Tag size="sm" colorScheme="blue" variant="subtle" borderRadius="full">
+          Active {numberFormatter.format(activeRentals)}
+        </Tag>
+        <Tag size="sm" colorScheme="gray" variant="subtle" borderRadius="full">
+          Unavailable{" "}
+          {unavailableUnits != null
+            ? numberFormatter.format(unavailableUnits)
+            : "--"}
+        </Tag>
+      </HStack>
+    ) : null;
+
+  const availabilityDays = useMemo(() => {
+    const reference = utilizationAsOfDate ?? new Date();
+    const start = startOfMonth(reference);
+    const end = endOfMonth(reference);
+    const total = differenceInCalendarDays(end, start) + 1;
+    const elapsedRaw = differenceInCalendarDays(reference, start) + 1;
+    const elapsed = Math.max(0, Math.min(total, elapsedRaw));
+    const remaining = Math.max(0, total - elapsed);
+    return { total, elapsed, remaining, reference };
+  }, [utilizationAsOfDate]);
+  const availabilityDaysValue = `${availabilityDays.elapsed}/${availabilityDays.total} days`;
+  const availabilityDaysSubtitle = `Progress through ${format(
+    availabilityDays.reference,
+    "MMMM yyyy"
+  )}`;
+  const availabilityDaysMeta = (
+    <HStack spacing={2}>
+      <Tag size="sm" colorScheme="green" variant="subtle" borderRadius="full">
+        {availabilityDays.elapsed} days passed
+      </Tag>
+      <Tag size="sm" colorScheme="orange" variant="subtle" borderRadius="full">
+        {availabilityDays.remaining} remaining
+      </Tag>
+    </HStack>
+  );
+  const availabilityDaysFooter = utilizationAsOfLabel
+    ? `As of ${utilizationAsOfLabel}`
+    : "Based on today's date";
 
   const summaryTotals = summaryData?.totals ?? {};
   const summaryTrend = summaryData?.trend ?? null;
@@ -1755,9 +2001,14 @@ const Dashboard = () => {
       : "Utilisation unavailable";
   const utilizationNarrative =
     utilizationDeltaLabel && utilizationPreviousPeriodLabel
-      ? `Utilisation is ${Math.abs(utilizationTrendRaw).toFixed(1)}% ${utilizationTrendRaw >= 0 ? "higher" : "lower"} than ${utilizationPreviousPeriodLabel}.`
+      ? `Utilisation is ${Math.abs(utilizationTrendRaw).toFixed(1)}% ${
+          utilizationTrendRaw >= 0 ? "higher" : "lower"
+        } than ${utilizationPreviousPeriodLabel}.`
       : utilizationDeltaLabel
-      ? `Utilisation changed by ${utilizationDeltaLabel.replace("+", "")} from the previous period.`
+      ? `Utilisation changed by ${utilizationDeltaLabel.replace(
+          "+",
+          ""
+        )} from the previous period.`
       : "Trend comparison is not available.";
 
   const primaryPeriodLabel = resolvedRangeLabel || selectedRangeLabel;
@@ -1777,12 +2028,21 @@ const Dashboard = () => {
             {revenueValueDisplay}
           </Heading>
           <Text fontSize="sm" color="gray.600">
-            Revenue recognised {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "during this period"}.
+            Revenue recognised{" "}
+            {primaryPeriodLabel
+              ? `for ${primaryPeriodLabel}`
+              : "during this period"}
+            .
           </Text>
         </Stack>
       ),
       footer: (
-        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+        <Flex
+          align="center"
+          justify="space-between"
+          fontSize="xs"
+          color="gray.500"
+        >
           <HStack spacing={1.5}>
             <Icon as={FiDollarSign} boxSize="12px" />
             <Text fontWeight="medium">{resolvedCurrency}</Text>
@@ -1791,7 +2051,8 @@ const Dashboard = () => {
         </Flex>
       ),
       accent: {
-        gradient: "linear(to-br, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.05))",
+        gradient:
+          "linear(to-br, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.05))",
         spot: "rgba(59, 130, 246, 0.45)",
         iconBg: "rgba(37, 99, 235, 0.15)",
         iconColor: "#1d4ed8",
@@ -1806,19 +2067,29 @@ const Dashboard = () => {
       deltaType: bookingsDeltaType,
       icon: FiCalendar,
       subtitle: bookingsSubtitle,
-      tooltip: "Count of confirmed bookings captured year-to-date for your active company.",
+      tooltip:
+        "Count of confirmed bookings captured year-to-date for your active company.",
       customContent: (
         <Stack spacing={2}>
           <Heading size="lg" color="gray.900">
             {bookingsValueDisplay}
           </Heading>
           <Text fontSize="sm" color="gray.600">
-            Confirmed trips {primaryPeriodLabel ? `logged through ${primaryPeriodLabel}` : "for the selected range"}.
+            Confirmed trips{" "}
+            {primaryPeriodLabel
+              ? `logged through ${primaryPeriodLabel}`
+              : "for the selected range"}
+            .
           </Text>
         </Stack>
       ),
       footer: (
-        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+        <Flex
+          align="center"
+          justify="space-between"
+          fontSize="xs"
+          color="gray.500"
+        >
           <HStack spacing={1.5}>
             <Icon as={FiCalendar} boxSize="12px" />
             <Text fontWeight="medium">Live & completed</Text>
@@ -1831,7 +2102,8 @@ const Dashboard = () => {
         </Flex>
       ),
       accent: {
-        gradient: "linear(to-br, rgba(109, 40, 217, 0.18), rgba(124, 58, 237, 0.05))",
+        gradient:
+          "linear(to-br, rgba(109, 40, 217, 0.18), rgba(124, 58, 237, 0.05))",
         spot: "rgba(124, 58, 237, 0.42)",
         iconBg: "rgba(124, 58, 237, 0.14)",
         iconColor: "#6d28d9",
@@ -1853,12 +2125,18 @@ const Dashboard = () => {
             {averageBookingValueDisplay}
           </Heading>
           <Text fontSize="sm" color="gray.600">
-            Typical net revenue per booking {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "this period"}.
+            Typical net revenue per booking{" "}
+            {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "this period"}.
           </Text>
         </Stack>
       ),
       footer: (
-        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+        <Flex
+          align="center"
+          justify="space-between"
+          fontSize="xs"
+          color="gray.500"
+        >
           <HStack spacing={1.5}>
             <Icon as={FiCreditCard} boxSize="12px" />
             <Text fontWeight="medium">Net of discounts</Text>
@@ -1867,7 +2145,8 @@ const Dashboard = () => {
         </Flex>
       ),
       accent: {
-        gradient: "linear(to-br, rgba(13, 148, 136, 0.18), rgba(16, 185, 129, 0.06))",
+        gradient:
+          "linear(to-br, rgba(13, 148, 136, 0.18), rgba(16, 185, 129, 0.06))",
         spot: "rgba(45, 212, 191, 0.4)",
         iconBg: "rgba(16, 185, 129, 0.16)",
         iconColor: "#0f766e",
@@ -1929,18 +2208,29 @@ const Dashboard = () => {
         </Flex>
       ),
       footer: (
-        <Flex align="center" justify="space-between" fontSize="xs" color="gray.500">
+        <Flex
+          align="center"
+          justify="space-between"
+          fontSize="xs"
+          color="gray.500"
+        >
           <HStack spacing={1.5}>
             <Icon as={FiClock} boxSize="12px" />
             <Text fontWeight="medium">
-              {utilizationAsOfLabel ? `As of ${utilizationAsOfLabel}` : "Live snapshot"}
+              {utilizationAsOfLabel
+                ? `As of ${utilizationAsOfLabel}`
+                : "Live snapshot"}
             </Text>
           </HStack>
           {availableUnits != null || unavailableUnits != null ? (
             <Text>
-              {availableUnits != null ? `${availableUnits} available` : "-- available"}
+              {availableUnits != null
+                ? `${availableUnits} available`
+                : "-- available"}
               {" | "}
-              {unavailableUnits != null ? `${unavailableUnits} unavailable` : "-- unavailable"}
+              {unavailableUnits != null
+                ? `${unavailableUnits} unavailable`
+                : "-- unavailable"}
             </Text>
           ) : (
             <Text>Inventory insight</Text>
@@ -1949,7 +2239,8 @@ const Dashboard = () => {
       ),
       onDoubleClick: utilizationData ? onUtilizationModalOpen : undefined,
       accent: {
-        gradient: "linear(to-br, rgba(249, 115, 22, 0.18), rgba(245, 158, 11, 0.05))",
+        gradient:
+          "linear(to-br, rgba(249, 115, 22, 0.18), rgba(245, 158, 11, 0.05))",
         spot: "rgba(251, 191, 36, 0.48)",
         iconBg: "rgba(251, 146, 60, 0.16)",
         iconColor: "#b45309",
@@ -2007,7 +2298,9 @@ const Dashboard = () => {
                   <MenuItem
                     key={preset.value}
                     onClick={() => handlePresetSelect(preset.value)}
-                    fontWeight={datePreset === preset.value ? "semibold" : "normal"}
+                    fontWeight={
+                      datePreset === preset.value ? "semibold" : "normal"
+                    }
                   >
                     {preset.label}
                   </MenuItem>
@@ -2020,11 +2313,7 @@ const Dashboard = () => {
                 </MenuItem>
               </MenuList>
             </Menu>
-            <Button
-              leftIcon={<FiDownload />}
-              colorScheme="blue"
-              size="sm"
-            >
+            <Button leftIcon={<FiDownload />} colorScheme="blue" size="sm">
               Export report
             </Button>
           </HStack>
@@ -2056,7 +2345,6 @@ const Dashboard = () => {
               borderColor="gray.100"
               boxShadow="sm"
               p={{ base: 4, md: 6 }}
-              h="100%"
             >
               <Stack spacing={6}>
                 <Flex
@@ -2079,13 +2367,19 @@ const Dashboard = () => {
                   </Stack>
 
                   <HStack spacing={3} flexWrap="wrap">
-                    <Tag size="sm" variant="subtle" colorScheme={isMonthlySalesLoading ? "gray" : "blue"}>
+                    <Tag
+                      size="sm"
+                      variant="subtle"
+                      colorScheme={isMonthlySalesLoading ? "gray" : "blue"}
+                    >
                       {isMonthlySalesLoading
                         ? "Refreshing..."
                         : monthlySalesRange?.mode === "single_year"
-                        ? `Year ${currentComparisonLabel || new Date().getFullYear()}`
+                        ? `Year ${
+                            currentComparisonLabel || new Date().getFullYear()
+                          }`
                         : monthlySalesRange?.mode === "range"
-                        ? formatPeriodRange(monthlySalesRange)
+                        ? formatPeriodRange(monthlySalesRange) || "Custom range"
                         : currentComparisonLabel
                         ? `Window: ${currentComparisonLabel}`
                         : "Last 12 months"}
@@ -2135,6 +2429,56 @@ const Dashboard = () => {
                   currencyFormatter={monthlyCurrencyFormatter}
                   compactCurrencyFormatter={monthlyCompactCurrencyFormatter}
                 />
+
+                <SimpleGrid
+                  columns={{ base: 1, md: 2, xl: 3 }}
+                  spacing={4}
+                  mt={3}
+                >
+                  <HighlightStatCard
+                    title="Total sales this month"
+                    value={latestSalesValueLabel}
+                    subtitle={latestSalesSubtitle}
+                    icon={FiTrendingUp}
+                    meta={
+                      <Tag
+                        size="sm"
+                        colorScheme="blue"
+                        borderRadius="full"
+                        variant="subtle"
+                      >
+                        {latestSalesBookingsLabel}
+                      </Tag>
+                    }
+                    footer={
+                      monthlySalesRange?.mode === "rolling_12_months"
+                        ? "Latest month in the rolling window"
+                        : "Latest reported month"
+                    }
+                  />
+                  <HighlightStatCard
+                    title="Cars available"
+                    value={availableFleetValueLabel}
+                    subtitle={availableFleetSubtitle}
+                    icon={TbSteeringWheel}
+                    accent="purple"
+                    meta={availableFleetMeta}
+                    footer={
+                      utilizationAsOfLabel
+                        ? `Snapshot captured ${utilizationAsOfLabel}`
+                        : "Live utilisation snapshot"
+                    }
+                  />
+                  <HighlightStatCard
+                    title="Month availability"
+                    value={availabilityDaysValue}
+                    subtitle={availabilityDaysSubtitle}
+                    icon={FiClock}
+                    accent="amber"
+                    meta={availabilityDaysMeta}
+                    footer={availabilityDaysFooter}
+                  />
+                </SimpleGrid>
               </Stack>
             </Box>
           </GridItem>
@@ -2204,7 +2548,9 @@ const Dashboard = () => {
                       </Heading>
                       <Text fontSize="xs" color="gray.500">
                         {availableUnits != null || unavailableUnits != null
-                          ? `${availableUnits ?? "--"} available | ${unavailableUnits ?? "--"} unavailable`
+                          ? `${availableUnits ?? "--"} available | ${
+                              unavailableUnits ?? "--"
+                            } unavailable`
                           : utilizationAsOfLabel
                           ? `As of ${utilizationAsOfLabel}`
                           : "Live snapshot of fleet utilisation"}
@@ -2231,7 +2577,7 @@ const Dashboard = () => {
                         {fleetPercent != null
                           ? `${fleetPercent}%`
                           : isUtilizationLoading
-                          ? "..." 
+                          ? "..."
                           : fleetPercentDisplay}
                       </Flex>
                     </Flex>
@@ -2245,7 +2591,11 @@ const Dashboard = () => {
                     </HStack>
                     <Text
                       fontSize="xs"
-                      color={utilizationError && !isUtilizationLoading ? "red.500" : "gray.500"}
+                      color={
+                        utilizationError && !isUtilizationLoading
+                          ? "red.500"
+                          : "gray.500"
+                      }
                     >
                       {utilizationError && !isUtilizationLoading
                         ? utilizationError
@@ -2421,52 +2771,52 @@ const Dashboard = () => {
                 </Stack>
 
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
-                  <Box
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    p={3}
-                    bg="gray.50"
-                  >
-                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                  <Box borderWidth="1px" borderRadius="lg" p={3} bg="gray.50">
+                    <Text
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="semibold"
+                    >
                       Active rentals
                     </Text>
                     <Heading size="md" color="gray.800">
                       {activeRentals != null ? activeRentals : "--"}
                     </Heading>
                   </Box>
-                  <Box
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    p={3}
-                    bg="gray.50"
-                  >
-                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                  <Box borderWidth="1px" borderRadius="lg" p={3} bg="gray.50">
+                    <Text
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="semibold"
+                    >
                       Total fleet
                     </Text>
                     <Heading size="md" color="gray.800">
                       {totalFleet != null ? totalFleet : "--"}
                     </Heading>
                   </Box>
-                  <Box
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    p={3}
-                    bg="gray.50"
-                  >
-                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                  <Box borderWidth="1px" borderRadius="lg" p={3} bg="gray.50">
+                    <Text
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="semibold"
+                    >
                       Available now
                     </Text>
                     <Heading size="md" color="gray.800">
                       {availableUnits != null ? availableUnits : "--"}
                     </Heading>
                   </Box>
-                  <Box
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    p={3}
-                    bg="gray.50"
-                  >
-                    <Text fontSize="xs" textTransform="uppercase" color="gray.500" fontWeight="semibold">
+                  <Box borderWidth="1px" borderRadius="lg" p={3} bg="gray.50">
+                    <Text
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      color="gray.500"
+                      fontWeight="semibold"
+                    >
                       Unavailable
                     </Text>
                     <Heading size="md" color="gray.800">
@@ -2478,7 +2828,11 @@ const Dashboard = () => {
                 {Array.isArray(utilizationData?.breakdown) &&
                 utilizationData.breakdown.length > 0 ? (
                   <Stack spacing={2}>
-                    <Heading size="xs" color="gray.700" textTransform="uppercase">
+                    <Heading
+                      size="xs"
+                      color="gray.700"
+                      textTransform="uppercase"
+                    >
                       By vehicle type
                     </Heading>
                     <Stack spacing={2}>
@@ -2487,27 +2841,33 @@ const Dashboard = () => {
                         const rate = safeNumber(item?.utilization);
                         const percent =
                           rate != null
-                            ? `${Math.round(Math.min(Math.max(rate, 0), 1) * 100)}%`
+                            ? `${Math.round(
+                                Math.min(Math.max(rate, 0), 1) * 100
+                              )}%`
                             : "--";
                         return (
                           <Flex
-                            key={item?.label || Math.random()}
+                            key={key}
                             align="center"
                             justify="space-between"
                             borderWidth="1px"
                             borderRadius="md"
                             p={3}
-                            key={key}
                           >
                             <Stack spacing={0}>
                               <Text fontWeight="semibold" color="gray.800">
                                 {item?.label || "Unspecified"}
                               </Text>
                               <Text fontSize="xs" color="gray.500">
-                                {item?.active ?? "--"} active / {item?.fleet ?? "--"} total
+                                {item?.active ?? "--"} active /{" "}
+                                {item?.fleet ?? "--"} total
                               </Text>
                             </Stack>
-                            <Tag variant="subtle" colorScheme="orange" borderRadius="full">
+                            <Tag
+                              variant="subtle"
+                              colorScheme="orange"
+                              borderRadius="full"
+                            >
                               {percent}
                             </Tag>
                           </Flex>
@@ -2544,7 +2904,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
-
-
