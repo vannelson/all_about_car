@@ -325,6 +325,76 @@ function RevenueTooltip({ active, payload, label, currencyFormatter: fmt }) {
   );
 }
 
+function StatCardSkeleton({ accent = "blue" }) {
+  const baseAccent =
+    typeof accent === "string"
+      ? cardAccentMap[accent] ?? cardAccentMap.blue
+      : cardAccentMap.blue;
+  const accentStyles =
+    typeof accent === "object" ? { ...baseAccent, ...accent } : baseAccent;
+  const overlayLayer =
+    accentStyles.overlay ||
+    accentStyles.gradient ||
+    "linear-gradient(135deg, rgba(248,250,252,0.95), rgba(226,232,240,0.85))";
+  const patternLayer = accentStyles.pattern
+    ? accentStyles.pattern
+    : accentStyles.spot
+    ? `radial-gradient(circle at 90% 25%, ${accentStyles.spot} 0%, rgba(255,255,255,0) 60%)`
+    : null;
+  const backgroundLayers = [overlayLayer, patternLayer].filter(Boolean);
+  const backgroundImage = backgroundLayers.join(", ");
+  const overlayRepeat = "no-repeat";
+  const patternRepeat = accentStyles.patternRepeat || "no-repeat";
+  const backgroundRepeat =
+    backgroundLayers.length > 1
+      ? `${overlayRepeat}, ${patternRepeat}`
+      : overlayRepeat;
+  const backgroundSize =
+    backgroundLayers.length > 1
+      ? `100% 100%, ${accentStyles.patternSize || "160% 160%"}`
+      : "100% 100%";
+  const backgroundPosition =
+    backgroundLayers.length > 1
+      ? `center, ${accentStyles.patternPosition || "120% 60%"}`
+      : "center";
+
+  return (
+    <Box
+      position="relative"
+      bg="white"
+      borderRadius="xl"
+      p={{ base: 4, md: 5 }}
+      minH="170px"
+      borderWidth="1px"
+      borderColor={accentStyles.border}
+      boxShadow="sm"
+      backgroundImage={backgroundImage}
+      backgroundRepeat={backgroundRepeat}
+      backgroundSize={backgroundSize}
+      backgroundPosition={backgroundPosition}
+      overflow="hidden"
+    >
+      <Stack spacing={3}>
+        <Flex align="flex-start" justify="space-between" gap={3}>
+          <Stack spacing={2.5} flex="1">
+            <Skeleton height="16px" width="36%" borderRadius="full" />
+            <Skeleton height="12px" width="45%" />
+            <Skeleton height="28px" width="65%" />
+            <Skeleton height="10px" width="55%" />
+          </Stack>
+          <Skeleton boxSize="44px" borderRadius="full" />
+        </Flex>
+        <Stack spacing={2}>
+          <Skeleton height="10px" width="70%" />
+          <Skeleton height="10px" width="55%" />
+          <Skeleton height="10px" width="60%" />
+          <Skeleton height="10px" width="45%" />
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
 function RevenueChart({
   data,
   chartType,
@@ -770,6 +840,11 @@ function StatCard({
   customContent,
   footer,
   onDoubleClick,
+  badge,
+  badgeColorScheme = "blue",
+  badgeVariant = "subtle",
+  badgeIcon,
+  meta,
 }) {
   const DeltaIcon =
     deltaType === "increase"
@@ -778,22 +853,58 @@ function StatCard({
       ? FiTrendingDown
       : FiActivity;
 
-  const accentStyles = cardAccentMap[accent] ?? cardAccentMap.blue;
-  const backgroundLayers = [
-    accentStyles.overlay,
-    accentStyles.pattern,
-  ].filter(Boolean);
+  const baseAccent =
+    typeof accent === "string"
+      ? cardAccentMap[accent] ?? cardAccentMap.blue
+      : cardAccentMap.blue;
+  const accentStyles =
+    typeof accent === "object" ? { ...baseAccent, ...accent } : baseAccent;
+  const overlayLayer =
+    accentStyles.overlay ||
+    accentStyles.gradient ||
+    "linear-gradient(135deg, rgba(248,250,252,0.95), rgba(226,232,240,0.85))";
+  const patternLayer = accentStyles.pattern
+    ? accentStyles.pattern
+    : accentStyles.spot
+    ? `radial-gradient(circle at 90% 25%, ${accentStyles.spot} 0%, rgba(255,255,255,0) 60%)`
+    : null;
+  const backgroundLayers = [overlayLayer, patternLayer].filter(Boolean);
   const backgroundImage = backgroundLayers.join(", ");
+  const overlayRepeat = "no-repeat";
+  const patternRepeat = accentStyles.patternRepeat || "no-repeat";
   const backgroundRepeat =
-    backgroundLayers.length > 1 ? "no-repeat, no-repeat" : "no-repeat";
+    backgroundLayers.length > 1
+      ? `${overlayRepeat}, ${patternRepeat}`
+      : overlayRepeat;
+
   const backgroundSize =
     backgroundLayers.length > 1
-      ? 100% 100%, 
+      ? `100% 100%, ${accentStyles.patternSize || "160% 160%"}`
       : "100% 100%";
+
   const backgroundPosition =
     backgroundLayers.length > 1
-      ? center, 
+      ? `center, ${accentStyles.patternPosition || "120% 60%"}`
       : "center";
+
+  const badgeNode = badge ? (
+    <Badge
+      px={2.5}
+      py={0.5}
+      borderRadius="full"
+      colorScheme={badgeColorScheme}
+      variant={badgeVariant}
+      display="inline-flex"
+      alignItems="center"
+      gap={1}
+      fontSize="xs"
+      fontWeight="semibold"
+      textTransform="none"
+    >
+      {badgeIcon ? <Icon as={badgeIcon} boxSize="11px" /> : null}
+      {badge}
+    </Badge>
+  ) : null;
 
   const labelNode = (
     <HStack spacing={1.5}>
@@ -834,24 +945,43 @@ function StatCard({
     >
       <Stack spacing={customContent ? 3 : 4} position="relative" zIndex={1}>
         <Flex align="flex-start" justify="space-between" gap={3}>
-          <Stack spacing={customContent ? 1.5 : 1.5} pr={2}>
+          <Stack spacing={customContent ? 1.5 : 2} pr={2}>
+            {badgeNode}
             {labelContent}
-            <Heading size="lg" color="gray.900">
-              {value}
-            </Heading>
-            {description ? (
-              <Text fontSize="xs" color="gray.600">
-                {description}
-              </Text>
+            {!customContent ? (
+              <>
+                <Heading size="lg" color="gray.900">
+                  {value}
+                </Heading>
+                {description ? (
+                  <Text fontSize="xs" color="gray.600">
+                    {description}
+                  </Text>
+                ) : null}
+                {meta
+                  ? typeof meta === "string"
+                    ? (
+                        <Text fontSize="xs" color="gray.500">
+                          {meta}
+                        </Text>
+                      )
+                    : (
+                        <Box fontSize="xs" color="gray.500">
+                          {meta}
+                        </Box>
+                      )
+                  : null}
+              </>
             ) : null}
           </Stack>
-          {icon ? (
+
+          {icon && (
             <Flex
               align="center"
               justify="center"
               boxSize="44px"
               borderRadius="full"
-              bgGradient={linear(to-br, , rgba(255,255,255,0.65))}
+              bgGradient={`linear(to-br, ${accentStyles.iconBg}, rgba(255,255,255,0.65))`}
               color={accentStyles.iconColor}
               borderWidth="1px"
               borderColor="rgba(255,255,255,0.6)"
@@ -859,11 +989,26 @@ function StatCard({
             >
               <Icon as={icon} boxSize="20px" />
             </Flex>
-          ) : null}
+          )}
         </Flex>
 
         {customContent ? (
-          <Box>{customContent}</Box>
+          <>
+            <Box>{customContent}</Box>
+            {meta
+              ? typeof meta === "string"
+                ? (
+                    <Text fontSize="xs" color="gray.500">
+                      {meta}
+                    </Text>
+                  )
+                : (
+                    <Box fontSize="xs" color="gray.500">
+                      {meta}
+                    </Box>
+                  )
+              : null}
+          </>
         ) : (
           <Stack spacing={2}>
             {subtitle ? (
@@ -897,19 +1042,17 @@ function StatCard({
                 ) : null}
               </HStack>
             )}
-            {footer
-              ? typeof footer === "string"
-                ? (
-                    <Text fontSize="xs" color="gray.500">
-                      {footer}
-                    </Text>
-                  )
-                : (
-                    <Box fontSize="xs" color="gray.500">
-                      {footer}
-                    </Box>
-                  )
-              : null}
+            {footer ? (
+              typeof footer === "string" ? (
+                <Text fontSize="xs" color="gray.500">
+                  {footer}
+                </Text>
+              ) : (
+                <Box fontSize="xs" color="gray.500">
+                  {footer}
+                </Box>
+              )
+            ) : null}
           </Stack>
         )}
       </Stack>
@@ -923,52 +1066,53 @@ const cardAccentMap = {
     iconBg: "rgba(37, 99, 235, 0.18)",
     iconColor: "#1d4ed8",
     overlay:
-      "linear-gradient(130deg, rgba(235, 245, 255, 0.98) 0%, rgba(212, 233, 255, 0.92) 45%, rgba(59, 130, 246, 0.22) 100%)",
-    pattern:
-      "radial-gradient(circle at 85% 25%, rgba(59, 130, 246, 0.22) 0%, rgba(59, 130, 246, 0) 55%), radial-gradient(circle at 20% 110%, rgba(147, 197, 253, 0.18) 0%, rgba(147, 197, 253, 0) 60%)",
+      "linear-gradient(135deg, rgba(238, 244, 255, 0.92) 0%, rgba(212, 233, 255, 0.88) 50%, rgba(59, 130, 246, 0.24) 100%)",
+    pattern: "url('/card/bg_blue_card.png')",
+    patternSize: "145% 145%",
+    patternPosition: "110% 40%",
+    patternRepeat: "no-repeat",
     deltaBg: "rgba(37, 99, 235, 0.15)",
     deltaColor: "#1d4ed8",
-    patternSize: "200% 200%",
-    patternPosition: "120% 60%",
   },
   purple: {
     border: "rgba(139, 92, 246, 0.2)",
     iconBg: "rgba(139, 92, 246, 0.18)",
     iconColor: "#6d28d9",
     overlay:
-      "linear-gradient(130deg, rgba(246, 237, 255, 0.98) 0%, rgba(236, 221, 255, 0.9) 45%, rgba(168, 85, 247, 0.22) 100%)",
-    pattern:
-      "radial-gradient(circle at 88% 28%, rgba(168, 85, 247, 0.24) 0%, rgba(168, 85, 247, 0) 55%), radial-gradient(circle at 18% 115%, rgba(205, 180, 252, 0.2) 0%, rgba(205, 180, 252, 0) 60%)",
+      "linear-gradient(135deg, rgba(248, 243, 255, 0.94) 0%, rgba(236, 221, 255, 0.88) 50%, rgba(168, 85, 247, 0.25) 100%)",
+    pattern: "url('/card/bg_purple_card.png')",
+    patternSize: "150% 150%",
+    patternPosition: "108% 45%",
+    patternRepeat: "no-repeat",
     deltaBg: "rgba(139, 92, 246, 0.15)",
     deltaColor: "#6d28d9",
-    patternSize: "200% 200%",
-    patternPosition: "120% 60%",
   },
   mint: {
     border: "rgba(16, 185, 129, 0.2)",
     iconBg: "rgba(16, 185, 129, 0.2)",
     iconColor: "#047857",
     overlay:
-      "linear-gradient(130deg, rgba(236, 253, 245, 0.98) 0%, rgba(209, 250, 229, 0.9) 45%, rgba(52, 211, 153, 0.2) 100%)",
-    pattern:
-      "radial-gradient(circle at 88% 25%, rgba(16, 185, 129, 0.24) 0%, rgba(16, 185, 129, 0) 55%), radial-gradient(circle at 20% 115%, rgba(134, 239, 172, 0.2) 0%, rgba(134, 239, 172, 0) 60%)",
+      "linear-gradient(135deg, rgba(236, 253, 245, 0.95) 0%, rgba(209, 250, 229, 0.88) 48%, rgba(52, 211, 153, 0.24) 100%)",
+    pattern: "url('/card/bg_green_card.png')",
+    patternSize: "148% 148%",
+    patternPosition: "108% 45%",
+    patternRepeat: "no-repeat",
     deltaBg: "rgba(16, 185, 129, 0.15)",
     deltaColor: "#047857",
-    patternSize: "200% 200%",
-    patternPosition: "120% 60%",
   },
   amber: {
     border: "rgba(251, 191, 36, 0.24)",
     iconBg: "rgba(251, 191, 36, 0.18)",
     iconColor: "#b45309",
     overlay:
-      "linear-gradient(130deg, rgba(255, 250, 235, 0.98) 0%, rgba(254, 243, 199, 0.9) 45%, rgba(250, 204, 21, 0.2) 100%)",
+      "linear-gradient(135deg, rgba(255, 250, 235, 0.95) 0%, rgba(253, 241, 178, 0.88) 48%, rgba(250, 204, 21, 0.22) 100%)",
     pattern:
-      "radial-gradient(circle at 88% 25%, rgba(234, 179, 8, 0.22) 0%, rgba(234, 179, 8, 0) 55%), radial-gradient(circle at 20% 115%, rgba(253, 230, 138, 0.18) 0%, rgba(253, 230, 138, 0) 60%)",
+      "radial-gradient(circle at 88% 28%, rgba(251, 191, 36, 0.28) 0%, rgba(251, 191, 36, 0) 60%), radial-gradient(circle at 12% 110%, rgba(253, 230, 138, 0.22) 0%, rgba(253, 230, 138, 0) 60%)",
+    patternSize: "200% 200%",
+    patternPosition: "120% 70%",
+    patternRepeat: "no-repeat",
     deltaBg: "rgba(251, 191, 36, 0.18)",
     deltaColor: "#b45309",
-    patternSize: "200% 200%",
-    patternPosition: "120% 60%",
   },
 };
 
@@ -982,13 +1126,23 @@ function HighlightStatCard({
   footer,
 }) {
   const accentStyles = cardAccentMap[accent] ?? cardAccentMap.blue;
-  const backgroundLayers = [
-    accentStyles.overlay,
-    accentStyles.pattern,
-  ].filter(Boolean);
+  const overlayLayer =
+    accentStyles.overlay ||
+    accentStyles.gradient ||
+    "linear-gradient(135deg, rgba(248,250,252,0.95), rgba(226,232,240,0.85))";
+  const patternLayer = accentStyles.pattern
+    ? accentStyles.pattern
+    : accentStyles.spot
+    ? `radial-gradient(circle at 90% 25%, ${accentStyles.spot} 0%, rgba(255,255,255,0) 60%)`
+    : null;
+  const backgroundLayers = [overlayLayer, patternLayer].filter(Boolean);
   const backgroundImage = backgroundLayers.join(", ");
+  const overlayRepeat = "no-repeat";
+  const patternRepeat = accentStyles.patternRepeat || "no-repeat";
   const backgroundRepeat =
-    backgroundLayers.length > 1 ? "no-repeat, no-repeat" : "no-repeat";
+    backgroundLayers.length > 1
+      ? `${overlayRepeat}, ${patternRepeat}`
+      : overlayRepeat;
   const backgroundSize =
     backgroundLayers.length > 1
       ? `100% 100%, ${accentStyles.patternSize || "180% 180%"}`
@@ -1062,13 +1216,23 @@ function HighlightStatCard({
 
 function HighlightStatCardSkeleton({ accent = "blue" }) {
   const accentStyles = cardAccentMap[accent] ?? cardAccentMap.blue;
-  const backgroundLayers = [
-    accentStyles.overlay,
-    accentStyles.pattern,
-  ].filter(Boolean);
+  const overlayLayer =
+    accentStyles.overlay ||
+    accentStyles.gradient ||
+    "linear-gradient(135deg, rgba(248,250,252,0.95), rgba(226,232,240,0.85))";
+  const patternLayer = accentStyles.pattern
+    ? accentStyles.pattern
+    : accentStyles.spot
+    ? `radial-gradient(circle at 90% 25%, ${accentStyles.spot} 0%, rgba(255,255,255,0) 60%)`
+    : null;
+  const backgroundLayers = [overlayLayer, patternLayer].filter(Boolean);
   const backgroundImage = backgroundLayers.join(", ");
+  const overlayRepeat = "no-repeat";
+  const patternRepeat = accentStyles.patternRepeat || "no-repeat";
   const backgroundRepeat =
-    backgroundLayers.length > 1 ? "no-repeat, no-repeat" : "no-repeat";
+    backgroundLayers.length > 1
+      ? `${overlayRepeat}, ${patternRepeat}`
+      : overlayRepeat;
   const backgroundSize =
     backgroundLayers.length > 1
       ? `100% 100%, ${accentStyles.patternSize || "180% 180%"}`
@@ -2158,11 +2322,16 @@ const Dashboard = () => {
     ? formatPeriodRange(summaryData.resolvedRange)
     : null;
 
-  const buildSubtitle = (valueLabel) => {
-    if (valueLabel && previousPeriodLabel) {
-      return `${valueLabel} | ${previousPeriodLabel}`;
+  const buildPreviousLine = (valueLabel) => {
+    if (!valueLabel && !previousPeriodLabel) return undefined;
+    const pieces = [];
+    if (valueLabel) {
+      pieces.push(valueLabel);
     }
-    return valueLabel || previousPeriodLabel || undefined;
+    if (previousPeriodLabel) {
+      pieces.push(previousPeriodLabel);
+    }
+    return `Previous: ${pieces.join(" / ")}`;
   };
 
   const revenueValueDisplay =
@@ -2224,19 +2393,19 @@ const Dashboard = () => {
           2
         )}%`;
 
-  const revenueSubtitle = buildSubtitle(
+  const revenueSubtitle = buildPreviousLine(
     previousRevenue != null
-      ? `Prev ${summaryCompactCurrencyFormatter.format(previousRevenue)}`
+      ? summaryCompactCurrencyFormatter.format(previousRevenue)
       : null
   );
-  const bookingsSubtitle = buildSubtitle(
+  const bookingsSubtitle = buildPreviousLine(
     previousBookings != null
-      ? `Prev ${numberFormatter.format(previousBookings)}`
+      ? numberFormatter.format(previousBookings)
       : null
   );
-  const averageBookingValueSubtitle = buildSubtitle(
+  const averageBookingValueSubtitle = buildPreviousLine(
     previousAverageBookingValue != null
-      ? `Prev ${summaryCurrencyFormatter.format(previousAverageBookingValue)}`
+      ? summaryCurrencyFormatter.format(previousAverageBookingValue)
       : null
   );
 
@@ -2310,153 +2479,110 @@ const Dashboard = () => {
 
   const primaryPeriodLabel = resolvedRangeLabel || selectedRangeLabel;
 
+  const makeInfoBadge = (label, icon, colorScheme = "gray") => (
+    <Badge
+      px={2.5}
+      py={0.5}
+      borderRadius="full"
+      colorScheme={colorScheme}
+      variant="subtle"
+      display="inline-flex"
+      alignItems="center"
+      gap={1}
+      textTransform="none"
+    >
+      {icon ? <Icon as={icon} boxSize="10px" /> : null}
+      <Text fontSize="xs" fontWeight="semibold" color="gray.700">
+        {label}
+      </Text>
+    </Badge>
+  );
+
+  const previousComparisonHint = previousPeriodLabel
+    ? "Compared to previous window"
+    : null;
+
   const metricCards = [
     {
       label: "Annual Revenue",
+      badge: primaryPeriodLabel || "Current window",
+      badgeColorScheme: "blue",
+      badgeIcon: FiCalendar,
       value: revenueValueDisplay,
       delta: revenueDeltaLabel,
       deltaType: revenueDeltaType,
       icon: FiTrendingUp,
       subtitle: revenueSubtitle,
+      description: `Gross collections in ${resolvedCurrency}.`,
+      deltaCaption: previousComparisonHint,
+      meta: (
+        <HStack spacing={2} flexWrap="wrap">
+          {makeInfoBadge("Paid bookings", FiCreditCard, "blue")}
+          {resolvedCurrency
+            ? makeInfoBadge(resolvedCurrency, FiDollarSign, "gray")
+            : null}
+        </HStack>
+      ),
       tooltip: `Total confirmed rental revenue in ${resolvedCurrency} for the selected window.`,
-      customContent: (
-        <Stack spacing={2}>
-          <Heading size="lg" color="gray.900">
-            {revenueValueDisplay}
-          </Heading>
-          <Text fontSize="sm" color="gray.600">
-            Revenue recognised{" "}
-            {primaryPeriodLabel
-              ? `for ${primaryPeriodLabel}`
-              : "during this period"}
-            .
-          </Text>
-        </Stack>
-      ),
-      footer: (
-        <Flex
-          align="center"
-          justify="space-between"
-          fontSize="xs"
-          color="gray.500"
-        >
-          <HStack spacing={1.5}>
-            <Icon as={FiDollarSign} boxSize="12px" />
-            <Text fontWeight="medium">{resolvedCurrency}</Text>
-          </HStack>
-          <Text>Using confirmed payments</Text>
-        </Flex>
-      ),
-      accent: {
-        gradient:
-          "linear(to-br, rgba(37, 99, 235, 0.18), rgba(59, 130, 246, 0.05))",
-        spot: "rgba(59, 130, 246, 0.45)",
-        iconBg: "rgba(37, 99, 235, 0.15)",
-        iconColor: "#1d4ed8",
-        border: "rgba(37, 99, 235, 0.24)",
-        bar: "linear(to-r, rgba(37, 99, 235, 0.7), rgba(59, 130, 246, 0))",
-      },
+      footer: "Includes confirmed payments only.",
+      accent: "blue",
     },
     {
       label: "Bookings YTD",
+      badge: primaryPeriodLabel || "Current window",
+      badgeColorScheme: "purple",
+      badgeIcon: FiCheckCircle,
       value: bookingsValueDisplay,
       delta: bookingsDeltaLabel,
       deltaType: bookingsDeltaType,
       icon: FiCalendar,
       subtitle: bookingsSubtitle,
+      description: "Completed and live trips across the selected companies.",
+      deltaCaption: previousComparisonHint,
+      meta: (
+        <HStack spacing={2} flexWrap="wrap">
+          {makeInfoBadge("Live & completed", FiCheckCircle, "purple")}
+          {makeInfoBadge("Tenant-wide scope", FiUser, "gray")}
+        </HStack>
+      ),
       tooltip:
         "Count of confirmed bookings captured year-to-date for your active company.",
-      customContent: (
-        <Stack spacing={2}>
-          <Heading size="lg" color="gray.900">
-            {bookingsValueDisplay}
-          </Heading>
-          <Text fontSize="sm" color="gray.600">
-            Confirmed trips{" "}
-            {primaryPeriodLabel
-              ? `logged through ${primaryPeriodLabel}`
-              : "for the selected range"}
-            .
-          </Text>
-        </Stack>
-      ),
-      footer: (
-        <Flex
-          align="center"
-          justify="space-between"
-          fontSize="xs"
-          color="gray.500"
-        >
-          <HStack spacing={1.5}>
-            <Icon as={FiCalendar} boxSize="12px" />
-            <Text fontWeight="medium">Live & completed</Text>
-          </HStack>
-          {previousPeriodLabel ? (
-            <Text>{previousPeriodLabel}</Text>
-          ) : (
-            <Text>Rolling total</Text>
-          )}
-        </Flex>
-      ),
-      accent: {
-        gradient:
-          "linear(to-br, rgba(109, 40, 217, 0.18), rgba(124, 58, 237, 0.05))",
-        spot: "rgba(124, 58, 237, 0.42)",
-        iconBg: "rgba(124, 58, 237, 0.14)",
-        iconColor: "#6d28d9",
-        border: "rgba(124, 58, 237, 0.24)",
-        bar: "linear(to-r, rgba(124, 58, 237, 0.7), rgba(244, 114, 182, 0))",
-      },
+      footer: "Includes live and completed booking statuses.",
+      accent: "purple",
     },
     {
       label: "Avg Booking Value",
+      badge: primaryPeriodLabel || "Current window",
+      badgeColorScheme: "green",
+      badgeIcon: FiCreditCard,
       value: averageBookingValueDisplay,
       delta: averageBookingValueDeltaLabel,
       deltaType: averageValueDeltaType,
       icon: FiCreditCard,
       subtitle: averageBookingValueSubtitle,
+      description: `Average revenue per completed booking in ${resolvedCurrency}.`,
+      deltaCaption: previousComparisonHint,
+      meta: (
+        <HStack spacing={2} flexWrap="wrap">
+          {makeInfoBadge("Net of discounts", FiCreditCard, "green")}
+          {resolvedCurrency
+            ? makeInfoBadge(resolvedCurrency, FiDollarSign, "gray")
+            : null}
+        </HStack>
+      ),
       tooltip: `Average amount collected per completed booking in ${resolvedCurrency}.`,
-      customContent: (
-        <Stack spacing={2}>
-          <Heading size="lg" color="gray.900">
-            {averageBookingValueDisplay}
-          </Heading>
-          <Text fontSize="sm" color="gray.600">
-            Typical net revenue per booking{" "}
-            {primaryPeriodLabel ? `for ${primaryPeriodLabel}` : "this period"}.
-          </Text>
-        </Stack>
-      ),
-      footer: (
-        <Flex
-          align="center"
-          justify="space-between"
-          fontSize="xs"
-          color="gray.500"
-        >
-          <HStack spacing={1.5}>
-            <Icon as={FiCreditCard} boxSize="12px" />
-            <Text fontWeight="medium">Net of discounts</Text>
-          </HStack>
-          <Text>{resolvedCurrency}</Text>
-        </Flex>
-      ),
-      accent: {
-        gradient:
-          "linear(to-br, rgba(13, 148, 136, 0.18), rgba(16, 185, 129, 0.06))",
-        spot: "rgba(45, 212, 191, 0.4)",
-        iconBg: "rgba(16, 185, 129, 0.16)",
-        iconColor: "#0f766e",
-        border: "rgba(13, 148, 136, 0.24)",
-        bar: "linear(to-r, rgba(13, 148, 136, 0.7), rgba(45, 212, 191, 0))",
-      },
+      footer: "Net of discounts and adjustments.",
+      accent: "mint",
     },
     {
       label: "Fleet Utilization",
+      badge: utilizationAsOfLabel ? `As of ${utilizationAsOfLabel}` : "Live snapshot",
+      badgeColorScheme: "orange",
+      badgeIcon: FiClock,
       value: fleetPercentDisplay,
       delta: utilizationDeltaLabel,
       deltaType: utilizationDeltaType,
-      icon: null,
+      icon: BsSpeedometer2,
       subtitle: utilizationSubtitle,
       tooltip: utilizationAsOfLabel
         ? `Share of units on rent as of ${utilizationAsOfLabel}.`
@@ -2479,7 +2605,7 @@ const Dashboard = () => {
               </CircularProgressLabel>
             ) : null}
           </CircularProgress>
-          <Stack spacing={1}>
+          <Stack spacing={2}>
             <Heading size="md" color="gray.900">
               {fleetPercent != null
                 ? `${fleetPercent}% utilized`
@@ -2495,6 +2621,44 @@ const Dashboard = () => {
             <Text fontSize="xs" color="gray.500">
               {utilizationNarrative}
             </Text>
+            {utilizationDeltaLabel ? (
+              <Badge
+                px={2}
+                py={0.5}
+                borderRadius="full"
+                variant="subtle"
+                colorScheme={
+                  utilizationDeltaType === "increase"
+                    ? "green"
+                    : utilizationDeltaType === "decrease"
+                    ? "red"
+                    : "gray"
+                }
+                display="inline-flex"
+                alignItems="center"
+                gap={1}
+                textTransform="none"
+              >
+                <Icon
+                  as={
+                    utilizationDeltaType === "increase"
+                      ? FiTrendingUp
+                      : utilizationDeltaType === "decrease"
+                      ? FiTrendingDown
+                      : FiActivity
+                  }
+                  boxSize="10px"
+                />
+                <Text fontSize="xs" fontWeight="semibold" color="gray.700">
+                  {utilizationDeltaLabel}
+                </Text>
+                {utilizationPreviousPeriodLabel ? (
+                  <Text fontSize="xs" color="gray.600">
+                    {`vs ${utilizationPreviousPeriodLabel}`}
+                  </Text>
+                ) : null}
+              </Badge>
+            ) : null}
             {utilizationError && !isUtilizationLoading ? (
               <Text fontSize="xs" color="red.500">
                 {utilizationError}
@@ -2507,6 +2671,31 @@ const Dashboard = () => {
             )}
           </Stack>
         </Flex>
+      ),
+      meta: (
+        <HStack spacing={2} flexWrap="wrap">
+          {activeRentals != null
+            ? makeInfoBadge(
+                `${numberFormatter.format(activeRentals)} active`,
+                FiActivity,
+                "orange"
+              )
+            : null}
+          {availableUnits != null
+            ? makeInfoBadge(
+                `${numberFormatter.format(availableUnits)} available`,
+                FiCheckCircle,
+                "green"
+              )
+            : null}
+          {unavailableUnits != null
+            ? makeInfoBadge(
+                `${numberFormatter.format(unavailableUnits)} unavailable`,
+                FiAlertTriangle,
+                "red"
+              )
+            : null}
+        </HStack>
       ),
       footer: (
         <Flex
@@ -2539,17 +2728,12 @@ const Dashboard = () => {
         </Flex>
       ),
       onDoubleClick: utilizationData ? onUtilizationModalOpen : undefined,
-      accent: {
-        gradient:
-          "linear(to-br, rgba(249, 115, 22, 0.18), rgba(245, 158, 11, 0.05))",
-        spot: "rgba(251, 191, 36, 0.48)",
-        iconBg: "rgba(251, 146, 60, 0.16)",
-        iconColor: "#b45309",
-        border: "rgba(251, 146, 60, 0.24)",
-        bar: "linear(to-r, rgba(251, 146, 60, 0.7), rgba(253, 224, 71, 0))",
-      },
+      accent: "amber",
     },
   ];
+
+  const heroCardSkeletonAccents = ["blue", "purple", "mint", "amber"];
+  const isHeroCardsLoading = isSummaryLoading && !summaryData;
 
   return (
     <Box
@@ -2628,9 +2812,16 @@ const Dashboard = () => {
         ) : null}
 
         <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} spacing={5}>
-          {metricCards.map((card) => (
-            <StatCard key={card.label} {...card} />
-          ))}
+          {isHeroCardsLoading
+            ? heroCardSkeletonAccents.map((accent, index) => (
+                <StatCardSkeleton
+                  key={`stat-card-skeleton-${accent}-${index}`}
+                  accent={accent}
+                />
+              ))
+            : metricCards.map((card) => (
+                <StatCard key={card.label} {...card} />
+              ))}
         </SimpleGrid>
 
         <Grid
@@ -3313,4 +3504,6 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
 
