@@ -81,6 +81,8 @@ import { fetchDashboardHighlights } from "../../services/highlights";
 import { fetchFleetUtilization } from "../../services/fleetUtilization";
 import { fetchMonthlySales } from "../../services/monthlySales";
 import { fetchRevenueByClass } from "../../services/revenueByClass";
+import { fetchUpcomingBookings } from "../../services/upcomingBookings";
+import { fetchTopPerformers } from "../../services/topPerformers";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -158,72 +160,6 @@ function resolveSeriesYearLabel(series) {
   return startYear || endYear ? String(startYear || endYear) : null;
 }
 
-const topUnitsData = [
-  {
-    name: "Range Rover Sport SE",
-    plate: "NDX-9182",
-    revenue: 12800,
-    occupancy: 94,
-  },
-  {
-    name: "Toyota Alphard Executive",
-    plate: "TRV-4221",
-    revenue: 11250,
-    occupancy: 88,
-  },
-  {
-    name: "BMW 530e Hybrid",
-    plate: "LUX-1403",
-    revenue: 9850,
-    occupancy: 86,
-  },
-  {
-    name: "Ford Expedition Max",
-    plate: "VAN-9320",
-    revenue: 9420,
-    occupancy: 82,
-  },
-];
-
-const upcomingBookingsData = [
-  {
-    id: "BK-2389",
-    guest: "Alyssa Cortez",
-    date: "Oct 14, 10:30 AM",
-    unit: "Range Rover Sport SE",
-    status: "Confirmed",
-    value: 780,
-    pickup: "HQ Garage, Makati",
-  },
-  {
-    id: "BK-2390",
-    guest: "Luis Ramirez",
-    date: "Oct 15, 8:00 AM",
-    unit: "BMW 530e Hybrid",
-    status: "Pending",
-    value: 540,
-    pickup: "Airport Terminal 3",
-  },
-  {
-    id: "BK-2391",
-    guest: "Jenna Young",
-    date: "Oct 16, 6:45 AM",
-    unit: "Toyota Alphard Executive",
-    status: "Confirmed",
-    value: 690,
-    pickup: "HQ Garage, Makati",
-  },
-  {
-    id: "BK-2392",
-    guest: "Eliot Navarro",
-    date: "Oct 16, 3:00 PM",
-    unit: "Ford Expedition Max",
-    status: "Maintenance",
-    value: 0,
-    pickup: "Service Bay 4",
-  },
-];
-
 const activityTimelineData = [
   {
     time: "10:24 AM",
@@ -263,8 +199,12 @@ const chartGradientId = "tenant-dashboard-revenue-gradient";
 
 const statusColorMap = {
   Confirmed: "green",
+  Completed: "green",
   Pending: "yellow",
+  Reserved: "blue",
+  Scheduled: "blue",
   Maintenance: "purple",
+  Cancelled: "red",
 };
 
 const deltaColorMap = {
@@ -1356,9 +1296,13 @@ function RevenueByClassSkeleton({ rows = 5 }) {
 }
 
 const statusVariantMap = {
-  Confirmed: "subtle",
+  Confirmed: "solid",
+  Completed: "solid",
   Pending: "subtle",
+  Reserved: "subtle",
+  Scheduled: "subtle",
   Maintenance: "outline",
+  Cancelled: "outline",
 };
 
 const bookingAccentMap = {
@@ -1368,17 +1312,41 @@ const bookingAccentMap = {
     border: "rgba(37, 99, 235, 0.28)",
     highlight: "blue.500",
   },
+  Reserved: {
+    gradient:
+      "linear(to-br, rgba(14, 116, 144, 0.12), rgba(8, 145, 178, 0.05))",
+    border: "rgba(8, 145, 178, 0.28)",
+    highlight: "teal.500",
+  },
   Pending: {
     gradient:
       "linear(to-br, rgba(234, 179, 8, 0.14), rgba(250, 204, 21, 0.05))",
     border: "rgba(234, 179, 8, 0.32)",
     highlight: "yellow.500",
   },
+  Scheduled: {
+    gradient:
+      "linear(to-br, rgba(30, 64, 175, 0.1), rgba(59, 130, 246, 0.04))",
+    border: "rgba(59, 130, 246, 0.22)",
+    highlight: "blue.400",
+  },
   Maintenance: {
     gradient:
       "linear(to-br, rgba(147, 51, 234, 0.16), rgba(168, 85, 247, 0.05))",
     border: "rgba(147, 51, 234, 0.3)",
     highlight: "purple.500",
+  },
+  Completed: {
+    gradient:
+      "linear(to-br, rgba(34, 197, 94, 0.14), rgba(16, 185, 129, 0.05))",
+    border: "rgba(34, 197, 94, 0.28)",
+    highlight: "green.500",
+  },
+  Cancelled: {
+    gradient:
+      "linear(to-br, rgba(248, 113, 113, 0.16), rgba(248, 113, 113, 0.05))",
+    border: "rgba(248, 113, 113, 0.28)",
+    highlight: "red.500",
   },
   default: {
     gradient:
@@ -1389,105 +1357,215 @@ const bookingAccentMap = {
 };
 
 function UpcomingBookings({ items }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return (
+      <Box
+        borderRadius="xl"
+        borderWidth="1px"
+        borderColor="gray.100"
+        p={6}
+        textAlign="center"
+        color="gray.500"
+        bg="gray.50"
+      >
+        No upcoming bookings scheduled.
+      </Box>
+    );
+  }
+
+  const formatCurrencyValue = (value, currencyCode) => {
+    if (value === null || value === undefined) return null;
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currencyCode || "USD",
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      return currencyFormatter.format(value);
+    }
+  };
+
+  const InfoCell = ({ icon, label, value, accentColor }) => (
+    <Stack
+      spacing={1.5}
+      p={3}
+      borderRadius="lg"
+      borderWidth="1px"
+      borderColor="rgba(148, 163, 184, 0.18)"
+      bg="whiteAlpha.700"
+      backdropFilter="blur(4px)"
+      minH="82px"
+    >
+      <HStack spacing={1.5} color="gray.500">
+        <Icon as={icon} boxSize="12px" color={accentColor || "gray.400"} />
+        <Text fontSize="xs" fontWeight="semibold" textTransform="uppercase">
+          {label}
+        </Text>
+      </HStack>
+      <Text fontSize="sm" fontWeight="semibold" color="gray.800">
+        {value || "--"}
+      </Text>
+    </Stack>
+  );
+
   return (
     <Stack spacing={4}>
-      {items.map((item) => {
+      {items.map((item, index) => {
         const accent =
           bookingAccentMap[item.status] || bookingAccentMap.default;
+        const statusColor = statusColorMap[item.status] || "gray";
+        const formattedValue =
+          typeof item.value === "number"
+            ? formatCurrencyValue(item.value, item.currency)
+            : "Awaiting quote";
+        const routeValue =
+          item.pickup && item.dropoff
+            ? `${item.pickup} → ${item.dropoff}`
+            : item.pickup || item.dropoff || null;
+        const dropoffSummary = item.dropoffLabel
+          ? `Drop-off ${item.dropoffLabel}${
+              item.dropoff ? ` @ ${item.dropoff}` : ""
+            }`
+          : null;
+        const actionText =
+          item.instructions || dropoffSummary || "Prepare concierge handoff";
+
         return (
           <Box
-            key={item.id}
+            key={`${item.id}-${index}`}
+            position="relative"
             borderRadius="xl"
             borderWidth="1px"
             borderColor={accent.border}
             bgGradient={accent.gradient}
             boxShadow="sm"
             p={{ base: 4, md: 5 }}
+            overflow="hidden"
             transition="all 0.25s ease"
             _hover={{
               boxShadow: "lg",
-              transform: "translateY(-2px)",
+              transform: "translateY(-3px)",
             }}
           >
-            <Stack spacing={3}>
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              bottom={0}
+              width="6px"
+              bgGradient={`linear(to-b, ${accent.highlight}, transparent)`}
+            />
+
+            <Stack spacing={4} position="relative" zIndex={1}>
               <Flex
-                direction={{ base: "column", sm: "row" }}
+                direction={{ base: "column", md: "row" }}
                 justify="space-between"
-                align={{ base: "flex-start", sm: "center" }}
-                gap={3}
+                align={{ base: "flex-start", md: "center" }}
+                gap={4}
               >
                 <Stack spacing={2}>
-                  <HStack spacing={2}>
+                  <HStack spacing={2} flexWrap="wrap">
                     <Tag
                       size="sm"
-                      variant="subtle"
+                      variant="solid"
                       colorScheme="gray"
                       borderRadius="full"
                     >
                       {item.id}
                     </Tag>
                     <Badge
-                      colorScheme={statusColorMap[item.status] || "gray"}
+                      colorScheme={statusColor}
                       variant={statusVariantMap[item.status] || "subtle"}
                       borderRadius="full"
+                      px={3}
+                      py={0.5}
                     >
-                      {item.status}
+                      {item.status || "Scheduled"}
                     </Badge>
                   </HStack>
                   <Heading size="sm" color="gray.900">
-                    {item.guest}
+                    {item.guest || "Unassigned guest"}
                   </Heading>
                   <Text fontSize="sm" color="gray.600">
-                    {item.unit}
+                    {item.unit || "Vehicle to be confirmed"}
                   </Text>
+                  {item.guestPhone ? (
+                    <Text fontSize="xs" color="gray.500">
+                      {item.guestPhone}
+                    </Text>
+                  ) : null}
                 </Stack>
+
                 <Stack
-                  spacing={2}
-                  align={{ base: "flex-start", sm: "flex-end" }}
+                  spacing={1.5}
+                  align={{ base: "flex-start", md: "flex-end" }}
+                  bg="whiteAlpha.700"
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor="rgba(148, 163, 184, 0.18)"
+                  px={3}
+                  py={2}
+                  minW={{ base: "full", md: "220px" }}
                 >
-                  <Text fontSize="xs" color="gray.500">
-                    Est. value
-                  </Text>
-                  <Heading size="sm" color="gray.900">
-                    {item.value ? currencyFormatter.format(item.value) : "—"}
-                  </Heading>
-                  <HStack fontSize="xs" color="gray.500">
-                    <Icon as={FiMapPin} />
-                    <Text>{item.pickup}</Text>
+                  <HStack spacing={2} color="gray.500" fontSize="xs">
+                    <Icon as={FiClock} />
+                    <Text fontWeight="semibold" textTransform="uppercase">
+                      Pickup window
+                    </Text>
                   </HStack>
+                  <Text fontWeight="semibold" color="gray.800">
+                    {item.date || "TBD"}
+                  </Text>
+                  {item.pickup ? (
+                    <HStack spacing={2} color="gray.500" fontSize="xs">
+                      <Icon as={FiMapPin} />
+                      <Text>{item.pickup}</Text>
+                    </HStack>
+                  ) : null}
                 </Stack>
               </Flex>
 
-              <Divider borderColor="rgba(148, 163, 184, 0.35)" />
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
+                <InfoCell
+                  icon={FiClock}
+                  label="Pickup"
+                  value={item.date || item.pickupTime}
+                  accentColor={accent.highlight}
+                />
+                <InfoCell
+                  icon={FiMapPin}
+                  label="Route"
+                  value={routeValue}
+                  accentColor={accent.highlight}
+                />
+                <InfoCell
+                  icon={FiDollarSign}
+                  label="Est. value"
+                  value={formattedValue}
+                  accentColor={accent.highlight}
+                />
+              </SimpleGrid>
 
               <Flex
-                direction={{ base: "column", sm: "row" }}
                 justify="space-between"
                 align={{ base: "flex-start", sm: "center" }}
+                direction={{ base: "column", sm: "row" }}
                 gap={3}
                 fontSize="sm"
-                color="gray.600"
               >
-                <HStack spacing={2}>
-                  <Icon as={FiClock} />
-                  <Text>{item.date}</Text>
-                </HStack>
-                <HStack spacing={2}>
-                  <Icon as={FiDollarSign} />
-                  <Text>
-                    {item.value
-                      ? currencyFormatter.format(item.value)
-                      : "Awaiting quote"}
-                  </Text>
+                <HStack spacing={2} color="gray.500">
+                  <Icon as={FiArrowRight} color={accent.highlight} />
+                  <Text>{actionText}</Text>
                 </HStack>
                 <HStack
-                  spacing={1}
-                  color="blue.600"
+                  spacing={1.5}
+                  color={accent.highlight}
                   fontWeight="semibold"
                   cursor="pointer"
                 >
+                  <Text fontSize="sm">Open booking</Text>
                   <Icon as={FiArrowRight} />
-                  <Text>Prepare handoff</Text>
                 </HStack>
               </Flex>
             </Stack>
@@ -1498,8 +1576,32 @@ function UpcomingBookings({ items }) {
   );
 }
 
-function TopPerformers({ items }) {
-  if (!items?.length) {
+const performerCardThemes = [
+  {
+    gradient:
+      "linear-gradient(130deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.05))",
+    border: "rgba(37, 99, 235, 0.22)",
+    badge: "blue",
+    shadow: "0 18px 35px -22px rgba(37, 99, 235, 0.55)",
+  },
+  {
+    gradient:
+      "linear-gradient(130deg, rgba(109, 40, 217, 0.12), rgba(147, 51, 234, 0.05))",
+    border: "rgba(147, 51, 234, 0.22)",
+    badge: "purple",
+    shadow: "0 18px 35px -22px rgba(147, 51, 234, 0.55)",
+  },
+  {
+    gradient:
+      "linear-gradient(130deg, rgba(13, 148, 136, 0.12), rgba(16, 185, 129, 0.05))",
+    border: "rgba(13, 148, 136, 0.22)",
+    badge: "teal",
+    shadow: "0 18px 35px -22px rgba(13, 148, 136, 0.55)",
+  },
+];
+
+function TopPerformers({ items, currency }) {
+  if (!Array.isArray(items) || items.length === 0) {
     return (
       <Box
         borderRadius="xl"
@@ -1515,70 +1617,221 @@ function TopPerformers({ items }) {
     );
   }
 
-  const maxRevenue = Math.max(...items.map((item) => item.revenue));
+  const maxRevenue = Math.max(...items.map((item) => item.revenue || 0)) || 0;
+
+  const formatCurrencyValue = (value) => {
+    if (value === null || value === undefined) return null;
+    const code = currency || "USD";
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: code,
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      return currencyFormatter.format(value);
+    }
+  };
 
   return (
     <Stack spacing={4}>
-      {items.map((unit) => {
-        const revenueShare = Math.round((unit.revenue / maxRevenue) * 100);
+      {items.map((unit, index) => {
+        const theme = performerCardThemes[index % performerCardThemes.length];
+        const revenue = safeNumber(unit.revenue) ?? 0;
+        const bookings = safeNumber(unit.bookings) ?? null;
+        const occupancyRate = safeNumber(unit.occupancyRate);
+        const utilizationRate = safeNumber(unit.utilizationRate);
+        const occupancyPercent =
+          occupancyRate != null
+            ? Math.round(
+                Math.min(
+                  Math.max(
+                    occupancyRate <= 1 ? occupancyRate * 100 : occupancyRate,
+                    0
+                  ),
+                  100
+                )
+              )
+            : null;
+        const utilizationPercent =
+          utilizationRate != null
+            ? Math.round(
+                Math.min(
+                  Math.max(
+                    utilizationRate <= 1
+                      ? utilizationRate * 100
+                      : utilizationRate,
+                    0
+                  ),
+                  100
+                )
+              )
+            : null;
+        const revenueShare =
+          maxRevenue > 0 ? Math.round((revenue / maxRevenue) * 100) : 0;
+        const avgDailyRate = safeNumber(unit.avgDailyRate);
 
         return (
           <Box
-            key={unit.plate}
+            key={`${unit.plate || unit.name}-${index}`}
+            position="relative"
             borderRadius="xl"
             borderWidth="1px"
-            borderColor="rgba(37, 99, 235, 0.12)"
-            bg="rgba(37, 99, 235, 0.05)"
+            borderColor={theme.border}
+            bgGradient={theme.gradient}
+            boxShadow={theme.shadow}
             px={4}
-            py={4}
+            py={5}
+            overflow="hidden"
           >
-            <Stack spacing={3}>
-              <Flex justify="space-between" align="center" gap={4} wrap="wrap">
-                <HStack spacing={3}>
+            <Box
+              position="absolute"
+              top="-60px"
+              right="-60px"
+              boxSize="160px"
+              bg="rgba(255,255,255,0.18)"
+              borderRadius="full"
+              filter="blur(0.5px)"
+            />
+
+            <Stack spacing={4} position="relative" zIndex={1}>
+              <Flex
+                justify="space-between"
+                align={{ base: "flex-start", md: "center" }}
+                direction={{ base: "column", md: "row" }}
+                gap={4}
+              >
+                <HStack spacing={3} align="flex-start">
                   <Avatar
                     name={unit.name}
-                    size="sm"
+                    size="md"
                     color="white"
-                    bg="blue.500"
+                    bg={theme.badge + ".500"}
+                    src={unit.imageUrl || undefined}
                   />
-                  <Stack spacing={0}>
-                    <Text fontWeight="semibold" color="gray.800">
-                      {unit.name}
+                  <Stack spacing={1}>
+                    <HStack spacing={2}>
+                      <Badge
+                        colorScheme={theme.badge}
+                        borderRadius="full"
+                        px={3}
+                        py={0.5}
+                      >
+                        #{unit.rank || index + 1}
+                      </Badge>
+                      {unit.class ? (
+                        <Tag
+                          size="sm"
+                          variant="subtle"
+                          colorScheme="gray"
+                          borderRadius="full"
+                        >
+                          {unit.class}
+                        </Tag>
+                      ) : null}
+                    </HStack>
+                    <Text fontWeight="semibold" color="gray.900" fontSize="md">
+                      {unit.name || "Unnamed unit"}
                     </Text>
                     <Text fontSize="xs" color="gray.500">
-                      {unit.plate}
+                      {unit.plate || "Plate pending"}
                     </Text>
                   </Stack>
                 </HStack>
 
-                <Stack spacing={0} align="flex-end">
-                  <Text fontSize="xs" color="gray.500">
+                <Stack spacing={1} align={{ base: "flex-start", md: "flex-end" }}>
+                  <Text fontSize="xs" color="gray.500" textTransform="uppercase">
                     Revenue
                   </Text>
                   <Heading size="sm" color="gray.900">
-                    {currencyFormatter.format(unit.revenue)}
+                    {formatCurrencyValue(revenue) ?? "--"}
                   </Heading>
+                  <Text fontSize="xs" color="gray.500">
+                    {revenueShare}% of leader revenue
+                  </Text>
                 </Stack>
               </Flex>
 
-              <Progress
-                value={unit.occupancy}
-                colorScheme="blue"
-                size="sm"
-                borderRadius="full"
-                bg="rgba(37, 99, 235, 0.12)"
-              />
+              <Stack spacing={2}>
+                <Flex justify="space-between" fontSize="xs" color="gray.500">
+                  <HStack spacing={1}>
+                    <Icon as={FiActivity} />
+                    <Text>Occupancy</Text>
+                  </HStack>
+                  <Text fontWeight="semibold" color="gray.700">
+                    {occupancyPercent != null ? `${occupancyPercent}%` : "--"}
+                  </Text>
+                </Flex>
+                <Progress
+                  value={occupancyPercent ?? 0}
+                  colorScheme={theme.badge}
+                  size="sm"
+                  borderRadius="full"
+                  bg="whiteAlpha.700"
+                />
+              </Stack>
 
-              <Flex justify="space-between" fontSize="xs" color="gray.600">
-                <HStack spacing={1}>
-                  <Icon as={FiActivity} />
-                  <Text>{unit.occupancy}% occupancy</Text>
-                </HStack>
-                <HStack spacing={1}>
-                  <Icon as={FiTrendingUp} />
-                  <Text>{revenueShare}% of top-unit revenue</Text>
-                </HStack>
-              </Flex>
+              <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3} fontSize="xs">
+                <Stack
+                  spacing={1}
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor="rgba(255,255,255,0.35)"
+                  bg="whiteAlpha.700"
+                  backdropFilter="blur(4px)"
+                  p={3}
+                >
+                  <Text fontWeight="semibold" color="gray.600">
+                    Revenue share
+                  </Text>
+                  <HStack spacing={1.5} color={theme.badge + ".600"}>
+                    <Icon as={FiTrendingUp} />
+                    <Text fontWeight="semibold">{revenueShare}%</Text>
+                  </HStack>
+                </Stack>
+                <Stack
+                  spacing={1}
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor="rgba(255,255,255,0.35)"
+                  bg="whiteAlpha.700"
+                  backdropFilter="blur(4px)"
+                  p={3}
+                >
+                  <Text fontWeight="semibold" color="gray.600">
+                    Utilisation
+                  </Text>
+                  <Text fontWeight="semibold" color="gray.800">
+                    {utilizationPercent != null ? `${utilizationPercent}%` : "--"}
+                  </Text>
+                  {occupancyPercent != null ? (
+                    <Text fontSize="xs" color="gray.500">
+                      {occupancyPercent}% occupancy
+                    </Text>
+                  ) : null}
+                </Stack>
+                <Stack
+                  spacing={1}
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor="rgba(255,255,255,0.35)"
+                  bg="whiteAlpha.700"
+                  backdropFilter="blur(4px)"
+                  p={3}
+                >
+                  <Text fontWeight="semibold" color="gray.600">
+                    Bookings
+                  </Text>
+                  <Text fontWeight="semibold" color="gray.800">
+                    {bookings != null ? bookings : "--"}
+                  </Text>
+                  {avgDailyRate != null ? (
+                    <Text fontSize="xs" color="gray.500">
+                      Avg rate {formatCurrencyValue(avgDailyRate) ?? "--"}
+                    </Text>
+                  ) : null}
+                </Stack>
+              </SimpleGrid>
             </Stack>
           </Box>
         );
@@ -1586,7 +1839,115 @@ function TopPerformers({ items }) {
     </Stack>
   );
 }
+function UpcomingBookingsSkeleton({ count = 3 }) {
+  return (
+    <Stack spacing={4}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Box
+          key={`upcoming-skeleton-${index}`}
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="gray.100"
+          bg="white"
+          p={{ base: 4, md: 5 }}
+        >
+          <Stack spacing={4}>
+            <Flex
+              justify="space-between"
+              align={{ base: "flex-start", md: "center" }}
+              direction={{ base: "column", md: "row" }}
+              gap={4}
+            >
+              <Stack spacing={2} width="full">
+                <Skeleton height="12px" width="80px" borderRadius="full" />
+                <Skeleton height="18px" width="160px" />
+                <Skeleton height="12px" width="120px" />
+              </Stack>
+              <Stack spacing={2} align="flex-end" width={{ base: "full", md: "auto" }}>
+                <Skeleton height="12px" width="100px" />
+                <Skeleton height="18px" width="140px" />
+              </Stack>
+            </Flex>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
+              {Array.from({ length: 3 }).map((__, cellIdx) => (
+                <Box
+                  key={`upcoming-skeleton-cell-${index}-${cellIdx}`}
+                  borderWidth="1px"
+                  borderColor="gray.100"
+                  borderRadius="lg"
+                  p={3}
+                >
+                  <Skeleton height="10px" width="50%" />
+                  <Skeleton height="12px" width="80%" mt={3} />
+                </Box>
+              ))}
+            </SimpleGrid>
+            <Flex justify="space-between" align="center" gap={3}>
+              <Skeleton height="12px" width="45%" />
+              <Skeleton height="12px" width="25%" />
+            </Flex>
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
 
+function TopPerformersSkeleton({ count = 3 }) {
+  return (
+    <Stack spacing={4}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Box
+          key={`performer-skeleton-${index}`}
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="gray.100"
+          bg="white"
+          px={4}
+          py={5}
+        >
+          <Stack spacing={4}>
+            <Flex
+              justify="space-between"
+              align={{ base: "flex-start", md: "center" }}
+              direction={{ base: "column", md: "row" }}
+              gap={4}
+            >
+              <HStack spacing={3} align="center">
+                <Skeleton boxSize="48px" borderRadius="full" />
+                <Stack spacing={2}>
+                  <Skeleton height="12px" width="60px" borderRadius="full" />
+                  <Skeleton height="16px" width="140px" />
+                  <Skeleton height="10px" width="80px" />
+                </Stack>
+              </HStack>
+              <Stack spacing={2} align="flex-end">
+                <Skeleton height="10px" width="70px" />
+                <Skeleton height="18px" width="120px" />
+                <Skeleton height="10px" width="90px" />
+              </Stack>
+            </Flex>
+            <Skeleton height="6px" borderRadius="full" />
+            <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3}>
+              {Array.from({ length: 3 }).map((__, cellIdx) => (
+                <Box
+                  key={`performer-skeleton-cell-${index}-${cellIdx}`}
+                  borderWidth="1px"
+                  borderColor="gray.100"
+                  borderRadius="lg"
+                  p={3}
+                >
+                  <Skeleton height="10px" width="60%" />
+                  <Skeleton height="12px" width="70%" mt={3} />
+                </Box>
+              ))}
+            </SimpleGrid>
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
+  );
+}
 function ActivityTimeline({ items }) {
   return (
     <Stack spacing={4}>
@@ -1663,6 +2024,16 @@ const Dashboard = () => {
   const [utilizationData, setUtilizationData] = useState(null);
   const [isUtilizationLoading, setIsUtilizationLoading] = useState(false);
   const [utilizationError, setUtilizationError] = useState(null);
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [upcomingWindow, setUpcomingWindow] = useState(null);
+  const [upcomingTotals, setUpcomingTotals] = useState(null);
+  const [isUpcomingBookingsLoading, setIsUpcomingBookingsLoading] =
+    useState(false);
+  const [upcomingBookingsError, setUpcomingBookingsError] = useState(null);
+  const [topPerformers, setTopPerformers] = useState([]);
+  const [topPerformersMeta, setTopPerformersMeta] = useState(null);
+  const [isTopPerformersLoading, setIsTopPerformersLoading] = useState(false);
+  const [topPerformersError, setTopPerformersError] = useState(null);
   const {
     isOpen: isComparisonOpen,
     onOpen: onComparisonOpen,
@@ -1678,6 +2049,42 @@ const Dashboard = () => {
     onOpen: onUtilizationModalOpen,
     onClose: onUtilizationModalClose,
   } = useDisclosure();
+
+const browserTimezone = useMemo(
+  () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  []
+);
+
+const formatCurrencyForDisplay = useCallback((value, code) => {
+  if (value === null || value === undefined) return null;
+  const currencyCode = code || "USD";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return currencyFormatter.format(value);
+  }
+}, []);
+
+const ensureDateOnly = useCallback((input) => {
+  if (!input) return null;
+  if (input instanceof Date && !Number.isNaN(input.valueOf())) {
+    return format(input, "yyyy-MM-dd");
+  }
+  try {
+    const parsed = parseISO(String(input));
+    if (parsed instanceof Date && !Number.isNaN(parsed.valueOf())) {
+      return format(parsed, "yyyy-MM-dd");
+    }
+  } catch {
+    // ignore parse failure
+  }
+  const str = String(input);
+  return str.length >= 10 ? str.slice(0, 10) : null;
+}, []);
 
   const selectedRangeLabel = useMemo(() => {
     if (datePreset === "custom") {
@@ -1765,6 +2172,16 @@ const Dashboard = () => {
     }
     return todayIso;
   }, [customRange.end, datePreset, summaryData?.resolvedRange?.end]);
+
+  const upcomingStartDate = useMemo(
+    () => ensureDateOnly(effectiveAsOf),
+    [ensureDateOnly, effectiveAsOf]
+  );
+
+  const topPerformersAsOfDate = useMemo(
+    () => ensureDateOnly(effectiveAsOf),
+    [ensureDateOnly, effectiveAsOf]
+  );
 
   useEffect(() => {
     if (!shouldFetchSummary) {
@@ -1997,6 +2414,92 @@ const Dashboard = () => {
       active = false;
     };
   }, [customRange.end, customRange.start, datePreset, shouldFetchSummary]);
+
+  useEffect(() => {
+    if (!upcomingStartDate) return;
+    let active = true;
+
+    async function loadUpcomingBookings() {
+      setIsUpcomingBookingsLoading(true);
+      try {
+        const response = await fetchUpcomingBookings({
+          startDate: upcomingStartDate,
+          limit: 6,
+          includeWaitlist: true,
+          timezone: browserTimezone,
+        });
+        if (!active) return;
+        setUpcomingBookings(response?.items ?? []);
+        setUpcomingWindow(response?.window ?? null);
+        setUpcomingTotals(response?.totals ?? null);
+        setUpcomingBookingsError(null);
+      } catch (error) {
+        if (!active) return;
+        setUpcomingBookings([]);
+        setUpcomingWindow(null);
+        setUpcomingTotals(null);
+        setUpcomingBookingsError(
+          error?.message || "Failed to load upcoming bookings."
+        );
+      } finally {
+        if (active) {
+          setIsUpcomingBookingsLoading(false);
+        }
+      }
+    }
+
+    loadUpcomingBookings();
+
+    return () => {
+      active = false;
+    };
+  }, [browserTimezone, upcomingStartDate]);
+
+  useEffect(() => {
+    if (!topPerformersAsOfDate) return;
+    let active = true;
+
+    async function loadTopPerformers() {
+      setIsTopPerformersLoading(true);
+      try {
+        const response = await fetchTopPerformers({
+          preset: "rolling_30",
+          metric: "revenue",
+          limit: 5,
+          includeTotals: true,
+          timezone: browserTimezone,
+          asOf: topPerformersAsOfDate,
+        });
+        if (!active) return;
+        setTopPerformers(response?.leaders ?? []);
+        setTopPerformersMeta({
+          currency: response?.currency ?? null,
+          range: response?.range ?? null,
+          totals: response?.totals ?? null,
+          metric: response?.metric ?? "revenue",
+          preset: response?.preset ?? "rolling_30",
+        });
+        setTopPerformersError(null);
+      } catch (error) {
+        if (!active) return;
+        setTopPerformers([]);
+        setTopPerformersMeta(null);
+        setTopPerformersError(
+          error?.message || "Failed to load top performers."
+        );
+      } finally {
+        if (active) {
+          setIsTopPerformersLoading(false);
+        }
+      }
+    }
+
+    loadTopPerformers();
+
+    return () => {
+      active = false;
+    };
+  }, [browserTimezone, topPerformersAsOfDate]);
 
   const resolvedCurrency = summaryData?.period?.currency || "PHP";
 
@@ -2463,6 +2966,127 @@ const Dashboard = () => {
       bookingDelta,
     };
   }, [monthlySalesTotals, salesChartData, monthlySalesPrevious]);
+
+  const upcomingWindowLabel = useMemo(() => {
+    if (!upcomingWindow?.start || !upcomingWindow?.end) return null;
+    try {
+      const start = format(parseISO(upcomingWindow.start), "MMM d");
+      const end = format(parseISO(upcomingWindow.end), "MMM d");
+      if (start === end) return start;
+      return `${start} - ${end}`;
+    } catch {
+      return null;
+    }
+  }, [upcomingWindow?.end, upcomingWindow?.start]);
+
+  const upcomingGeneratedAtLabel = useMemo(() => {
+    if (!upcomingWindow?.generated_at) return null;
+    try {
+      return format(parseISO(upcomingWindow.generated_at), "MMM d, yyyy h:mm a");
+    } catch {
+      return null;
+    }
+  }, [upcomingWindow?.generated_at]);
+
+  const upcomingBookingItems = useMemo(() => {
+    return (upcomingBookings || []).map((item, index) => {
+      const pickupAt = item?.pickup_at ? parseISO(item.pickup_at) : null;
+      const dropoffAt = item?.dropoff_at ? parseISO(item.dropoff_at) : null;
+      const pickupLabel = pickupAt
+        ? format(pickupAt, "MMM d, h:mm a")
+        : item?.pickup_at || null;
+      const dropoffLabel = dropoffAt
+        ? format(dropoffAt, "MMM d, h:mm a")
+        : item?.dropoff_at || null;
+      const amountTotal = safeNumber(item?.amount?.total);
+      const unitLabel = [item?.vehicle?.name, item?.vehicle?.plate_no]
+        .filter(Boolean)
+        .join(" • ");
+      return {
+        id: item?.booking_id || item?.id || `booking-${index}`,
+        status: item?.status || "Scheduled",
+        guest: item?.renter?.name || "Guest pending",
+        guestPhone: item?.renter?.phone || null,
+        unit: unitLabel || "Vehicle to be confirmed",
+        value: amountTotal,
+        currency: item?.amount?.currency || null,
+        pickup: item?.pickup_location || null,
+        pickupLabel,
+        dropoff: item?.dropoff_location || null,
+        dropoffLabel,
+        date: pickupLabel,
+        pickupTime: pickupLabel,
+        instructions: item?.notes || null,
+        raw: item,
+      };
+    });
+  }, [upcomingBookings]);
+
+  const topPerformersItems = useMemo(() => {
+    return (topPerformers || []).map((leader, index) => {
+      const metrics = leader?.metrics ?? {};
+      const trend = leader?.trend ?? {};
+      const revenue = safeNumber(metrics.revenue) ?? 0;
+      const bookings = safeNumber(metrics.bookings);
+      const occupancyRate = safeNumber(metrics.occupancy_rate);
+      const utilizationRate = safeNumber(metrics.utilization_rate);
+      return {
+        rank: index + 1,
+        name: leader?.name || "Unnamed unit",
+        plate: leader?.plate_no || "",
+        class: leader?.class || null,
+        imageUrl: leader?.image_url || null,
+        revenue,
+        bookings,
+        occupancyRate,
+        utilizationRate,
+        avgDailyRate: safeNumber(metrics.avg_daily_rate),
+        revenueChangePct: safeNumber(trend.revenue_change_pct),
+        occupancyChangePct: safeNumber(trend.occupancy_change_pct),
+        utilizationChangePct: safeNumber(trend.utilization_change_pct),
+      };
+    });
+  }, [topPerformers]);
+
+  const topPerformersRangeLabel = useMemo(() => {
+    const range = topPerformersMeta?.range;
+    if (!range?.start || !range?.end) return null;
+    try {
+      const start = format(parseISO(range.start), "MMM d");
+      const end = format(parseISO(range.end), "MMM d, yyyy");
+      return `${start} - ${end}`;
+    } catch {
+      return null;
+    }
+  }, [topPerformersMeta?.range]);
+
+  const topPerformersMetricLabel = useMemo(() => {
+    const metric = topPerformersMeta?.metric || "revenue";
+    switch (metric) {
+      case "occupancy":
+        return "Vehicles leading by occupancy";
+      case "utilization":
+        return "Vehicles leading by utilisation";
+      default:
+        return "Vehicles driving revenue";
+    }
+  }, [topPerformersMeta?.metric]);
+
+  const topPerformersTotalsRevenueLabel = useMemo(() => {
+    const total = safeNumber(topPerformersMeta?.totals?.leaders_revenue);
+    return total != null
+      ? formatCurrencyForDisplay(total, topPerformersMeta?.currency)
+      : null;
+  }, [
+    formatCurrencyForDisplay,
+    topPerformersMeta?.currency,
+    topPerformersMeta?.totals?.leaders_revenue,
+  ]);
+
+  const topPerformersShareLabel = useMemo(() => {
+    const share = safeNumber(topPerformersMeta?.totals?.leaders_share_pct);
+    return share != null ? `${share.toFixed(1)}%` : null;
+  }, [topPerformersMeta?.totals?.leaders_share_pct]);
 
   const fleetPercentValue = fleetPercent ?? 0;
   const utilizationNarrative =
@@ -3223,24 +3847,79 @@ const Dashboard = () => {
               p={{ base: 4, md: 5 }}
               h="100%"
             >
-              <Flex justify="space-between" align="center" mb={5}>
-                <Stack spacing={1}>
-                  <HStack spacing={2} color="gray.500">
-                    <Icon as={FiClock} />
-                    <Text fontSize="sm" fontWeight="medium">
-                      Next up
-                    </Text>
-                  </HStack>
-                  <Heading size="sm" color="gray.800">
-                    Upcoming booking schedule
-                  </Heading>
-                </Stack>
-                <Button size="xs" variant="outline">
-                  See calendar
-                </Button>
-              </Flex>
+              <Stack spacing={4}>
+                <Flex
+                  justify="space-between"
+                  align={{ base: "flex-start", md: "center" }}
+                  direction={{ base: "column", md: "row" }}
+                  gap={4}
+                >
+                  <Stack spacing={1} flex="1">
+                    <HStack spacing={2} color="gray.500">
+                      <Icon as={FiClock} />
+                      <Text fontSize="sm" fontWeight="medium">
+                        Next up
+                      </Text>
+                    </HStack>
+                    <Heading size="sm" color="gray.800">
+                      Upcoming booking schedule
+                    </Heading>
+                    <HStack spacing={2} flexWrap="wrap">
+                      {upcomingWindowLabel ? (
+                        <Tag
+                          size="sm"
+                          variant="subtle"
+                          colorScheme="blue"
+                          borderRadius="full"
+                        >
+                          {upcomingWindowLabel}
+                        </Tag>
+                      ) : null}
+                      {upcomingTotals?.scheduled != null ? (
+                        <Tag
+                          size="sm"
+                          variant="subtle"
+                          colorScheme="green"
+                          borderRadius="full"
+                        >
+                          {`${upcomingTotals.scheduled} scheduled`}
+                        </Tag>
+                      ) : null}
+                      {upcomingTotals?.waitlisted ? (
+                        <Tag
+                          size="sm"
+                          variant="subtle"
+                          colorScheme="yellow"
+                          borderRadius="full"
+                        >
+                          {`${upcomingTotals.waitlisted} waitlisted`}
+                        </Tag>
+                      ) : null}
+                    </HStack>
+                    {upcomingGeneratedAtLabel ? (
+                      <Text fontSize="xs" color="gray.400">
+                        Updated {upcomingGeneratedAtLabel}
+                      </Text>
+                    ) : null}
+                  </Stack>
+                  <Button size="xs" variant="outline">
+                    See calendar
+                  </Button>
+                </Flex>
 
-              <UpcomingBookings items={upcomingBookingsData} />
+                {upcomingBookingsError ? (
+                  <Alert status="error" variant="subtle" borderRadius="lg">
+                    <AlertIcon />
+                    {upcomingBookingsError}
+                  </Alert>
+                ) : null}
+
+                {isUpcomingBookingsLoading ? (
+                  <UpcomingBookingsSkeleton />
+                ) : (
+                  <UpcomingBookings items={upcomingBookingItems} />
+                )}
+              </Stack>
             </Box>
           </GridItem>
 
@@ -3255,18 +3934,72 @@ const Dashboard = () => {
                 p={{ base: 4, md: 5 }}
               >
                 <Stack spacing={4}>
-                  <Stack spacing={1}>
-                    <HStack spacing={2} color="gray.500">
-                      <Icon as={FiTrendingUp} />
-                      <Text fontSize="sm" fontWeight="medium">
-                        Top performers
-                      </Text>
-                    </HStack>
-                    <Heading size="sm" color="gray.800">
-                      Vehicles driving revenue
-                    </Heading>
-                  </Stack>
-                  <TopPerformers items={topUnitsData} />
+                  <Flex
+                    justify="space-between"
+                    align={{ base: "flex-start", md: "center" }}
+                    direction={{ base: "column", md: "row" }}
+                    gap={4}
+                  >
+                    <Stack spacing={1} flex="1">
+                      <HStack spacing={2} color="gray.500">
+                        <Icon as={FiTrendingUp} />
+                        <Text fontSize="sm" fontWeight="medium">
+                          Top performers
+                        </Text>
+                      </HStack>
+                      <Heading size="sm" color="gray.800">
+                        {topPerformersMetricLabel}
+                      </Heading>
+                      <HStack spacing={2} flexWrap="wrap">
+                        {topPerformersRangeLabel ? (
+                          <Tag
+                            size="sm"
+                            variant="subtle"
+                            colorScheme="blue"
+                            borderRadius="full"
+                          >
+                            {topPerformersRangeLabel}
+                          </Tag>
+                        ) : null}
+                        {topPerformersTotalsRevenueLabel ? (
+                          <Tag
+                            size="sm"
+                            variant="subtle"
+                            colorScheme="purple"
+                            borderRadius="full"
+                          >
+                            {`Revenue: ${topPerformersTotalsRevenueLabel}`}
+                          </Tag>
+                        ) : null}
+                        {topPerformersShareLabel ? (
+                          <Tag
+                            size="sm"
+                            variant="subtle"
+                            colorScheme="green"
+                            borderRadius="full"
+                          >
+                            {`Share: ${topPerformersShareLabel}`}
+                          </Tag>
+                        ) : null}
+                      </HStack>
+                    </Stack>
+                  </Flex>
+
+                  {topPerformersError ? (
+                    <Alert status="error" variant="subtle" borderRadius="lg">
+                      <AlertIcon />
+                      {topPerformersError}
+                    </Alert>
+                  ) : null}
+
+                  {isTopPerformersLoading ? (
+                    <TopPerformersSkeleton />
+                  ) : (
+                    <TopPerformers
+                      items={topPerformersItems}
+                      currency={topPerformersMeta?.currency}
+                    />
+                  )}
                 </Stack>
               </Box>
 
@@ -3504,6 +4237,8 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
 
 
 
