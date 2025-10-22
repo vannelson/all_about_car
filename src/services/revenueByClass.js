@@ -1,32 +1,34 @@
 import { axiosInstance } from "./api";
 import { getActiveCompanyId, getPersistedAuth } from "../utils/company";
 
-/**
- * Fetch the latest fleet utilisation metrics for the dashboard.
- */
-export async function fetchFleetUtilization({
+export async function fetchRevenueByClass({
   companyId,
+  preset,
+  startDate,
+  endDate,
   timezone,
+  limit,
+  includeOthers = true,
   asOf,
-  includeBreakdown = true,
-  includeTrend = true,
 } = {}) {
   const params = {};
-
-  if (timezone) params.timezone = timezone;
-  if (asOf) params.as_of = asOf;
 
   const resolvedCompanyId = companyId ?? getActiveCompanyId();
   if (resolvedCompanyId !== undefined && resolvedCompanyId !== null) {
     params.company_id = resolvedCompanyId;
   }
 
-  if (includeBreakdown !== undefined && includeBreakdown !== null) {
-    params.include_breakdown = includeBreakdown ? "true" : "false";
+  if (preset) params.preset = preset;
+  if (timezone) params.timezone = timezone;
+  if (limit != null) params.limit = limit;
+  if (includeOthers !== undefined && includeOthers !== null) {
+    params.include_others = includeOthers ? "true" : "false";
   }
+  if (asOf) params.as_of = asOf.substring(0, 10);
 
-  if (includeTrend !== undefined && includeTrend !== null) {
-    params.include_trend = includeTrend ? "true" : "false";
+  if (preset === "custom") {
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
   }
 
   const auth = getPersistedAuth();
@@ -46,7 +48,7 @@ export async function fetchFleetUtilization({
   }
 
   const response = await axiosInstance.get(
-    "/tenant/dashboard/utilization",
+    "/tenant/dashboard/revenue-by-class",
     {
       params,
       headers,
@@ -56,4 +58,4 @@ export async function fetchFleetUtilization({
   return response.data;
 }
 
-export default fetchFleetUtilization;
+export default fetchRevenueByClass;

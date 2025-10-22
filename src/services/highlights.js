@@ -1,33 +1,28 @@
 import { axiosInstance } from "./api";
 import { getActiveCompanyId, getPersistedAuth } from "../utils/company";
 
-/**
- * Fetch the latest fleet utilisation metrics for the dashboard.
- */
-export async function fetchFleetUtilization({
+export async function fetchDashboardHighlights({
   companyId,
-  timezone,
   asOf,
-  includeBreakdown = true,
+  timezone,
   includeTrend = true,
+  granularity,
 } = {}) {
   const params = {};
-
-  if (timezone) params.timezone = timezone;
-  if (asOf) params.as_of = asOf;
 
   const resolvedCompanyId = companyId ?? getActiveCompanyId();
   if (resolvedCompanyId !== undefined && resolvedCompanyId !== null) {
     params.company_id = resolvedCompanyId;
   }
 
-  if (includeBreakdown !== undefined && includeBreakdown !== null) {
-    params.include_breakdown = includeBreakdown ? "true" : "false";
-  }
+  if (asOf) params.as_of = asOf.substring(0, 10);
+  if (timezone) params.timezone = timezone;
 
   if (includeTrend !== undefined && includeTrend !== null) {
     params.include_trend = includeTrend ? "true" : "false";
   }
+
+  if (granularity) params.granularity = granularity;
 
   const auth = getPersistedAuth();
   const token =
@@ -46,7 +41,7 @@ export async function fetchFleetUtilization({
   }
 
   const response = await axiosInstance.get(
-    "/tenant/dashboard/utilization",
+    "/tenant/dashboard/highlights",
     {
       params,
       headers,
@@ -56,4 +51,4 @@ export async function fetchFleetUtilization({
   return response.data;
 }
 
-export default fetchFleetUtilization;
+export default fetchDashboardHighlights;
