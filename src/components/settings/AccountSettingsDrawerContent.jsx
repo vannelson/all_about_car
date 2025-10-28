@@ -43,6 +43,7 @@ import {
 import { selectAuth, selectCompanies } from "../../store";
 import { fetchCompanies, createCompany, setDefaultCompany, updateCompany } from "../../store/companiesSlice";
 import ImageUpload from "../tenant/ImageUpload";
+import CompanyLocationPicker from "./CompanyLocationPicker";
 
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -69,6 +70,7 @@ const CompanyCreateForm = ({
   locating,
   mode = "create",
   onCancelEdit,
+  onLocationChange = () => {},
 }) => {
   const mutedText = useColorModeValue("gray.600", "gray.300");
   const panelBg = useColorModeValue("white", "gray.900");
@@ -157,43 +159,16 @@ const CompanyCreateForm = ({
           <FormControl>
             <FormLabel fontSize="sm">Geolocation</FormLabel>
             <Stack spacing={3}>
-              <Box
-                borderRadius="md"
-                overflow="hidden"
-                borderWidth="1px"
-                borderColor={useColorModeValue("gray.200", "gray.700")}
-                h="220px"
-              >
-                {values.latitude && values.longitude ? (
-                  <Box
-                    as="iframe"
-                    src={`https://maps.google.com/maps?q=${values.latitude},${values.longitude}&z=15&output=embed`}
-                    title="Company location"
-                    width="100%"
-                    height="100%"
-                    border="0"
-                    loading="lazy"
-                    aria-label="Company map location"
-                  />
-                ) : (
-                  <Flex
-                    h="100%"
-                    align="center"
-                    justify="center"
-                    direction="column"
-                    color={mutedText}
-                    fontSize="sm"
-                    bg={useColorModeValue("gray.100", "gray.800")}
-                  >
-                    <Icon as={FaMapMarkerAlt} boxSize={6} mb={2} />
-                    <Text>Location preview appears once coordinates are set.</Text>
-                  </Flex>
-                )}
-              </Box>
+              <CompanyLocationPicker
+                latitude={values.latitude}
+                longitude={values.longitude}
+                onLocationChange={onLocationChange}
+                mapHeight="220px"
+              />
               <Text fontSize="xs" color={mutedText} textAlign="center">
                 {values.latitude && values.longitude
                   ? `Latitude ${values.latitude} | Longitude ${values.longitude}`
-                  : "Coordinates will appear here once available."}
+                  : "Click the map to capture coordinates or use your current location."}
               </Text>
               <Button
                 size="sm"
@@ -484,6 +459,20 @@ const AccountSettingsDrawerContent = () => {
     setLogoFile(file || null);
   };
 
+  const handleMapSelection = (lat, lng) => {
+    const format = (value) => {
+      if (!Number.isFinite(value)) return "";
+      return value.toFixed(6);
+    };
+
+    setFormValues((prev) => ({
+      ...prev,
+      latitude: format(lat),
+      longitude: format(lng),
+    }));
+    setLocating(false);
+  };
+
   const handleEditCompany = (company) => {
     if (!company) return;
 
@@ -758,6 +747,7 @@ const AccountSettingsDrawerContent = () => {
                 locating={locating}
                 mode={editingCompany ? "edit" : "create"}
                 onCancelEdit={handleCancelEdit}
+                onLocationChange={handleMapSelection}
               />
             </SlideFade>
           </Flex>
@@ -792,6 +782,7 @@ const AccountSettingsDrawerContent = () => {
                 locating={locating}
                 mode={editingCompany ? "edit" : "create"}
                 onCancelEdit={handleCancelEdit}
+                onLocationChange={handleMapSelection}
               />
             </SlideFade>
           )}

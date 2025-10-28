@@ -167,6 +167,33 @@ export async function updateCompanyApi(
   return res.data;
 }
 
+export async function listNearbyCompaniesApi({
+  lat,
+  lng,
+  radius,
+  limit,
+  with_cars,
+  filters = {},
+} = {}) {
+  const params = {};
+  if (lat !== undefined && lat !== null) params.lat = lat;
+  if (lng !== undefined && lng !== null) params.lng = lng;
+  if (radius !== undefined && radius !== null) params.radius = radius;
+  if (limit !== undefined && limit !== null) params.limit = limit;
+  if (with_cars !== undefined && with_cars !== null) {
+    params.with_cars = with_cars ? 1 : 0;
+  }
+
+  Object.entries(filters || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params[`filters[${key}]`] = value;
+    }
+  });
+
+  const res = await axiosInstance.get(`${BASE_PATH}/nearby`, { params });
+  return res.data;
+}
+
 export async function toggleDefaultCompanyApi(id, isDefault) {
   const res = await axiosInstance.patch(`${BASE_PATH}/${id}`, { is_default: isDefault });
   return res.data;

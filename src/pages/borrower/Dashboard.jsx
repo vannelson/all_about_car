@@ -1,23 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AlertIcon,
   Box,
   Button,
+  Badge,
   Center,
   Container,
+  Flex,
+  HStack,
+  Icon,
   SimpleGrid,
   Spinner,
   Stack,
   Text,
   useDisclosure,
 } from "@chakra-ui/react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiMapPin, FiNavigation2, FiRefreshCw } from "react-icons/fi";
 import SearchHero from "./dashboard/components/SearchHero";
 import FilterToolbar from "./dashboard/components/FilterToolbar";
 import CarCard from "./dashboard/components/CarCard";
 import BookingRequestModal from "./dashboard/components/BookingRequestModal";
 import { listCarsApi, mapCarToViewModel } from "../../services/cars";
+import { listNearbyCompaniesApi } from "../../services/companies";
+import NearestCompaniesMap from "./dashboard/components/NearestCompaniesMap";
 
 const initialSearchCriteria = {
   pickupLocation: "",
@@ -52,6 +58,333 @@ function getRateValue(car) {
   return Number(car?.raw?.rates?.[0]?.rate || 0) || 0;
 }
 
+function formatDistance(meters) {
+  if (!Number.isFinite(Number(meters))) return null;
+  const value = Number(meters);
+  if (value >= 1000) {
+    const km = value / 1000;
+    return `${km >= 10 ? Math.round(km) : km.toFixed(1)} km`;
+  }
+  if (value >= 100) {
+    return `${Math.round(value / 10) * 10} m`;
+  }
+  return `${Math.max(1, Math.round(value))} m`;
+}
+
+function formatUpdatedLabel(timestamp) {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.round(diffMs / 60000);
+  if (diffMinutes <= 1) return "just now";
+  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hr${diffHours > 1 ? "s" : ""} ago`;
+  }
+  return date.toLocaleDateString();
+}
+
+function getTopCars(cars = [], limit = 3) {
+  if (!Array.isArray(cars)) return [];
+  return cars
+    .filter((car) => car && (car.name || car.model || car.title))
+    .slice(0, limit);
+}
+
+function formatRate(rate, rateType) {
+  const numeric = Number(rate);
+  if (!Number.isFinite(numeric) || numeric <= 0) return null;
+  const formatter = new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    maximumFractionDigits: numeric >= 1000 ? 0 : 2,
+  });
+  const type = typeof rateType === "string" ? rateType.toLowerCase() : "";
+  const suffix =
+    type === "daily"
+      ? "/day"
+      : type === "hourly"
+      ? "/hour"
+      : type === "monthly"
+      ? "/month"
+      : type
+      ? `/${type}`
+      : "";
+  return `${formatter.format(numeric)}${suffix}`;
+}
+
+function NearestCompaniesSection({
+  loading,
+  error,
+  companies,
+  meta,
+  onLocate,
+  onRefresh,
+  onSelectCompany,
+  lastUpdated,
+  userCoords,
+  searchRadius,
+}) {
+  const hasResults = Array.isArray(companies) && companies.length > 0;
+  const updatedLabel = formatUpdatedLabel(lastUpdated);
+  const radiusMeters = Number(meta?.radius ?? searchRadius ?? 0) || 0;
+  const radiusKmLabel =
+    radiusMeters > 0
+      ? radiusMeters >= 1000
+        ? `${Math.round(radiusMeters / 1000)} km`
+        : `${radiusMeters} m`
+      : null;
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="2xl"
+      px={{ base: 4, md: 6 }}
+      py={{ base: 5, md: 6 }}
+      bgGradient="linear(to-r, white, blue.50)"
+      borderColor="rgba(148, 163, 184, 0.3)"
+      shadow="xl"
+    >
+      <Stack spacing={5}>
+        <Flex
+          direction={{ base: "column", md: "row" }}
+          justify="space-between"
+          align={{ base: "flex-start", md: "center" }}
+          gap={{ base: 4, md: 6 }}
+        >
+          <Stack spacing={2}>
+            <HStack spacing={3}>
+              <Icon as={FiMapPin} boxSize={5} color="blue.500" />
+              <Text fontWeight="bold" fontSize="lg">
+                Find cars near you
+              </Text>
+              {hasResults && radiusKmLabel && (
+                <Badge colorScheme="blue" borderRadius="full">
+                  within {radiusKmLabel}
+                </Badge>
+              )}
+            </HStack>
+            <Text color="gray.600" fontSize="sm" maxW="3xl">
+              Use your current location to spot the closest partner fleets and
+              book a ride in minutes.
+            </Text>
+            {updatedLabel && (
+              <Text fontSize="xs" color="gray.500">
+                Updated {updatedLabel}
+              </Text>
+            )}
+          </Stack>
+
+          <HStack spacing={3}>
+            <Button
+              leftIcon={<FiNavigation2 />}
+              colorScheme="blue"
+              onClick={onLocate}
+              isLoading={loading && !hasResults}
+              loadingText="Locating"
+            >
+              {hasResults ? "Refresh nearest" : "Nearest cars"}
+            </Button>
+            {hasResults && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRefresh}
+                isLoading={loading && hasResults}
+              >
+                Update list
+              </Button>
+            )}
+          </HStack>
+        </Flex>
+
+        {error && (
+          <Alert status="warning" variant="left-accent" borderRadius="md">
+            <AlertIcon />
+            {error}
+          </Alert>
+        )}
+
+        {(userCoords || hasResults) && (
+          <Box
+            borderRadius="2xl"
+            overflow="hidden"
+            shadow="md"
+            borderWidth="1px"
+            borderColor="rgba(148,163,184,0.25)"
+          >
+            <NearestCompaniesMap
+              companies={companies}
+              userCoords={userCoords}
+              radiusMeters={radiusMeters || undefined}
+            />
+          </Box>
+        )}
+
+        {loading && !hasResults ? (
+          <Center py={6}>
+            <Stack spacing={2} align="center">
+              <Spinner size="md" color="blue.500" />
+              <Text fontSize="sm" color="gray.600">
+                Looking for nearby fleets…
+              </Text>
+            </Stack>
+          </Center>
+        ) : hasResults ? (
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            {companies.map((company) => (
+              <NearestCompanyCard
+                key={company.id || company.name}
+                company={company}
+                onSelect={() => onSelectCompany?.(company)}
+              />
+            ))}
+          </SimpleGrid>
+        ) : (
+          <Box
+            borderWidth="1px"
+            borderRadius="lg"
+            borderStyle="dashed"
+            borderColor="blue.200"
+            bg="whiteAlpha.700"
+            py={6}
+            px={4}
+          >
+            <Stack spacing={2} align="center" textAlign="center">
+              <Icon as={FiMapPin} boxSize={6} color="blue.400" />
+              <Text fontWeight="semibold">Ready when you are</Text>
+              <Text fontSize="sm" color="gray.600">
+                Tap "Nearest cars" to let us know where you are and we'll
+                surface fleets closest to you.
+              </Text>
+            </Stack>
+          </Box>
+        )}
+      </Stack>
+    </Box>
+  );
+}
+
+function NearestCompanyCard({ company, onSelect }) {
+  const distanceLabel = formatDistance(
+    company?.distance_m || company?.distance
+  );
+  const vehicles = getTopCars(company?.cars);
+
+  return (
+    <Stack
+      spacing={3}
+      borderWidth="1px"
+      borderRadius="xl"
+      bg="white"
+      p={5}
+      shadow="md"
+      borderColor="rgba(148, 163, 184, 0.25)"
+      _hover={{ shadow: "lg", borderColor: "blue.200" }}
+      transition="all 0.2s ease"
+    >
+      <Flex justify="space-between" align="flex-start" gap={3}>
+        <Stack spacing={1}>
+          <Text fontWeight="semibold" fontSize="md" noOfLines={1}>
+            {company?.name || "Company"}
+          </Text>
+          {company?.address && (
+            <Text fontSize="sm" color="gray.600" noOfLines={2}>
+              {company.address}
+            </Text>
+          )}
+        </Stack>
+        {distanceLabel && (
+          <Badge colorScheme="blue" borderRadius="full" px={2}>
+            {distanceLabel}
+          </Badge>
+        )}
+      </Flex>
+
+      {vehicles.length > 0 ? (
+        <Stack spacing={2}>
+          <Text
+            fontSize="xs"
+            color="gray.500"
+            textTransform="uppercase"
+            letterSpacing="wide"
+          >
+            Available cars
+          </Text>
+          <Stack spacing={1}>
+            {vehicles.map((car) => (
+              <HStack
+                key={car.id || car.name}
+                spacing={3}
+                align="flex-start"
+                py={1}
+              >
+                <Box w="10px" h="10px" borderRadius="full" bg="blue.400" />
+                <Stack spacing={0.5} flex="1" minW={0}>
+                  <Text fontSize="sm" color="gray.700" noOfLines={1}>
+                    {car.name || car.model || car.title || "Vehicle"}
+                    {formatRate(
+                      car.rate ?? car.rate_value,
+                      car.rate_type ?? car.rateType
+                    ) ? (
+                      <Text as="span" fontSize="sm" color="gray.500">
+                        {" "}
+                        ·{" "}
+                        {formatRate(
+                          car.rate ?? car.rate_value,
+                          car.rate_type ?? car.rateType
+                        )}
+                      </Text>
+                    ) : null}
+                  </Text>
+                  {car.location && (
+                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                      {car.location}
+                    </Text>
+                  )}
+                </Stack>
+                {car.availability_status && (
+                  <Badge
+                    colorScheme={
+                      String(car.availability_status).toLowerCase() ===
+                      "available"
+                        ? "green"
+                        : "gray"
+                    }
+                    borderRadius="full"
+                    px={2}
+                    fontSize="0.7rem"
+                    textTransform="capitalize"
+                    whiteSpace="nowrap"
+                  >
+                    {car.availability_status}
+                  </Badge>
+                )}
+              </HStack>
+            ))}
+          </Stack>
+        </Stack>
+      ) : (
+        <Text fontSize="sm" color="gray.500">
+          Fleet details loading soon.
+        </Text>
+      )}
+
+      <Button
+        size="sm"
+        colorScheme="blue"
+        variant="outline"
+        alignSelf="flex-start"
+        onClick={onSelect}
+      >
+        View cars from this company
+      </Button>
+    </Stack>
+  );
+}
+
 export default function BorrowerDashboard() {
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -63,7 +396,17 @@ export default function BorrowerDashboard() {
   const [sortBy, setSortBy] = useState("recommended");
   const [availableOnly, setAvailableOnly] = useState(true);
   const [selectedCar, setSelectedCar] = useState(null);
+  const [nearestCompanies, setNearestCompanies] = useState([]);
+  const [nearestMeta, setNearestMeta] = useState(null);
+  const [nearestLoading, setNearestLoading] = useState(false);
+  const [nearestError, setNearestError] = useState(null);
+  const [nearestCoords, setNearestCoords] = useState(null);
+  const [nearestUpdatedAt, setNearestUpdatedAt] = useState(null);
   const bookingModal = useDisclosure();
+  const carListRef = useRef(null);
+
+  const NEAREST_SEARCH_RADIUS = 40000; // 15 km
+  const NEAREST_SEARCH_LIMIT = 12;
 
   const fetchCars = async (refresh = false) => {
     setError(null);
@@ -146,7 +489,10 @@ export default function BorrowerDashboard() {
       if (companyId || companyName) {
         const key = companyId ?? companyName;
         if (!companies.has(key)) {
-          companies.set(key, { id: companyId ?? companyName, name: companyName ?? brand ?? "Company" });
+          companies.set(key, {
+            id: companyId ?? companyName,
+            name: companyName ?? brand ?? "Company",
+          });
         }
       }
     });
@@ -287,15 +633,119 @@ export default function BorrowerDashboard() {
     fetchCars(true);
   };
 
+  const extractCompanies = (payload) => {
+    if (!payload) return [];
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.items)) return payload.items;
+    if (Array.isArray(payload.results)) return payload.results;
+    if (Array.isArray(payload)) return payload;
+    return [];
+  };
+
+  const fetchNearestCompanies = async (
+    coords,
+    { skipLoadingState = false } = {}
+  ) => {
+    if (!coords) return;
+    if (!skipLoadingState) {
+      setNearestLoading(true);
+    }
+    setNearestError(null);
+    try {
+      const res = await listNearbyCompaniesApi({
+        lat: coords.latitude,
+        lng: coords.longitude,
+        radius: NEAREST_SEARCH_RADIUS,
+        limit: NEAREST_SEARCH_LIMIT,
+        with_cars: true,
+      });
+      const companies = extractCompanies(res);
+      setNearestCompanies(companies);
+      setNearestMeta(res?.meta || null);
+      setNearestUpdatedAt(new Date().toISOString());
+    } catch (err) {
+      setNearestError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Unable to load nearby companies right now."
+      );
+    } finally {
+      setNearestLoading(false);
+    }
+  };
+
+  const handleFindNearest = () => {
+    if (nearestLoading) return;
+    setNearestError(null);
+    if (typeof window === "undefined" || !navigator?.geolocation) {
+      setNearestError(
+        "Location services are not available in your browser. Try updating your settings."
+      );
+      return;
+    }
+
+    setNearestLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const coords = { latitude, longitude };
+        setNearestCoords(coords);
+        fetchNearestCompanies(coords, { skipLoadingState: true });
+      },
+      (error) => {
+        setNearestLoading(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setNearestError(
+            "We couldn't access your location. Please allow location access and try again."
+          );
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setNearestError(
+            "Location information is currently unavailable. Please try again shortly."
+          );
+        } else if (error.code === error.TIMEOUT) {
+          setNearestError(
+            "Taking too long to find your location. Try again with a better signal."
+          );
+        } else {
+          setNearestError(
+            "Unable to determine your location. Please try again."
+          );
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handleRefreshNearest = () => {
+    if (nearestCoords) {
+      fetchNearestCompanies(nearestCoords);
+    } else {
+      handleFindNearest();
+    }
+  };
+
+  const focusCarResults = () => {
+    if (carListRef.current) {
+      carListRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleSelectNearestCompany = (company) => {
+    if (!company?.name) return;
+    setFilters((prev) => ({ ...prev, company: company.name }));
+    setTimeout(focusCarResults, 120);
+  };
+
   const handleBook = (car) => {
     setSelectedCar(car);
     bookingModal.onOpen();
   };
 
-  const totalVehicles =
-    filteredCars.length ||
-    meta?.total ||
-    cars.length;
+  const totalVehicles = filteredCars.length || meta?.total || cars.length;
 
   return (
     <Box bg="gray.50" minH="100vh" py={{ base: 8, md: 12 }}>
@@ -310,6 +760,19 @@ export default function BorrowerDashboard() {
             }}
             isBusy={loading || refreshing}
             totalResults={totalVehicles}
+          />
+
+          <NearestCompaniesSection
+            loading={nearestLoading}
+            error={nearestError}
+            companies={nearestCompanies}
+            meta={nearestMeta}
+            onLocate={handleFindNearest}
+            onRefresh={handleRefreshNearest}
+            onSelectCompany={handleSelectNearestCompany}
+            lastUpdated={nearestUpdatedAt}
+            userCoords={nearestCoords}
+            searchRadius={NEAREST_SEARCH_RADIUS}
           />
 
           {error && (
@@ -351,7 +814,11 @@ export default function BorrowerDashboard() {
               </Stack>
             </Center>
           ) : filteredCars.length > 0 ? (
-            <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={6}>
+            <SimpleGrid
+              ref={carListRef}
+              columns={{ base: 1, md: 2, xl: 3 }}
+              spacing={6}
+            >
               {filteredCars.map((car) => (
                 <CarCard key={car.id} car={car} onBook={handleBook} />
               ))}
