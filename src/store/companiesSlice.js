@@ -28,7 +28,19 @@ export const fetchCompanies = createAsyncThunk(
 
 export const createCompany = createAsyncThunk(
   "companies/create",
-  async ({ user_id, name, address, industry, is_default = false, logo = null }, { rejectWithValue }) => {
+  async (
+    {
+      user_id,
+      name,
+      address,
+      industry,
+      is_default = false,
+      logo = null,
+      latitude,
+      longitude,
+    },
+    { rejectWithValue }
+  ) => {
     try {
       const res = await createCompanyApi({
         user_id,
@@ -37,6 +49,8 @@ export const createCompany = createAsyncThunk(
         industry,
         is_default,
         logo,
+        latitude,
+        longitude,
       });
       return res?.data;
     } catch (err) {
@@ -47,16 +61,79 @@ export const createCompany = createAsyncThunk(
 
 export const updateCompany = createAsyncThunk(
   "companies/update",
-  async ({ id, name, address, industry, is_default }, { rejectWithValue }) => {
-    try {
-      const payload = {};
-      if (name !== undefined) payload.name = name;
-      if (address !== undefined) payload.address = address;
-      if (industry !== undefined) payload.industry = industry;
-      if (is_default !== undefined) payload.is_default = is_default;
+  async (
+    {
+      id,
+      name,
+      address,
+      industry,
+      is_default,
+      logo,
+      latitude,
+      longitude,
+    },
+    { rejectWithValue }
+  ) => {
+    const normalizeText = (value) => {
+      if (value === undefined) return undefined;
+      if (value === null) return null;
+      return String(value).trim();
+    };
 
-      const res = await updateCompanyApi(id, payload);
-      return { id, payload, res };
+    const normalizeBoolean = (value) => {
+      if (value === undefined || value === null) return undefined;
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (["true", "1", "yes", "on"].includes(normalized)) return true;
+        if (["false", "0", "no", "off"].includes(normalized)) return false;
+        return undefined;
+      }
+      if (typeof value === "number") return value === 1;
+      return Boolean(value);
+    };
+
+    const normalizeCoordinate = (value) => {
+      if (value === undefined) return undefined;
+      if (value === null) return null;
+      const str = String(value).trim();
+      if (str.length === 0) return null;
+      return str;
+    };
+
+    const isFileLike = (value) => {
+      if (!value) return false;
+      const hasFileCtor = typeof File !== "undefined" && value instanceof File;
+      const hasBlobCtor = typeof Blob !== "undefined" && value instanceof Blob;
+      return hasFileCtor || hasBlobCtor;
+    };
+
+    try {
+      const normalized = {
+        name: normalizeText(name),
+        address: normalizeText(address),
+        industry: normalizeText(industry),
+        is_default: normalizeBoolean(is_default),
+        latitude: normalizeCoordinate(latitude),
+        longitude: normalizeCoordinate(longitude),
+      };
+
+      const requestBody = {};
+      const localPayload = {};
+
+      Object.entries(normalized).forEach(([key, value]) => {
+        if (value !== undefined) {
+          requestBody[key] = value;
+          localPayload[key] = value;
+        }
+      });
+
+      if (isFileLike(logo)) {
+        requestBody.logo = logo;
+      }
+
+      const res = await updateCompanyApi(id, requestBody);
+      return { id, payload: localPayload, res };
     } catch (err) {
       return rejectWithValue(err?.data || { message: err.message });
     }

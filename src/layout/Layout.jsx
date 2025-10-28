@@ -52,6 +52,7 @@ export default function Layout({ role = null, children }) {
           isAuthenticated={auth.isAuthenticated}
           user={auth.user}
           onLogout={handleLogout}
+          role={role}
         />
       )}
       <main>{children}</main>

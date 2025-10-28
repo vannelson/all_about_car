@@ -37,9 +37,11 @@ import {
   FaUser,
   FaRegBuilding,
   FaIndustry,
+  FaEdit,
+  FaSave,
 } from "react-icons/fa";
 import { selectAuth, selectCompanies } from "../../store";
-import { fetchCompanies, createCompany, setDefaultCompany } from "../../store/companiesSlice";
+import { fetchCompanies, createCompany, setDefaultCompany, updateCompany } from "../../store/companiesSlice";
 import ImageUpload from "../tenant/ImageUpload";
 
 const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -49,6 +51,8 @@ const DEFAULT_FORM = {
   industry: "",
   address: "",
   is_default: false,
+  latitude: "",
+  longitude: "",
 };
 
 const CompanyCreateForm = ({
@@ -61,10 +65,15 @@ const CompanyCreateForm = ({
   onLogoImagesChange,
   onLogoFilesSelected,
   logoResetKey,
+  onLocate,
+  locating,
+  mode = "create",
+  onCancelEdit,
 }) => {
   const mutedText = useColorModeValue("gray.600", "gray.300");
   const panelBg = useColorModeValue("white", "gray.900");
   const iconColor = useColorModeValue("gray.400", "gray.500");
+  const isEditMode = mode === "edit";
 
   return (
     <Box
@@ -81,10 +90,12 @@ const CompanyCreateForm = ({
       <Stack spacing={6}>
         <Stack spacing={1}>
           <Heading size="sm" textTransform="uppercase" letterSpacing="wide">
-            Create Company
+            {isEditMode ? "Update Company" : "Create Company"}
           </Heading>
           <Text fontSize="sm" color={mutedText}>
-            Add a company profile and keep tenant operations in sync across the platform.
+            {isEditMode
+              ? "Modify your company details and keep information consistent across the platform."
+              : "Add a company profile and keep tenant operations in sync across the platform."}
           </Text>
         </Stack>
 
@@ -142,6 +153,63 @@ const CompanyCreateForm = ({
               />
             </Box>
           </FormControl>
+
+          <FormControl>
+            <FormLabel fontSize="sm">Geolocation</FormLabel>
+            <Stack spacing={3}>
+              <Box
+                borderRadius="md"
+                overflow="hidden"
+                borderWidth="1px"
+                borderColor={useColorModeValue("gray.200", "gray.700")}
+                h="220px"
+              >
+                {values.latitude && values.longitude ? (
+                  <Box
+                    as="iframe"
+                    src={`https://maps.google.com/maps?q=${values.latitude},${values.longitude}&z=15&output=embed`}
+                    title="Company location"
+                    width="100%"
+                    height="100%"
+                    border="0"
+                    loading="lazy"
+                    aria-label="Company map location"
+                  />
+                ) : (
+                  <Flex
+                    h="100%"
+                    align="center"
+                    justify="center"
+                    direction="column"
+                    color={mutedText}
+                    fontSize="sm"
+                    bg={useColorModeValue("gray.100", "gray.800")}
+                  >
+                    <Icon as={FaMapMarkerAlt} boxSize={6} mb={2} />
+                    <Text>Location preview appears once coordinates are set.</Text>
+                  </Flex>
+                )}
+              </Box>
+              <Text fontSize="xs" color={mutedText} textAlign="center">
+                {values.latitude && values.longitude
+                  ? `Latitude ${values.latitude} | Longitude ${values.longitude}`
+                  : "Coordinates will appear here once available."}
+              </Text>
+              <Button
+                size="sm"
+                alignSelf={{ base: "stretch", sm: "flex-start" }}
+                colorScheme="blue"
+                variant="solid"
+                onClick={onLocate}
+                isDisabled={!onLocate}
+                isLoading={locating}
+                loadingText="Locating"
+                leftIcon={<Icon as={FaMapMarkerAlt} boxSize={4} />}
+              >
+                Use my current location
+              </Button>
+            </Stack>
+          </FormControl>
         </Stack>
 
         <Box
@@ -185,18 +253,22 @@ const CompanyCreateForm = ({
         </Box>
 
         <HStack justify="flex-end" spacing={3}>
-          <Button onClick={onReset} variant="ghost" size="sm">
-            Clear
+          <Button
+            onClick={isEditMode ? onCancelEdit : onReset}
+            variant="ghost"
+            size="sm"
+          >
+            {isEditMode ? "Cancel" : "Clear"}
           </Button>
           <Button
             type="submit"
             colorScheme="blue"
-            leftIcon={<FaPlusCircle />}
+            leftIcon={isEditMode ? <FaSave /> : <FaPlusCircle />}
             size="sm"
             isLoading={isSubmitting}
             loadingText="Saving"
           >
-            Save company
+            {isEditMode ? "Update company" : "Save company"}
           </Button>
         </HStack>
       </Stack>
@@ -204,7 +276,7 @@ const CompanyCreateForm = ({
   );
 };
 
-const CompanyCard = ({ company, onToggleDefault, toggleBusy, fallbackUserId }) => {
+const CompanyCard = ({ company, onToggleDefault, toggleBusy, fallbackUserId, onEdit }) => {
   const cardBg = useColorModeValue("white", "gray.800");
   const defaultBg = useColorModeValue("blue.50", "blue.900");
   const iconBg = useColorModeValue("gray.100", "gray.700");
@@ -260,20 +332,32 @@ const CompanyCard = ({ company, onToggleDefault, toggleBusy, fallbackUserId }) =
               {company.is_default && <Badge colorScheme="blue" variant="subtle">Active default</Badge>}
             </HStack>
           </Stack>
-          <Tooltip
-            label={company.is_default ? "Current default" : "Set as default"}
-            hasArrow
-            shouldWrapChildren
-          >
-            <Switch
-              size="sm"
-              colorScheme="blue"
-              isChecked={company.is_default}
-              onChange={() => onToggleDefault(company)}
-              isDisabled={toggleBusy !== null && toggleBusy !== company.id}
-              isReadOnly={toggleBusy !== null && toggleBusy !== company.id}
-            />
-          </Tooltip>
+          <HStack spacing={2} align="center">
+            {onEdit ? (
+              <Button
+                size="xs"
+                variant="ghost"
+                leftIcon={<FaEdit />}
+                onClick={() => onEdit(company)}
+              >
+                Edit
+              </Button>
+            ) : null}
+            <Tooltip
+              label={company.is_default ? "Current default" : "Set as default"}
+              hasArrow
+              shouldWrapChildren
+            >
+              <Switch
+                size="sm"
+                colorScheme="blue"
+                isChecked={company.is_default}
+                onChange={() => onToggleDefault(company)}
+                isDisabled={toggleBusy !== null && toggleBusy !== company.id}
+                isReadOnly={toggleBusy !== null && toggleBusy !== company.id}
+              />
+            </Tooltip>
+          </HStack>
         </Flex>
 
         <Stack spacing={1} fontSize="xs" color={mutedText}>
@@ -291,7 +375,15 @@ const CompanyCard = ({ company, onToggleDefault, toggleBusy, fallbackUserId }) =
   );
 };
 
-const CompanyList = ({ companies, loading, emptyFallback, onToggleDefault, toggleBusy, userId }) => {
+const CompanyList = ({
+  companies,
+  loading,
+  emptyFallback,
+  onToggleDefault,
+  toggleBusy,
+  userId,
+  onEdit,
+}) => {
   const mutedText = useColorModeValue("gray.600", "gray.300");
   const dividerColor = useColorModeValue("gray.200", "gray.700");
 
@@ -317,6 +409,7 @@ const CompanyList = ({ companies, loading, emptyFallback, onToggleDefault, toggl
           onToggleDefault={onToggleDefault}
           toggleBusy={toggleBusy}
           fallbackUserId={userId}
+          onEdit={onEdit}
         />
       ))}
     </Stack>
@@ -334,6 +427,8 @@ const AccountSettingsDrawerContent = () => {
   const [logoPreview, setLogoPreview] = useState([]);
   const [logoFile, setLogoFile] = useState(null);
   const [logoResetKey, setLogoResetKey] = useState(0);
+  const [locating, setLocating] = useState(false);
+  const [editingCompany, setEditingCompany] = useState(null);
 
   const userId = auth?.user?.id;
   const isDesktop = useBreakpointValue({ base: false, md: true });
@@ -366,6 +461,7 @@ const AccountSettingsDrawerContent = () => {
     setLogoPreview([]);
     setLogoFile(null);
     setLogoResetKey((key) => key + 1);
+    setLocating(false);
   };
 
   const handleLogoImagesChange = (images) => {
@@ -388,7 +484,95 @@ const AccountSettingsDrawerContent = () => {
     setLogoFile(file || null);
   };
 
-  const handleCreateCompany = async (event) => {
+  const handleEditCompany = (company) => {
+    if (!company) return;
+
+    setEditingCompany(company);
+    setActiveView("create");
+    setLocating(false);
+
+    setFormValues({
+      name: company.name || "",
+      industry: company.industry || "",
+      address: company.address || "",
+      is_default: Boolean(company.is_default),
+      latitude:
+        company.latitude !== undefined && company.latitude !== null && company.latitude !== ""
+          ? String(company.latitude)
+          : "",
+      longitude:
+        company.longitude !== undefined && company.longitude !== null && company.longitude !== ""
+          ? String(company.longitude)
+          : "",
+    });
+
+    const logoSrc =
+      company.logo ||
+      company.logo_url ||
+      company.logoUrl ||
+      company.logo_path ||
+      company.logoPath ||
+      null;
+
+    setLogoPreview(logoSrc ? [logoSrc] : []);
+    setLogoFile(null);
+    setLogoResetKey((key) => key + 1);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCompany(null);
+    resetForm();
+    if (!isDesktop) {
+      setActiveView("list");
+    }
+  };
+
+  const handleLocateMe = () => {
+    if (typeof window === "undefined" || !navigator?.geolocation) {
+      toast({
+        title: "Geolocation unavailable",
+        description: "Your browser does not support location services.",
+        status: "error",
+      });
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormValues((prev) => ({
+          ...prev,
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+        }));
+        setLocating(false);
+        toast({
+          title: "Location captured",
+          status: "success",
+        });
+      },
+      (error) => {
+        setLocating(false);
+        const message =
+          error?.message === "User denied Geolocation"
+            ? "Location permission denied."
+            : "Unable to retrieve your location.";
+        toast({
+          title: "Location failed",
+          description: message,
+          status: "error",
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handleSubmitCompany = async (event) => {
     event.preventDefault();
     if (!userId) {
       toast({ title: "Login required", status: "error" });
@@ -409,13 +593,48 @@ const AccountSettingsDrawerContent = () => {
       return;
     }
 
+    const sanitizeCoordinate = (value) => {
+      if (value === undefined || value === null) return undefined;
+      const str = String(value).trim();
+      return str.length ? str : undefined;
+    };
+
+    const sanitizedPayload = {
+      name: formValues.name.trim(),
+      address: formValues.address.trim(),
+      industry: formValues.industry.trim(),
+      is_default: formValues.is_default,
+      latitude: sanitizeCoordinate(formValues.latitude),
+      longitude: sanitizeCoordinate(formValues.longitude),
+    };
+
+    if (editingCompany) {
+      const action = await dispatch(
+        updateCompany({
+          id: editingCompany.id,
+          ...sanitizedPayload,
+          logo: logoFile || undefined,
+        })
+      );
+
+      if (updateCompany.fulfilled.match(action)) {
+        toast({ title: "Company updated", status: "success" });
+        setEditingCompany(null);
+        resetForm();
+        if (!isDesktop) {
+          setActiveView("list");
+        }
+      } else {
+        const message = action.payload?.message || action.error?.message || "Could not update company.";
+        toast({ title: "Update failed", description: message, status: "error" });
+      }
+      return;
+    }
+
     const action = await dispatch(
       createCompany({
         user_id: userId,
-        name: formValues.name.trim(),
-        address: formValues.address.trim(),
-        industry: formValues.industry.trim(),
-        is_default: formValues.is_default,
+        ...sanitizedPayload,
         logo: logoFile || null,
       })
     );
@@ -520,6 +739,7 @@ const AccountSettingsDrawerContent = () => {
             onToggleDefault={handleToggleDefault}
             toggleBusy={toggleTarget}
             userId={userId}
+            onEdit={handleEditCompany}
           />
         ) : (
           <Flex justify="flex-end">
@@ -527,13 +747,17 @@ const AccountSettingsDrawerContent = () => {
               <CompanyCreateForm
                 values={formValues}
                 onChange={handleInputChange}
-                onSubmit={handleCreateCompany}
+                onSubmit={handleSubmitCompany}
                 onReset={resetForm}
-                isSubmitting={companiesState.creating}
+                isSubmitting={editingCompany ? companiesState.updating : companiesState.creating}
                 logoPreview={logoPreview}
                 onLogoImagesChange={handleLogoImagesChange}
                 onLogoFilesSelected={handleLogoFilesSelected}
                 logoResetKey={logoResetKey}
+                onLocate={handleLocateMe}
+                locating={locating}
+                mode={editingCompany ? "edit" : "create"}
+                onCancelEdit={handleCancelEdit}
               />
             </SlideFade>
           </Flex>
@@ -549,6 +773,7 @@ const AccountSettingsDrawerContent = () => {
                 onToggleDefault={handleToggleDefault}
                 toggleBusy={toggleTarget}
                 userId={userId}
+                onEdit={handleEditCompany}
               />
             </SlideFade>
           ) : (
@@ -556,13 +781,17 @@ const AccountSettingsDrawerContent = () => {
               <CompanyCreateForm
                 values={formValues}
                 onChange={handleInputChange}
-                onSubmit={handleCreateCompany}
+                onSubmit={handleSubmitCompany}
                 onReset={resetForm}
-                isSubmitting={companiesState.creating}
+                isSubmitting={editingCompany ? companiesState.updating : companiesState.creating}
                 logoPreview={logoPreview}
                 onLogoImagesChange={handleLogoImagesChange}
                 onLogoFilesSelected={handleLogoFilesSelected}
                 logoResetKey={logoResetKey}
+                onLocate={handleLocateMe}
+                locating={locating}
+                mode={editingCompany ? "edit" : "create"}
+                onCancelEdit={handleCancelEdit}
               />
             </SlideFade>
           )}

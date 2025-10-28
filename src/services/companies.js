@@ -39,7 +39,16 @@ export async function listCompaniesApi({ page = 1, limit = 10, filters = {}, ord
   };
 }
 
-export async function createCompanyApi({ user_id, name, address, industry, is_default = false, logo } = {}) {
+export async function createCompanyApi({
+  user_id,
+  name,
+  address,
+  industry,
+  is_default = false,
+  logo,
+  latitude,
+  longitude,
+} = {}) {
   const form = new FormData();
   if (user_id !== undefined && user_id !== null) form.append("user_id", String(user_id));
   if (name !== undefined && name !== null) form.append("name", name);
@@ -51,6 +60,12 @@ export async function createCompanyApi({ user_id, name, address, industry, is_de
   if (logo instanceof File || logo instanceof Blob) {
     form.append("logo", logo);
   }
+  if (latitude !== undefined && latitude !== null && latitude !== "") {
+    form.append("latitude", String(latitude));
+  }
+  if (longitude !== undefined && longitude !== null && longitude !== "") {
+    form.append("longitude", String(longitude));
+  }
 
   const res = await axiosInstance.post(BASE_PATH, form, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -58,8 +73,97 @@ export async function createCompanyApi({ user_id, name, address, industry, is_de
   return res.data;
 }
 
-export async function updateCompanyApi(id, body) {
-  const res = await axiosInstance.put(`${BASE_PATH}/${id}`, body);
+export async function updateCompanyApi(
+  id,
+  {
+    name,
+    address,
+    industry,
+    is_default,
+    logo,
+    latitude,
+    longitude,
+  } = {}
+) {
+  const url = `${BASE_PATH}/${id}`;
+
+  const isFileLike = (value) => {
+    if (!value) return false;
+    const hasFileCtor = typeof File !== "undefined" && value instanceof File;
+    const hasBlobCtor = typeof Blob !== "undefined" && value instanceof Blob;
+    return hasFileCtor || hasBlobCtor;
+  };
+
+  const normalizeBoolean = (value) => {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (["true", "1", "yes", "on"].includes(normalized)) return true;
+      if (["false", "0", "no", "off"].includes(normalized)) return false;
+      return undefined;
+    }
+    if (typeof value === "number") return value === 1;
+    return Boolean(value);
+  };
+
+  const formCompatible = isFileLike(logo);
+
+  if (formCompatible) {
+    const form = new FormData();
+
+    const appendIfDefined = (key, value) => {
+      if (value === undefined) return;
+      if (value === null) return;
+      form.append(key, value);
+    };
+
+    appendIfDefined("name", name);
+    appendIfDefined("address", address);
+    appendIfDefined("industry", industry);
+
+    const normalizedDefault = normalizeBoolean(is_default);
+    if (normalizedDefault !== undefined) {
+      form.append("is_default", normalizedDefault ? "true" : "false");
+    }
+
+    if (latitude !== undefined && latitude !== null) {
+      form.append("latitude", String(latitude));
+    }
+
+    if (longitude !== undefined && longitude !== null) {
+      form.append("longitude", String(longitude));
+    }
+
+    form.append("logo", logo);
+
+    const res = await axiosInstance.put(url, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  }
+
+  const payload = {};
+
+  const setIfDefined = (key, value) => {
+    if (value !== undefined) {
+      payload[key] = value;
+    }
+  };
+
+  setIfDefined("name", name);
+  setIfDefined("address", address);
+  setIfDefined("industry", industry);
+
+  const normalizedDefault = normalizeBoolean(is_default);
+  if (normalizedDefault !== undefined) {
+    payload.is_default = normalizedDefault;
+  }
+
+  setIfDefined("latitude", latitude);
+  setIfDefined("longitude", longitude);
+
+  const res = await axiosInstance.put(url, payload);
   return res.data;
 }
 
