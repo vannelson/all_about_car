@@ -5,7 +5,7 @@ import { selectAuth } from "./store";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 // Borrower pages
-import BorrowerDashboard from "./pages/borrower/Dashboard";
+import BorrowerBrowse from "./pages/borrower/BrowseCars";
 import Payments from "./pages/borrower/Payments";
 import Bookings from "./pages/borrower/Bookings";
 import Profile from "./pages/borrower/Profile";
@@ -60,13 +60,14 @@ export default function App() {
 
           {/* Borrower Routes */}
           <Route
-            path="/borrower/dashboard"
+            path="/borrower/browse"
             element={
               <ProtectedRoute allowRoles={["borrower"]}>
-                <BorrowerDashboard />
+                <BorrowerBrowse />
               </ProtectedRoute>
             }
           />
+          <Route path="/borrower/dashboard" element={<Navigate to="/borrower/browse" replace />} />
           <Route
             path="/borrower/payments"
             element={
@@ -98,7 +99,7 @@ export default function App() {
             element={
               auth.isAuthenticated ? (
                 <Navigate
-                  to={auth.role === "tenant" ? "/tenant/dashboard" : "/borrower/dashboard"}
+                  to={auth.role === "tenant" ? "/tenant/dashboard" : "/borrower/browse"}
                   replace
                 />
               ) : (
@@ -111,3 +112,4 @@ export default function App() {
     </Router>
   );
 }
+
