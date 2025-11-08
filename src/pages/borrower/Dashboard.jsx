@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AlertIcon,
+  Avatar,
+  Badge,
   Box,
   Button,
-  Badge,
   Center,
   Container,
   Flex,
@@ -115,6 +116,19 @@ function formatRate(rate, rateType) {
   return `${formatter.format(numeric)}${suffix}`;
 }
 
+function getCompanyIdentifier(company) {
+  if (!company) return null;
+  const candidate =
+    company.id ??
+    company.company_id ??
+    company.uuid ??
+    company.slug ??
+    company.name ??
+    null;
+  if (candidate === null || candidate === undefined) return null;
+  return String(candidate);
+}
+
 function NearestCompaniesSection({
   loading,
   error,
@@ -136,18 +150,55 @@ function NearestCompaniesSection({
         ? `${Math.round(radiusMeters / 1000)} km`
         : `${radiusMeters} m`
       : null;
+  const [activeCompanyId, setActiveCompanyId] = useState(null);
+
+  useEffect(() => {
+    if (!hasResults) {
+      if (activeCompanyId !== null) setActiveCompanyId(null);
+      return;
+    }
+    const firstWithId = companies.find((company) => getCompanyIdentifier(company));
+    if (!firstWithId) return;
+    const currentExists = companies.some(
+      (company) => getCompanyIdentifier(company) === activeCompanyId
+    );
+    if (!activeCompanyId || !currentExists) {
+      setActiveCompanyId(getCompanyIdentifier(firstWithId));
+    }
+  }, [companies, hasResults, activeCompanyId]);
+
+  const handleFocusCompany = (company) => {
+    const identifier = getCompanyIdentifier(company);
+    if (identifier) {
+      setActiveCompanyId(identifier);
+    }
+  };
+
+  const handleSelectFromSource = (company) => {
+    if (!company) return;
+    handleFocusCompany(company);
+    onSelectCompany?.(company);
+  };
 
   return (
     <Box
       borderWidth="1px"
       borderRadius="2xl"
       px={{ base: 4, md: 6 }}
-      py={{ base: 5, md: 6 }}
-      bgGradient="linear(to-r, white, blue.50)"
-      borderColor="rgba(148, 163, 184, 0.3)"
+      py={{ base: 6, md: 7 }}
+      bg="white"
+      borderColor="rgba(148, 163, 184, 0.35)"
       shadow="xl"
+      position="relative"
     >
-      <Stack spacing={5}>
+      <Box
+        position="absolute"
+        inset={0}
+        borderRadius="inherit"
+        pointerEvents="none"
+        bgGradient="linear(to-r, rgba(59,130,246,0.08), rgba(30,64,175,0.03))"
+      />
+      <Stack spacing={{ base: 6, md: 7 }} position="relative">
         <Flex
           direction={{ base: "column", md: "row" }}
           justify="space-between"
@@ -155,49 +206,51 @@ function NearestCompaniesSection({
           gap={{ base: 4, md: 6 }}
         >
           <Stack spacing={2}>
-            <HStack spacing={3}>
-              <Icon as={FiMapPin} boxSize={5} color="blue.500" />
-              <Text fontWeight="bold" fontSize="lg">
-                Find cars near you
-              </Text>
-              {hasResults && radiusKmLabel && (
-                <Badge colorScheme="blue" borderRadius="full">
-                  within {radiusKmLabel}
-                </Badge>
+              <HStack spacing={3}>
+                <Icon as={FiMapPin} boxSize={5} color="blue.500" />
+                <Text fontWeight="bold" fontSize="lg">
+                  Nearby partner fleets
+                </Text>
+                {hasResults && radiusKmLabel && (
+                  <Badge colorScheme="blue" borderRadius="full">
+                    within {radiusKmLabel}
+                  </Badge>
               )}
             </HStack>
-            <Text color="gray.600" fontSize="sm" maxW="3xl">
-              Use your current location to spot the closest partner fleets and
-              book a ride in minutes.
-            </Text>
-            {updatedLabel && (
-              <Text fontSize="xs" color="gray.500">
-                Updated {updatedLabel}
+              <Text color="gray.600" fontSize="sm" maxW="3xl">
+                Quickly spot trusted fleets around your area and zero in on the cars that match your trip.
               </Text>
-            )}
-          </Stack>
+              {updatedLabel && (
+                <Text fontSize="xs" color="gray.500">
+                  Updated {updatedLabel}
+                </Text>
+              )}
+            </Stack>
 
-          <HStack spacing={3}>
-            <Button
-              leftIcon={<FiNavigation2 />}
-              colorScheme="blue"
-              onClick={onLocate}
-              isLoading={loading && !hasResults}
-              loadingText="Locating"
-            >
-              {hasResults ? "Refresh nearest" : "Nearest cars"}
-            </Button>
-            {hasResults && (
+            <HStack spacing={3}>
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRefresh}
-                isLoading={loading && hasResults}
+                leftIcon={<FiNavigation2 />}
+                colorScheme="blue"
+                onClick={onLocate}
+                isLoading={loading && !hasResults}
+                loadingText="Locating"
+                size="md"
+                boxShadow="md"
               >
-                Update list
+                {hasResults ? "Refresh nearest" : "Nearest cars"}
               </Button>
-            )}
-          </HStack>
+              {hasResults && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRefresh}
+                  isLoading={loading && hasResults}
+                  leftIcon={<FiRefreshCw />}
+                >
+                  Update list
+                </Button>
+              )}
+            </HStack>
         </Flex>
 
         {error && (
@@ -207,57 +260,82 @@ function NearestCompaniesSection({
           </Alert>
         )}
 
-        {(userCoords || hasResults) && (
-          <Box
-            borderRadius="2xl"
-            overflow="hidden"
-            shadow="md"
-            borderWidth="1px"
-            borderColor="rgba(148,163,184,0.25)"
-          >
-            <NearestCompaniesMap
-              companies={companies}
-              userCoords={userCoords}
-              radiusMeters={radiusMeters || undefined}
-            />
-          </Box>
-        )}
-
         {loading && !hasResults ? (
-          <Center py={6}>
+          <Center py={8}>
             <Stack spacing={2} align="center">
               <Spinner size="md" color="blue.500" />
               <Text fontSize="sm" color="gray.600">
-                Looking for nearby fleets…
+                Looking for nearby fleets...
               </Text>
             </Stack>
           </Center>
         ) : hasResults ? (
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-            {companies.map((company) => (
-              <NearestCompanyCard
-                key={company.id || company.name}
-                company={company}
-                onSelect={() => onSelectCompany?.(company)}
+          <SimpleGrid
+            columns={{ base: 1, lg: 2 }}
+            spacing={{ base: 5, lg: 6 }}
+            alignItems="stretch"
+          >
+            <Box
+              borderRadius="xl"
+              overflow="hidden"
+              borderWidth="1px"
+              borderColor="rgba(148,163,184,0.25)"
+              shadow="md"
+              bg="white"
+              minH={{ base: "300px", lg: "360px" }}
+              maxH={{ base: "420px", lg: "420px" }}
+            >
+              <NearestCompaniesMap
+                companies={companies}
+                userCoords={userCoords}
+                radiusMeters={radiusMeters || undefined}
+                activeCompanyId={activeCompanyId}
+                onMarkerClick={handleSelectFromSource}
               />
-            ))}
+            </Box>
+
+            <Stack spacing={4}>
+              <Stack spacing={1}>
+                <Text fontWeight="semibold" color="gray.800">
+                  Nearby companies
+                </Text>
+                <Text fontSize="sm" color="gray.500">
+                  Tap a card to filter cars or hover to preview them on the map.
+                </Text>
+              </Stack>
+              <Stack spacing={4} maxH={{ base: "unset", lg: "420px" }} overflowY="auto" pr={1}>
+                {companies.map((company) => {
+                  const identifier = getCompanyIdentifier(company);
+                  return (
+                    <NearestCompanyCard
+                      key={identifier || company.id || company.name}
+                      company={company}
+                      isActive={identifier === activeCompanyId}
+                      onHover={() => handleFocusCompany(company)}
+                      onSelect={() => handleSelectFromSource(company)}
+                    />
+                  );
+                })}
+              </Stack>
+            </Stack>
           </SimpleGrid>
         ) : (
           <Box
             borderWidth="1px"
-            borderRadius="lg"
+            borderRadius="xl"
             borderStyle="dashed"
             borderColor="blue.200"
             bg="whiteAlpha.700"
-            py={6}
-            px={4}
+            py={{ base: 8, md: 10 }}
+            px={{ base: 4, md: 6 }}
           >
-            <Stack spacing={2} align="center" textAlign="center">
-              <Icon as={FiMapPin} boxSize={6} color="blue.400" />
-              <Text fontWeight="semibold">Ready when you are</Text>
-              <Text fontSize="sm" color="gray.600">
-                Tap "Nearest cars" to let us know where you are and we'll
-                surface fleets closest to you.
+            <Stack spacing={3} align="center" textAlign="center">
+              <Icon as={FiMapPin} boxSize={8} color="blue.500" />
+              <Text fontWeight="semibold" fontSize="lg">
+                Ready when you are
+              </Text>
+              <Text fontSize="sm" color="gray.600" maxW="md">
+                Hit "Nearest cars" and we'll pinpoint partner fleets around your current location for quick booking.
               </Text>
             </Stack>
           </Box>
@@ -267,124 +345,168 @@ function NearestCompaniesSection({
   );
 }
 
-function NearestCompanyCard({ company, onSelect }) {
-  const distanceLabel = formatDistance(
-    company?.distance_m || company?.distance
-  );
+function NearestCompanyCard({ company, onSelect, onHover, isActive }) {
+  const distanceLabel = formatDistance(company?.distance_m || company?.distance);
   const vehicles = getTopCars(company?.cars);
+  const availableCount = Array.isArray(company?.cars)
+    ? company.cars.length
+    : company?.available_car_count ?? vehicles.length;
+  const tagline = company?.tagline || "Trusted local fleet";
+  const hasVehicles = vehicles.length > 0;
 
   return (
-    <Stack
-      spacing={3}
-      borderWidth="1px"
+    <Box
+      role="button"
+      onClick={onSelect}
+      onKeyPress={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect?.();
+      }}
+      onMouseEnter={onHover}
+      onFocus={onHover}
+      tabIndex={0}
       borderRadius="xl"
+      borderWidth="1px"
+      borderColor={isActive ? "blue.400" : "rgba(59,130,246,0.18)"}
       bg="white"
-      p={5}
-      shadow="md"
-      borderColor="rgba(148, 163, 184, 0.25)"
-      _hover={{ shadow: "lg", borderColor: "blue.200" }}
-      transition="all 0.2s ease"
+      px={{ base: 4, md: 5 }}
+      py={{ base: 4, md: 5 }}
+      shadow={isActive ? "xl" : "lg"}
+      transition="all 0.25s ease"
+      cursor="pointer"
+      _hover={{
+        shadow: "xl",
+        transform: "translateY(-3px)",
+        borderColor: "blue.400",
+      }}
+      _focusVisible={{
+        outline: "none",
+        borderColor: "blue.500",
+        boxShadow: "0 0 0 3px rgba(59,130,246,0.2)",
+      }}
     >
-      <Flex justify="space-between" align="flex-start" gap={3}>
-        <Stack spacing={1}>
-          <Text fontWeight="semibold" fontSize="md" noOfLines={1}>
-            {company?.name || "Company"}
-          </Text>
-          {company?.address && (
-            <Text fontSize="sm" color="gray.600" noOfLines={2}>
-              {company.address}
-            </Text>
-          )}
-        </Stack>
-        {distanceLabel && (
-          <Badge colorScheme="blue" borderRadius="full" px={2}>
-            {distanceLabel}
-          </Badge>
-        )}
-      </Flex>
+      <Stack spacing={4}>
+        <HStack align="flex-start" spacing={4}>
+          <Avatar
+            size="lg"
+            name={company?.name || "Company"}
+            src={company?.logo_url || company?.logo || undefined}
+            borderRadius="16px"
+          />
+          <Stack spacing={2} flex="1" minW={0}>
+            <HStack justify="space-between" align="flex-start" spacing={3}>
+              <Stack spacing={1} minW={0}>
+                <Text fontWeight="semibold" fontSize="lg" noOfLines={1} color="gray.800">
+                  {company?.name || "Company"}
+                </Text>
+                {company?.address && (
+                  <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                    {company.address}
+                  </Text>
+                )}
+                <HStack spacing={2} fontSize="xs" color="gray.500">
+                  <Badge variant="subtle" colorScheme="blue" borderRadius="full" px={2}>
+                    {availableCount} car{availableCount === 1 ? "" : "s"} nearby
+                  </Badge>
+                  <Text noOfLines={1}>{tagline}</Text>
+                </HStack>
+              </Stack>
+              {distanceLabel && (
+                <Badge colorScheme="blue" borderRadius="full" px={3} py={1} fontSize="0.75rem">
+                  {distanceLabel}
+                </Badge>
+              )}
+            </HStack>
 
-      {vehicles.length > 0 ? (
-        <Stack spacing={2}>
-          <Text
-            fontSize="xs"
-            color="gray.500"
-            textTransform="uppercase"
-            letterSpacing="wide"
-          >
-            Available cars
-          </Text>
-          <Stack spacing={1}>
-            {vehicles.map((car) => (
-              <HStack
-                key={car.id || car.name}
-                spacing={3}
-                align="flex-start"
-                py={1}
-              >
-                <Box w="10px" h="10px" borderRadius="full" bg="blue.400" />
-                <Stack spacing={0.5} flex="1" minW={0}>
-                  <Text fontSize="sm" color="gray.700" noOfLines={1}>
-                    {car.name || car.model || car.title || "Vehicle"}
-                    {formatRate(
+            {hasVehicles ? (
+              <Stack spacing={2} pt={1}>
+                <Text
+                  fontSize="xs"
+                  color="gray.500"
+                  textTransform="uppercase"
+                  letterSpacing="wide"
+                >
+                  Featured cars
+                </Text>
+                <Stack spacing={2}>
+                  {vehicles.map((car) => {
+                    const rateLabel = formatRate(
                       car.rate ?? car.rate_value,
                       car.rate_type ?? car.rateType
-                    ) ? (
-                      <Text as="span" fontSize="sm" color="gray.500">
-                        {" "}
-                        ·{" "}
-                        {formatRate(
-                          car.rate ?? car.rate_value,
-                          car.rate_type ?? car.rateType
+                    );
+                    return (
+                      <Flex
+                        key={car.id || car.name}
+                        align="center"
+                        gap={3}
+                        bg="rgba(59,130,246,0.06)"
+                        borderRadius="lg"
+                        px={3}
+                        py={2}
+                      >
+                        <Box w="8px" h="8px" borderRadius="full" bg="blue.500" flexShrink={0} />
+                        <Stack spacing={0} flex="1" minW={0}>
+                          <Text fontSize="sm" color="gray.700" noOfLines={1}>
+                            {car.name || car.model || car.title || "Vehicle"}
+                          </Text>
+                          <HStack spacing={3} fontSize="xs" color="gray.500">
+                            {car.location && <Text noOfLines={1}>{car.location}</Text>}
+                            {rateLabel && (
+                              <Text noOfLines={1} display="flex" alignItems="center">
+                                {"\u2022"} {rateLabel}
+                              </Text>
+                            )}
+                          </HStack>
+                        </Stack>
+                        {car.availability_status && (
+                          <Badge
+                            colorScheme={
+                              String(car.availability_status).toLowerCase() === "available" ? "green" : "gray"
+                            }
+                            borderRadius="full"
+                            px={2.5}
+                            fontSize="0.7rem"
+                            textTransform="capitalize"
+                            whiteSpace="nowrap"
+                          >
+                            {car.availability_status}
+                          </Badge>
                         )}
-                      </Text>
-                    ) : null}
-                  </Text>
-                  {car.location && (
-                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
-                      {car.location}
-                    </Text>
-                  )}
+                      </Flex>
+                    );
+                  })}
                 </Stack>
-                {car.availability_status && (
-                  <Badge
-                    colorScheme={
-                      String(car.availability_status).toLowerCase() ===
-                      "available"
-                        ? "green"
-                        : "gray"
-                    }
-                    borderRadius="full"
-                    px={2}
-                    fontSize="0.7rem"
-                    textTransform="capitalize"
-                    whiteSpace="nowrap"
-                  >
-                    {car.availability_status}
-                  </Badge>
-                )}
-              </HStack>
-            ))}
+              </Stack>
+            ) : (
+              <Text fontSize="sm" color="gray.500">
+                Fleet details coming soon. Check back shortly for new availability.
+              </Text>
+            )}
           </Stack>
-        </Stack>
-      ) : (
-        <Text fontSize="sm" color="gray.500">
-          Fleet details loading soon.
-        </Text>
-      )}
+        </HStack>
 
-      <Button
-        size="sm"
-        colorScheme="blue"
-        variant="outline"
-        alignSelf="flex-start"
-        onClick={onSelect}
-      >
-        View cars from this company
-      </Button>
-    </Stack>
+        <Flex justify="space-between" align={{ base: "stretch", sm: "center" }} gap={3}>
+          <HStack spacing={3} color="gray.500" fontSize="sm">
+            <Icon as={FiMapPin} color="blue.500" boxSize={4} />
+            <Text>
+              {distanceLabel
+                ? `Approximately ${distanceLabel} away`
+                : "Distance updates once we locate you"}
+            </Text>
+          </HStack>
+          <Button
+            size="sm"
+            colorScheme="blue"
+            rightIcon={<FiNavigation2 />}
+            variant="solid"
+            onClick={onSelect}
+          >
+            View cars
+          </Button>
+        </Flex>
+      </Stack>
+    </Box>
   );
 }
-
 export default function BorrowerDashboard() {
   const [cars, setCars] = useState([]);
   const [meta, setMeta] = useState(null);

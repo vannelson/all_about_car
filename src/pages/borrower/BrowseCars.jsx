@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+ï»¿import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   AlertIcon,
@@ -19,6 +19,8 @@ import {
   Stack,
   Switch,
   Text,
+  Wrap,
+  WrapItem,
   useDisclosure,
 } from "@chakra-ui/react";
 import { FiMapPin, FiNavigation2, FiRefreshCw, FiSearch } from "react-icons/fi";
@@ -118,6 +120,12 @@ function formatRate(rate, rateType) {
   return `${formatter.format(numeric)}${suffix}`;
 }
 
+function formatCount(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "--";
+  return new Intl.NumberFormat("en-US").format(Math.max(0, Math.round(numeric)));
+}
+
 function NearestCompaniesSection({
   loading,
   error,
@@ -141,29 +149,49 @@ function NearestCompaniesSection({
         ? `${Math.round(radiusMeters / 1000)} km`
         : `${radiusMeters} m`
       : null;
+  const companyCount = Array.isArray(companies) ? companies.length : 0;
+  const headingDescription = hasResults
+    ? `We found ${companyCount} partner${companyCount === 1 ? "" : "s"} within ${radiusLabel || "your area"}.`
+    : "Use the locator to reveal trusted fleets within minutes.";
 
   return (
-    <Stack spacing={5} h="100%">
+    <Stack spacing={6} h="100%">
+      <Stack spacing={1}>
+        <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest" color="blue.500">
+          Nearby fleets
+        </Text>
+        <Text fontWeight="bold" fontSize="xl">
+          Stay close to your pickup
+        </Text>
+        <Text fontSize="sm" color="gray.600">
+          {headingDescription}
+        </Text>
+      </Stack>
+
       <Box
         position="relative"
-        borderRadius="2xl"
+        borderRadius="3xl"
         overflow="hidden"
         borderWidth="1px"
-        borderColor="rgba(148, 163, 184, 0.3)"
-        shadow="xl"
-        bg="white"
+        borderColor="rgba(59, 130, 246, 0.18)"
+        shadow="2xl"
+        bgGradient="linear(to-br, blue.50, purple.50)"
         minH={{ base: "320px", xl: "560px" }}
       >
         <Box
           position="absolute"
-          top={4}
-          left={4}
+          top={5}
+          left={5}
           zIndex={1000}
-          bg="white"
-          borderRadius="lg"
-          shadow="md"
-          px={4}
-          py={3}
+          bg="whiteAlpha.900"
+          borderRadius="2xl"
+          shadow="xl"
+          px={{ base: 4, md: 5 }}
+          py={{ base: 4, md: 5 }}
+          maxW="280px"
+          backdropFilter="blur(14px)"
+          borderWidth="1px"
+          borderColor="whiteAlpha.700"
         >
           <Stack spacing={2}>
             <Stack spacing={1}>
@@ -173,8 +201,8 @@ function NearestCompaniesSection({
                   Find cars near you
                 </Text>
               </HStack>
-              <Text fontSize="xs" color="gray.500" maxW="220px">
-                Use your current location to discover partner fleets around you.
+              <Text fontSize="xs" color="gray.500">
+                Share your location to reveal partner fleets within reach.
               </Text>
               {updatedLabel && (
                 <Text fontSize="10px" color="gray.400">
@@ -196,11 +224,11 @@ function NearestCompaniesSection({
                 isLoading={loading && !hasResults}
                 loadingText="Locating"
               >
-                {hasResults ? "Refresh" : "Nearest cars"}
+                {hasResults ? "Locate again" : "Locate me"}
               </Button>
               {hasResults && (
                 <Button size="sm" variant="ghost" onClick={onRefresh} isLoading={loading && hasResults}>
-                  Update
+                  Refresh map
                 </Button>
               )}
             </HStack>
@@ -208,8 +236,8 @@ function NearestCompaniesSection({
         </Box>
 
         {error && (
-          <Box position="absolute" top={4} right={4} zIndex={1000} maxW="260px">
-            <Alert status="warning" variant="subtle" borderRadius="md">
+          <Box position="absolute" top={5} right={5} zIndex={1000} maxW="260px">
+            <Alert status="warning" variant="subtle" borderRadius="lg" shadow="md">
               <AlertIcon />
               <Text fontSize="sm">{error}</Text>
             </Alert>
@@ -226,9 +254,9 @@ function NearestCompaniesSection({
       </Box>
 
       {hasResults ? (
-        <Stack spacing={3}>
-          <Text fontWeight="semibold" color="gray.700">
-            Nearby companies
+        <Stack spacing={4}>
+          <Text fontWeight="semibold" fontSize="lg" color="gray.700">
+            Trusted partners nearby
           </Text>
           <SimpleGrid columns={{ base: 1 }} spacing={4}>
             {companies.map((company) => (
@@ -246,25 +274,25 @@ function NearestCompaniesSection({
           <Stack spacing={2} align="center">
             <Spinner size="md" color="blue.500" />
             <Text fontSize="sm" color="gray.600">
-              Looking for nearby fleets…
+              Looking for nearby fleets
             </Text>
           </Stack>
         </Center>
       ) : (
         <Box
           borderWidth="1px"
-          borderRadius="lg"
+          borderRadius="2xl"
           borderStyle="dashed"
           borderColor="blue.200"
-          bg="whiteAlpha.700"
-          py={6}
-          px={4}
+          bg="whiteAlpha.800"
+          py={8}
+          px={6}
         >
-          <Stack spacing={2} align="center" textAlign="center">
-            <Icon as={FiMapPin} boxSize={6} color="blue.400" />
+          <Stack spacing={3} align="center" textAlign="center">
+            <Icon as={FiMapPin} boxSize={7} color="blue.400" />
             <Text fontWeight="semibold">Ready when you are</Text>
-            <Text fontSize="sm" color="gray.600">
-              Tap “Nearest cars” to let us know where you are and we’ll surface fleets closest to you.
+            <Text fontSize="sm" color="gray.600" maxW="260px">
+              Tap "Locate me" to let us know where you are and we'll surface fleets closest to you.
             </Text>
           </Stack>
         </Box>
@@ -279,14 +307,14 @@ function NearestCompanyCard({ company, onSelect, isActive }) {
 
   return (
     <Stack
-      spacing={3}
+      spacing={4}
       borderWidth="1px"
-      borderRadius="xl"
-      bg="white"
+      borderRadius="2xl"
+      bgGradient={isActive ? "linear(to-r, white, blue.50)" : "linear(to-r, white, gray.50)"}
       p={5}
-      shadow={isActive ? "lg" : "md"}
-      borderColor={isActive ? "blue.300" : "rgba(148, 163, 184, 0.25)"}
-      _hover={{ shadow: "lg", borderColor: "blue.200" }}
+      shadow={isActive ? "xl" : "md"}
+      borderColor={isActive ? "blue.300" : "rgba(148, 163, 184, 0.2)"}
+      _hover={{ shadow: "xl", borderColor: "blue.200", transform: "translateY(-2px)" }}
       transition="all 0.2s ease"
     >
       <Flex justify="space-between" align="flex-start" gap={3}>
@@ -315,14 +343,14 @@ function NearestCompanyCard({ company, onSelect, isActive }) {
           <Stack spacing={1}>
             {vehicles.map((car) => (
               <HStack key={car.id || car.name} spacing={3} align="flex-start" py={1}>
-                <Box w="10px" h="10px" borderRadius="full" bg="blue.400" />
+                <Box w="10px" h="10px" borderRadius="full" bg={isActive ? "blue.500" : "blue.300"} />
                 <Stack spacing={0.5} flex="1" minW={0}>
                   <Text fontSize="sm" color="gray.700" noOfLines={1}>
                     {car.name || car.model || car.title || "Vehicle"}
                     {formatRate(car.rate ?? car.rate_value, car.rate_type ?? car.rateType) ? (
                       <Text as="span" fontSize="sm" color="gray.500">
-                        {" "}
-                        · {formatRate(car.rate ?? car.rate_value, car.rate_type ?? car.rateType)}
+                        {" - "}
+                        {formatRate(car.rate ?? car.rate_value, car.rate_type ?? car.rateType)}
                       </Text>
                     ) : null}
                   </Text>
@@ -352,7 +380,7 @@ function NearestCompanyCard({ company, onSelect, isActive }) {
         </Stack>
       ) : (
         <Text fontSize="sm" color="gray.500">
-          Fleet details loading soon.
+          Detailed availability coming soon.
         </Text>
       )}
 
@@ -363,7 +391,7 @@ function NearestCompanyCard({ company, onSelect, isActive }) {
         alignSelf="flex-start"
         onClick={onSelect}
       >
-        View cars from this company
+        View listings
       </Button>
     </Stack>
   );
@@ -577,6 +605,72 @@ export default function BorrowerBrowseCars() {
     availableOnly,
   ]);
 
+  const quickVehicleTypes = useMemo(
+    () => filterOptions.vehicleClasses.slice(0, 4),
+    [filterOptions.vehicleClasses]
+  );
+
+  const { availableVehiclesCount, lowestDailyRate, averageDailyRate } = useMemo(() => {
+    let available = 0;
+    const rates = [];
+
+    cars.forEach((car) => {
+      const isAvailable = car?.availability_status
+        ? normalizeValue(car.availability_status) === "available"
+        : !car?.raw?.is_booked;
+      if (isAvailable) {
+        available += 1;
+      }
+
+      const rateValue = getRateValue(car);
+      if (rateValue > 0) {
+        rates.push(rateValue);
+      }
+    });
+
+    const lowest = rates.length ? Math.min(...rates) : null;
+    const average = rates.length
+      ? rates.reduce((sum, value) => sum + value, 0) / rates.length
+      : null;
+
+    return {
+      availableVehiclesCount: available,
+      lowestDailyRate: lowest,
+      averageDailyRate: average,
+    };
+  }, [cars]);
+
+  const highlightedCars = useMemo(() => {
+    const source = filteredCars.length > 0 ? filteredCars : cars;
+    return getTopCars(source, 3);
+  }, [filteredCars, cars]);
+
+  const totalVehicles = filteredCars.length || meta?.total || cars.length;
+
+  const heroStats = useMemo(
+    () => [
+      {
+        label: "Vehicles ready",
+        value: formatCount(totalVehicles),
+        description: "Across trusted partners",
+      },
+      {
+        label: "Available now",
+        value: formatCount(availableVehiclesCount),
+        description: "Instantly bookable",
+      },
+      {
+        label: "Daily rates from",
+        value: formatRate(lowestDailyRate, "daily") ?? "Request quote",
+        description:
+          averageDailyRate && formatRate(averageDailyRate, "daily")
+            ? `Avg ${formatRate(averageDailyRate, "daily")}`
+            : "Based on current listings",
+      },
+    ],
+    [totalVehicles, availableVehiclesCount, lowestDailyRate, averageDailyRate]
+  );
+
   const extractCompanies = (payload) => {
     if (!payload) return [];
     if (Array.isArray(payload.data)) return payload.data;
@@ -736,18 +830,194 @@ export default function BorrowerBrowseCars() {
     const match = nearestCompanies.find(
       (company) => (company.name || "").toLowerCase() === filters.company.toLowerCase()
     );
-    if (match && match.id !== activeCompanyId) {
-      setActiveCompanyId(match.id);
-    }
-  }, [nearestCompanies, filters.company, activeCompanyId]);
-
-  const totalVehicles = filteredCars.length || meta?.total || cars.length;
+  if (match && match.id !== activeCompanyId) {
+    setActiveCompanyId(match.id);
+  }
+}, [nearestCompanies, filters.company, activeCompanyId]);
 
   return (
-    <Box bg="gray.50" minH="100vh" py={{ base: 8, md: 12 }}>
+    <Box bgGradient="linear(to-br, gray.50, blue.50)" minH="100vh" py={{ base: 8, md: 12 }}>
       <Container maxW="7xl" px={{ base: 4, md: 8 }}>
-        <Stack spacing={{ base: 6, md: 10 }}>
-          <Flex direction={{ base: "column", xl: "row" }} gap={{ base: 8, xl: 10 }} align="stretch">
+        <Stack spacing={{ base: 10, md: 16 }}>
+          <Box
+            position="relative"
+            overflow="hidden"
+            borderRadius="3xl"
+            bgGradient="linear(to-br, blue.600, purple.500)"
+            color="white"
+            px={{ base: 6, md: 10 }}
+            py={{ base: 8, md: 12 }}
+            shadow="2xl"
+          >
+            <Box
+              position="absolute"
+              top="-16"
+              right="-10"
+              w={{ base: "40", md: "56" }}
+              h={{ base: "40", md: "56" }}
+              bg="whiteAlpha.200"
+              borderRadius="full"
+              filter="blur(18px)"
+            />
+            <Box
+              position="absolute"
+              bottom="-12"
+              left="-6"
+              w={{ base: "36", md: "52" }}
+              h={{ base: "36", md: "52" }}
+              bg="whiteAlpha.200"
+              borderRadius="full"
+              filter="blur(16px)"
+            />
+            <Stack spacing={{ base: 6, md: 8 }} position="relative">
+              <Flex
+                direction={{ base: "column", lg: "row" }}
+                align="flex-start"
+                justify="space-between"
+                gap={{ base: 8, lg: 12 }}
+              >
+                <Stack spacing={5} maxW={{ base: "100%", lg: "55%" }}>
+                  <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest" color="whiteAlpha.700">
+                    Browse & book
+                  </Text>
+                  <Text fontSize={{ base: "3xl", md: "4xl" }} fontWeight="extrabold" lineHeight="1.1">
+                    Drive the car that fits your next adventure
+                  </Text>
+                  <Text fontSize={{ base: "md", md: "lg" }} color="whiteAlpha.800">
+                    Explore curated vehicles from verified partners. Tailor your search and secure a ride in a few taps.
+                  </Text>
+                  {quickVehicleTypes.length > 0 && (
+                    <Stack spacing={2}>
+                      <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest" color="whiteAlpha.700">
+                        Popular categories
+                      </Text>
+                      <Wrap spacing={2}>
+                        {quickVehicleTypes.map((vehicleType) => {
+                          const isActive =
+                            normalizeValue(filters.vehicleClass) === normalizeValue(vehicleType);
+                          return (
+                            <WrapItem key={vehicleType}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                colorScheme="whiteAlpha"
+                                borderColor={isActive ? "white" : "whiteAlpha.400"}
+                                bg={isActive ? "whiteAlpha.300" : "transparent"}
+                                color="white"
+                                onClick={() => handleFilterChange({ vehicleClass: vehicleType })}
+                                _hover={{ bg: "whiteAlpha.200" }}
+                              >
+                                {vehicleType}
+                              </Button>
+                            </WrapItem>
+                          );
+                        })}
+                        <WrapItem>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            color="white"
+                            onClick={handleClearFilters}
+                            _hover={{ bg: "whiteAlpha.200" }}
+                          >
+                            Reset filters
+                          </Button>
+                        </WrapItem>
+                      </Wrap>
+                    </Stack>
+                  )}
+                </Stack>
+                <SimpleGrid
+                  columns={{ base: 1, sm: 3 }}
+                  spacing={4}
+                  w={{ base: "full", lg: "auto" }}
+                  minW={{ lg: "280px" }}
+                >
+                  {heroStats.map((stat) => (
+                    <Stack
+                      key={stat.label}
+                      spacing={1}
+                      px={5}
+                      py={4}
+                      borderRadius="xl"
+                      bg="whiteAlpha.200"
+                      borderWidth="1px"
+                      borderColor="whiteAlpha.300"
+                      backdropFilter="blur(12px)"
+                    >
+                      <Text fontWeight="semibold" fontSize="2xl">
+                        {stat.value}
+                      </Text>
+                      <Text fontSize="sm" color="whiteAlpha.800">
+                        {stat.label}
+                      </Text>
+                      <Text fontSize="xs" color="whiteAlpha.700">
+                        {stat.description}
+                      </Text>
+                    </Stack>
+                  ))}
+                </SimpleGrid>
+              </Flex>
+              {highlightedCars.length > 0 && (
+                <Stack spacing={3}>
+                  <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest" color="whiteAlpha.700">
+                    Trending right now
+                  </Text>
+                  <SimpleGrid
+                    columns={{ base: 1, md: Math.min(3, highlightedCars.length) || 1 }}
+                    spacing={3}
+                  >
+                    {highlightedCars.map((car, index) => {
+                      const rateLabel = formatRate(
+                        getRateValue(car),
+                        car.rate_type ?? car.rateType ?? "daily"
+                      );
+                      const companyName = car?.company?.name ?? car?.raw?.company?.name;
+                      const key = car.id || car.raw?.id || `${car.name || car.model || "car"}-${index}`;
+                      return (
+                        <Stack
+                          key={key}
+                          spacing={3}
+                          borderRadius="xl"
+                          bg="whiteAlpha.100"
+                          borderWidth="1px"
+                          borderColor="whiteAlpha.200"
+                          p={4}
+                        >
+                          <Stack spacing={0}>
+                            <Text fontWeight="semibold" fontSize="md" noOfLines={1}>
+                              {car.name || car.model || car.title || "Vehicle"}
+                            </Text>
+                            {companyName && (
+                              <Text fontSize="sm" color="whiteAlpha.700" noOfLines={1}>
+                                {companyName}
+                              </Text>
+                            )}
+                          </Stack>
+                          {rateLabel && (
+                            <Text fontSize="sm" color="white">
+                              {rateLabel}
+                            </Text>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            colorScheme="whiteAlpha"
+                            borderColor="whiteAlpha.400"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                            onClick={() => handleBook(car)}
+                          >
+                            Quick book
+                          </Button>
+                        </Stack>
+                      );
+                    })}
+                  </SimpleGrid>
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+          <Flex direction={{ base: "column", xl: "row" }} gap={{ base: 10, xl: 12 }} align="stretch">
             <Box flex={{ base: "1 1 auto", xl: "0 0 48%" }}>
               <NearestCompaniesSection
                 loading={nearestLoading}
@@ -766,33 +1036,36 @@ export default function BorrowerBrowseCars() {
             </Box>
 
             <Box flex={{ base: "1 1 auto", xl: "0 0 52%" }}>
-              <Stack spacing={6} h="100%">
+              <Stack spacing={8} h="100%">
                 <Box
+                  borderRadius="3xl"
+                  bg="whiteAlpha.900"
                   borderWidth="1px"
-                  borderRadius="2xl"
-                  bg="white"
-                  shadow="xl"
-                  px={{ base: 4, md: 6 }}
-                  py={{ base: 5, md: 6 }}
+                  borderColor="rgba(148, 163, 184, 0.25)"
+                  shadow="2xl"
+                  backdropFilter="blur(12px)"
+                  px={{ base: 5, md: 8 }}
+                  py={{ base: 6, md: 8 }}
                 >
-                  <Stack spacing={4}>
+                  <Stack spacing={5}>
                     <Flex
                       align={{ base: "flex-start", md: "center" }}
                       justify="space-between"
                       direction={{ base: "column", md: "row" }}
-                      gap={3}
+                      gap={4}
                     >
                       <Stack spacing={1}>
-                        <Text fontSize="lg" fontWeight="bold">
-                          Find a car
+                        <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight="bold">
+                          Fine-tune your search
                         </Text>
-                        <Text fontSize="sm" color="gray.500">
-                          Search by make, model, keyword, or filter by price and availability.
+                        <Text fontSize="sm" color="gray.600">
+                          Use smart filters to surface the vehicles that match your itinerary perfectly.
                         </Text>
                       </Stack>
                       <Button
                         leftIcon={<FiRefreshCw />}
-                        variant="ghost"
+                        variant="outline"
+                        colorScheme="blue"
                         size="sm"
                         onClick={handleRefresh}
                         isLoading={refreshing}
@@ -801,18 +1074,29 @@ export default function BorrowerBrowseCars() {
                       </Button>
                     </Flex>
 
-                    <InputGroup>
+                    <HStack spacing={3} flexWrap="wrap">
+                      <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                        {formatCount(filteredCars.length)} matches
+                      </Badge>
+                      {availableOnly && (
+                        <Badge colorScheme="green" variant="subtle" borderRadius="full" px={3} py={1}>
+                          Available now
+                        </Badge>
+                      )}
+                    </HStack>
+
+                    <InputGroup size="lg">
                       <InputLeftElement pointerEvents="none" color="gray.400">
                         <FiSearch />
                       </InputLeftElement>
                       <Input
-                        placeholder="Search make, model, keyword"
+                        placeholder="Search by make, model, feature, or keyword"
                         value={searchCriteria.query}
                         onChange={(event) => handleCriteriaChange({ query: event.target.value })}
-                        size="lg"
-                        bg="gray.100"
+                        bg="white"
                         borderRadius="lg"
-                        _focus={{ bg: "white", borderColor: "blue.400" }}
+                        borderColor="gray.200"
+                        _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px rgba(59,130,246,0.45)" }}
                       />
                     </InputGroup>
 
@@ -829,7 +1113,9 @@ export default function BorrowerBrowseCars() {
                         borderWidth="1px"
                         borderRadius="lg"
                         px={4}
-                        py={2}
+                        py={3}
+                        bg="gray.50"
+                        borderColor="gray.200"
                       >
                         <Stack spacing={0}>
                           <Text fontSize="sm" fontWeight="semibold">
@@ -840,21 +1126,21 @@ export default function BorrowerBrowseCars() {
                           </Text>
                         </Stack>
                         <Switch
-                          colorScheme="blue"
+                          colorScheme="teal"
                           isChecked={availableOnly}
                           onChange={(event) => setAvailableOnly(event.target.checked)}
                         />
                       </HStack>
                     </SimpleGrid>
 
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                    <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={3}>
                       <Select
                         value={filters.vehicleClass}
                         onChange={(event) =>
                           handleFilterChange({ vehicleClass: event.target.value })
                         }
                       >
-                        <option value="all">All car types</option>
+                        <option value="all">Any vehicle type</option>
                         {filterOptions.vehicleClasses.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -865,10 +1151,43 @@ export default function BorrowerBrowseCars() {
                         value={filters.company}
                         onChange={(event) => handleFilterChange({ company: event.target.value })}
                       >
-                        <option value="all">All companies</option>
+                        <option value="all">Any company</option>
                         {filterOptions.companies.map((company) => (
                           <option key={company.id || company.name} value={company.name}>
                             {company.name}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select
+                        value={filters.brand}
+                        onChange={(event) => handleFilterChange({ brand: event.target.value })}
+                      >
+                        <option value="all">Any brand</option>
+                        {filterOptions.brands.map((brand) => (
+                          <option key={brand} value={brand}>
+                            {brand}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select
+                        value={filters.gearType}
+                        onChange={(event) => handleFilterChange({ gearType: event.target.value })}
+                      >
+                        <option value="all">Any transmission</option>
+                        {filterOptions.gearTypes.map((gear) => (
+                          <option key={gear} value={gear}>
+                            {gear}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select
+                        value={filters.fuelType}
+                        onChange={(event) => handleFilterChange({ fuelType: event.target.value })}
+                      >
+                        <option value="all">Any fuel type</option>
+                        {filterOptions.fuelTypes.map((fuel) => (
+                          <option key={fuel} value={fuel}>
+                            {fuel}
                           </option>
                         ))}
                       </Select>
@@ -876,7 +1195,7 @@ export default function BorrowerBrowseCars() {
 
                     <HStack justify="flex-end" spacing={3}>
                       <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                        Clear filters
+                        Clear all
                       </Button>
                     </HStack>
                   </Stack>
@@ -889,36 +1208,62 @@ export default function BorrowerBrowseCars() {
                   </Alert>
                 )}
 
-                <Box flex="1" ref={carListRef}>
-                  {loading ? (
-                    <Center py={12}>
-                      <Stack spacing={3} align="center">
-                        <Spinner size="lg" color="blue.500" />
-                        <Text color="gray.600">Loading vehicles…</Text>
-                      </Stack>
-                    </Center>
-                  ) : filteredCars.length > 0 ? (
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                      {filteredCars.map((car) => (
-                        <CarCard key={car.id} car={car} onBook={handleBook} />
-                      ))}
-                    </SimpleGrid>
-                  ) : (
-                    <Center py={16}>
-                      <Stack spacing={3} textAlign="center">
-                        <Text fontWeight="bold" fontSize="lg">
-                          No vehicles match your filters yet
-                        </Text>
-                        <Text color="gray.600">
-                          Adjust your search to discover more options.
-                        </Text>
-                        <Button onClick={handleClearFilters} colorScheme="blue">
-                          Reset filters
-                        </Button>
-                      </Stack>
-                    </Center>
-                  )}
-                </Box>
+                <Stack spacing={4} flex="1">
+                  <Flex
+                    align={{ base: "flex-start", md: "center" }}
+                    justify="space-between"
+                    direction={{ base: "column", md: "row" }}
+                    gap={3}
+                  >
+                    <Stack spacing={0}>
+                      <Text fontSize="lg" fontWeight="semibold">
+                        {availableOnly ? "Available rides" : "All curated rides"}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        Showing {formatCount(filteredCars.length)} of {formatCount(totalVehicles)} vehicles
+                      </Text>
+                    </Stack>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<FiNavigation2 />}
+                      onClick={focusCarResults}
+                    >
+                      Jump to results
+                    </Button>
+                  </Flex>
+
+                  <Box ref={carListRef}>
+                    {loading ? (
+                      <Center py={12}>
+                        <Stack spacing={3} align="center">
+                          <Spinner size="lg" color="blue.500" />
+                          <Text color="gray.600">Loading curated vehicles...</Text>
+                        </Stack>
+                      </Center>
+                    ) : filteredCars.length > 0 ? (
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                        {filteredCars.map((car) => (
+                          <CarCard key={car.id} car={car} onBook={handleBook} />
+                        ))}
+                      </SimpleGrid>
+                    ) : (
+                      <Center py={16}>
+                        <Stack spacing={3} textAlign="center">
+                          <Text fontWeight="bold" fontSize="lg">
+                            No vehicles match your filters yet
+                          </Text>
+                          <Text color="gray.600">
+                            Adjust your search to discover more options.
+                          </Text>
+                          <Button onClick={handleClearFilters} colorScheme="blue">
+                            Reset filters
+                          </Button>
+                        </Stack>
+                      </Center>
+                    )}
+                  </Box>
+                </Stack>
               </Stack>
             </Box>
           </Flex>
@@ -937,3 +1282,4 @@ export default function BorrowerBrowseCars() {
     </Box>
   );
 }
+

@@ -119,6 +119,19 @@ const computeInitials = (name) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
+const getCompanyIdentifier = (company) => {
+  if (!company) return null;
+  const candidate =
+    company.id ??
+    company.company_id ??
+    company.uuid ??
+    company.slug ??
+    company.name ??
+    null;
+  if (candidate === null || candidate === undefined) return null;
+  return String(candidate);
+};
+
 const gradients = [
   ["#2563EB", "#38BDF8"],
   ["#9333EA", "#EC4899"],
@@ -196,7 +209,8 @@ function NearestCompaniesMap({
     () =>
       (companies || [])
         .map((company) => ({
-          id: company.id,
+          id: getCompanyIdentifier(company),
+          originalId: company.id ?? null,
           name: company.name,
           position: buildLatLng(company.latitude, company.longitude),
           logo: company.logo_url || company.logo || null,
@@ -276,7 +290,7 @@ function NearestCompaniesMap({
                 )}
               </div>
               <span style={{ fontSize: "0.75rem", color: "#475569" }}>
-                {company.availableCount} cars · Affordable rentals near you
+                {company.availableCount} cars {"\u2022"} Affordable rentals near you
               </span>
             </div>
           </Tooltip>
@@ -308,7 +322,7 @@ function NearestCompaniesMap({
                 <div style={{ fontSize: "0.82rem", color: "#475569" }}>{company.address}</div>
               )}
               <div style={{ fontSize: "0.78rem", color: "#64748B" }}>
-                {company.availableCount} vehicles ready · Book instantly with your preferred fleet.
+                {company.availableCount} vehicles ready {"\u2022"} Book instantly with your preferred fleet.
               </div>
             </div>
           </Popup>
